@@ -1,0 +1,12 @@
+{
+  "title": "Rust",
+  "pages": [
+    "getting-started",
+    "frameworks",
+    "organizations-workspaces",
+    "api-auth-oauth",
+    "webhooks",
+    "ai-runtime",
+    "contract-validation"
+  ]
+}

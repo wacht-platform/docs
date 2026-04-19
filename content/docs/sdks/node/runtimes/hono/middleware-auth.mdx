@@ -1,0 +1,99 @@
+---
+title: Middleware and Auth
+description: Implement reusable Hono auth middleware with permission checks.
+---
+
+This guide implements both auth modes in Hono: JWT/session middleware and API key/OAuth protected checks for machine-token endpoints.
+
+## Project shape
+
+<FileTree title="Hono Middleware Setup">
+{`src/
+    app.ts
+    middleware/
+      auth.ts
+    routes/
+      admin.ts
+    errors.ts`}
+</FileTree>
+
+```ts title="src/middleware/auth.ts"
+import type { MiddlewareHandler } from 'hono';
+import { authenticateRequest } from '@wacht/backend';
+
+export const authMiddleware: MiddlewareHandler = async (c, next) => {
+  const { auth } = await authenticateRequest(c.req.raw, {
+    publishableKey: process.env.WACHT_PUBLISHABLE_KEY,
+  });
+
+  await auth.protect({ permission: 'deployment:read' });
+  c.set('auth', auth);
+  await next();
+};
+```
+
+## JWT/session-protected routes
+
+```ts title="src/routes/admin.ts"
+import { Hono } from 'hono';
+import { users } from '@wacht/backend';
+
+export const adminRoutes = new Hono();
+
+adminRoutes.get('/users', async (c) => {
+  const data = await users.listUsers({ limit: 20 });
+  return c.json(data);
+});
+```
+
+## API key/OAuth protected machine route
+
+```ts title="src/routes/machine.ts"
+import { Hono } from 'hono';
+import { gateway, users } from '@wacht/backend';
+
+export const machineRoutes = new Hono();
+
+machineRoutes.get('/users', async (c) => {
+  const incoming = c.req.header('x-api-key') || '';
+
+  const decision = await gateway.checkPrincipalAuthz(
+    {
+      principalType: 'api_key',
+      principalValue: incoming,
+      resource: '/machine/users',
+      method: 'GET',
+      requiredPermissions: ['user:read'],
+    },
+  );
+
+  if (!decision.allowed) {
+    return c.json({ error: 'forbidden' }, 403);
+  }
+
+  return c.json(await users.listUsers({ limit: 20 }));
+});
+```
+
+```ts title="src/app.ts"
+import { Hono } from 'hono';
+import { authMiddleware } from './middleware/auth';
+import { adminRoutes } from './routes/admin';
+import { machineRoutes } from './routes/machine';
+
+const app = new Hono();
+app.use('/admin/*', authMiddleware);
+app.route('/admin', adminRoutes);
+app.route('/machine', machineRoutes);
+app.onError((err, c) => c.json({ error: 'internal_error', message: err.message }, 500));
+
+export default app;
+```
+
+## Production details
+
+- Return JSON errors from a global `app.onError` handler.
+- Keep permission names centralized to avoid drift across middleware and handlers.
+- If you proxy through another authorization gateway, preserve the `Authorization` header end-to-end.
+- Record `request_id` and deny reason in logs for machine-token diagnostics.
+- `gatewayUrl` is optional; custom host overrides are available on Enterprise plans.

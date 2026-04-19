@@ -1,0 +1,38 @@
+---
+title: Hono Overview
+description: Build backend APIs with Hono and @wacht/backend across Node and edge runtimes.
+---
+
+Hono works well when you want one routing style across multiple runtimes.
+
+## Project shape
+
+<FileTree title="Hono App">
+{`src/
+    app.ts
+    middleware/
+      auth.ts
+    routes/
+      admin.ts`}
+</FileTree>
+
+```ts title="src/app.ts"
+import { Hono } from 'hono';
+import { initClient } from '@wacht/backend';
+import { authMiddleware } from './middleware/auth';
+import { adminRoutes } from './routes/admin';
+
+initClient({ apiKey: process.env.WACHT_API_KEY! });
+
+const app = new Hono();
+app.use('/admin/*', authMiddleware);
+app.route('/admin', adminRoutes);
+
+export default app;
+```
+
+## Runtime and framework fit
+
+- `c.req.raw` exposes a standard `Request`, which maps directly to `authenticateRequest()`.
+- The same middleware pattern can be reused on Cloudflare-style deploy targets.
+- Hono can host both JWT/session-protected user routes and API key/OAuth protected machine routes in one app.

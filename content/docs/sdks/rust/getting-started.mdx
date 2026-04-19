@@ -1,0 +1,81 @@
+---
+title: Getting Started
+description: Install wacht-rs, initialize a client, and make your first backend call.
+---
+
+Use the Rust SDK to connect backend services to Wacht with typed request builders, async execution, and framework integrations such as Axum.
+
+## Install
+
+```toml
+[dependencies]
+wacht = "0.1.0-beta.4"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+```
+
+For Axum middleware support:
+
+```toml
+[dependencies]
+wacht = { version = "0.1.0-beta.4", features = ["axum"] }
+```
+
+## Environment variables
+
+Set the values used by `WachtClient::from_env()`:
+
+- `WACHT_API_KEY`
+- `WACHT_PUBLISHABLE_KEY` (preferred) or `WACHT_FRONTEND_HOST`
+- optional: `WACHT_PUBLIC_SIGNING_KEY`
+
+## Create a client and call the API
+
+```rust
+use wacht::{Result, WachtClient};
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let client = WachtClient::from_env().await?;
+
+    let users = client.users().list_users().send().await?;
+    println!("fetched {} users", users.len());
+
+    Ok(())
+}
+```
+
+## Explicit configuration
+
+```rust
+use wacht::{Result, WachtClient, WachtConfig};
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let config = WachtConfig::new(
+        "wk_live_xxx",
+        "https://your-deployment.fapi.trywacht.xyz",
+    );
+    let client = WachtClient::new(config)?;
+
+    let health = client.operations().health_check().send().await?;
+    println!("status={}", health.status);
+
+    Ok(())
+}
+```
+
+## Request pattern
+
+Backend methods use request builders and execute with `.send().await`.
+
+```rust
+let result = client
+    .organizations()
+    .list_organizations()
+    .limit(20)
+    .offset(0)
+    .send()
+    .await?;
+```
+
+Use [Backend Overview](./backend/overview) for the full Rust method surface.

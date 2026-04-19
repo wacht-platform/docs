@@ -1,0 +1,49 @@
+---
+title: Installation
+description: Install the React Router SDK and configure the environment variables required for Wacht.
+---
+
+Install the package:
+
+```bash
+pnpm add @wacht/react-router
+```
+
+Set the client-facing key in your app environment:
+
+```bash
+VITE_WACHT_PUBLISHABLE_KEY=...
+```
+
+If your app talks to a non-default frontend auth host, set that as well:
+
+```bash
+VITE_WACHT_FRONTEND_API_URL=https://frontend.wacht.dev
+```
+
+## Provider setup
+
+Wrap your app with `DeploymentProvider` near the root:
+
+```tsx
+import { DeploymentProvider } from '@wacht/react-router';
+
+export function AppProviders({ children }: { children: React.ReactNode }) {
+  return (
+    <DeploymentProvider
+      publicKey={import.meta.env.VITE_WACHT_PUBLISHABLE_KEY}
+      uiOverwrites={{
+        app_name: 'Wacht',
+      }}
+    >
+      {children}
+    </DeploymentProvider>
+  );
+}
+```
+
+`DeploymentProvider` loads the deployment for the current public key and makes the auth configuration available to the rest of the adapter.
+
+## Next
+
+Continue to [Quick Start](./quickstart) to wire the provider into your app.

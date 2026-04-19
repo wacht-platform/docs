@@ -1,11 +1,13 @@
-export const appName = 'My App';
+export const appName = 'Wacht Docs';
 export const docsRoute = '/docs';
 export const docsImageRoute = '/og/docs';
 export const docsContentRoute = '/llms.mdx/docs';
+export const siteUrl = process.env.NEXT_PUBLIC_DOCS_URL || 'https://docs.wacht.dev';
+export const siteDescription =
+  'Developer documentation for Wacht SDKs, APIs, guides, and integration patterns.';
 
-// fill this with your actual GitHub info, for example:
 export const gitConfig = {
-  user: 'fuma-nama',
-  repo: 'fumadocs',
+  user: 'wacht-platform',
+  repo: 'documentation',
   branch: 'main',
 };

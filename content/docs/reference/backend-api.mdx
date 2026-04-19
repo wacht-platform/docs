@@ -1,0 +1,168 @@
+---
+title: Backend API
+description: Server-to-server management API for administering users, organizations, auth configuration, and deployment settings.
+---
+
+The Backend API is the administrative control plane for your Wacht deployment. It is a server-to-server API used to provision and manage users, configure authentication settings, administer OAuth applications, inspect sessions, manage webhooks, and access analytics. It is never called from the browser or exposed to end users.
+
+## Base URL
+
+```
+https://api.wacht.dev
+```
+
+All requests go to this shared endpoint. The deployment you are managing is identified by the API key used to authenticate.
+
+## Authentication
+
+Every request to the Backend API must include an `Authorization` header with a valid API key:
+
+```bash
+curl https://api.wacht.dev/users \
+  --header "Authorization: Bearer wacht_live_sk_..."
+```
+
+### Obtaining API keys
+
+API keys are managed in the Wacht console under **Settings → API Keys**. Each key is scoped to a single deployment and can be granted limited permissions.
+
+- **Secret keys** (`wacht_live_sk_...`) have full access. Store them in environment variables and never commit them to source control.
+- **Restricted keys** can be scoped to specific resource types and operations for least-privilege access.
+
+```bash
+# Recommended: load from environment
+curl https://api.wacht.dev/users \
+  --header "Authorization: Bearer $WACHT_SECRET_KEY"
+```
+
+### Key security
+
+Backend API keys carry full administrative access to your deployment. If a key is compromised, rotate it immediately from the console. Keys cannot be recovered after initial creation — store them securely on first display.
+
+## Making requests
+
+All request bodies must be JSON with `Content-Type: application/json`:
+
+```bash
+curl https://api.wacht.dev/users \
+  --request POST \
+  --header "Authorization: Bearer $WACHT_SECRET_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "email": "jane@example.com",
+    "first_name": "Jane",
+    "last_name": "Doe"
+  }'
+```
+
+## Response format
+
+### Success
+
+Successful responses return `2xx` with a JSON body wrapping the result in `data`:
+
+```json
+{
+  "data": {
+    "id": "usr_01j...",
+    "email": "jane@example.com",
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "created_at": "2025-01-15T10:30:00Z"
+  }
+}
+```
+
+### Paginated lists
+
+List endpoints return cursor-based pagination. Use `limit` and `offset` query parameters to page through results:
+
+```bash
+curl "https://api.wacht.dev/users?limit=50&offset=usr_01j..." \
+  --header "Authorization: Bearer $WACHT_SECRET_KEY"
+```
+
+```json
+{
+  "data": [ ... ],
+  "has_more": true,
+  "limit": 50,
+  "offset": "usr_01j..."
+}
+```
+
+When `has_more` is `false`, you have reached the last page. Pass the last item's cursor as `offset` to fetch the next page.
+
+## Error handling
+
+The API uses standard HTTP status codes. All error responses include a `code` for programmatic handling and a `message` for debugging:
+
+```json
+{
+  "error": {
+    "code": "user_not_found",
+    "message": "No user exists with the provided ID.",
+    "status": 404
+  }
+}
+```
+
+| Status | Meaning |
+|--------|---------|
+| `400` | Bad request — malformed JSON or missing required fields |
+| `401` | Unauthorized — API key missing, invalid, or revoked |
+| `403` | Forbidden — key lacks permission for this operation |
+| `404` | Not found — resource does not exist in this deployment |
+| `409` | Conflict — e.g. user with that email already exists |
+| `422` | Unprocessable — request was well-formed but failed validation |
+| `429` | Rate limited — reduce request frequency |
+| `500` | Server error — contact support if this persists |
+
+Always check `error.code` rather than `error.message` — messages are for humans and may change.
+
+## Rate limiting
+
+Requests are rate-limited per API key. The limit is applied over a rolling window. When exceeded, the API returns `429 Too Many Requests` with a `Retry-After` header:
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 2
+```
+
+Implement exponential backoff when building automation pipelines that issue many requests in sequence.
+
+## Endpoints
+
+### Users — 16 operations
+`Users` · `Invitations`
+
+Create, retrieve, update, and delete user accounts. Search and filter users by email, name, or metadata. Manage pending invitations — create, list, revoke, and resend them.
+
+### Authentication — 37 operations
+`API Auth` · `Session` · `OAuth` · `JWT Templates`
+
+Create and manage API keys with configurable scopes. List and revoke active sessions across users. Administer OAuth applications and their clients — create apps, manage secrets, and configure redirect URIs. Configure JWT template overrides for custom claims.
+
+### Organizations & Workspaces — 26 operations
+`Organizations` · `Workspaces`
+
+Create and manage organizations and their settings. Control membership, roles, and permissions. Create and configure workspaces within organizations. Manage workspace members and transfer ownership.
+
+### Platform — 128 operations
+`AI` · `Analytics` · `Notifications` · `Webhooks` · `Settings` · `Segments`
+
+Administer AI actors, projects, and threads. Access deployment analytics and usage metrics. Manage notification templates and delivery. Configure webhook endpoints, inspect delivery logs, and replay failed events. Manage global deployment settings. Define user and organization segments for targeting.
+
+### Other — 3 operations
+`Waitlist` · `Default`
+
+Manage waitlist entries and enrollment status. Miscellaneous utility endpoints.
+
+## SDKs
+
+Use an SDK rather than raw HTTP where possible — they handle authentication, type safety, and error normalization automatically:
+
+| SDK | Install |
+|-----|---------|
+| [Node SDK](/docs/sdks/node/server-auth) | `npm install @wacht/node` |
+| [Rust SDK](/docs/sdks/rust/getting-started) | `cargo add wacht` |

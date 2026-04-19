@@ -1,0 +1,65 @@
+---
+title: Netlify Framework Patterns
+description: Patterns for Netlify Functions, Edge Functions, and framework route handlers using @wacht/backend.
+---
+
+Use the same SDK auth flow everywhere: verify caller, enforce permissions, then execute backend methods.
+
+## Serverless Function route
+
+```ts title="netlify/functions/admin-users.ts"
+import { authenticateRequest, initClient, users } from '@wacht/backend';
+
+export default async (request: Request, context: { env: Record<string, string> }) => {
+  initClient({
+    apiKey: context.env.WACHT_API_KEY,
+    baseUrl: context.env.WACHT_BACKEND_API_URL,
+  });
+
+  const { auth } = await authenticateRequest(request);
+  await auth.protect({ permission: 'user:read' });
+
+  return Response.json(await users.listUsers({ limit: 20 }));
+};
+```
+
+## Edge Function route
+
+```ts title="netlify/edge-functions/machine-users.ts"
+import { gateway, initClient, users } from '@wacht/backend';
+
+export default async (request: Request, context: { env: Record<string, string> }) => {
+  initClient({
+    apiKey: context.env.WACHT_API_KEY,
+    baseUrl: context.env.WACHT_BACKEND_API_URL,
+  });
+
+  const decision = await gateway.checkPrincipalAuthz({
+    principalType: 'api_key',
+    principalValue: request.headers.get('x-api-key') ?? '',
+    resource: '/machine/users',
+    method: 'GET',
+    requiredPermissions: ['user:read'],
+  });
+
+  if (!decision.allowed) {
+    return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 });
+  }
+
+  return Response.json(await users.listUsers({ limit: 20 }));
+};
+```
+
+## Framework server handlers on Netlify
+
+```ts title="src/server/auth-list-users.ts"
+import { authenticateRequest, users } from '@wacht/backend';
+
+export async function authListUsers(request: Request): Promise<Response> {
+  const { auth } = await authenticateRequest(request);
+  await auth.protect({ permission: 'user:read' });
+  return Response.json(await users.listUsers({ limit: 20 }));
+}
+```
+
+Use this shared function inside Astro endpoints, Remix loaders/actions, or SvelteKit server routes deployed on Netlify.

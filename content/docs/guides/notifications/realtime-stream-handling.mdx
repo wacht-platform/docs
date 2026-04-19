@@ -1,0 +1,60 @@
+---
+title: "Realtime Stream Handling"
+description: "Use realtime notification streaming safely with reconnect handling and API reconciliation."
+---
+
+# Realtime Stream Handling
+
+Realtime improves freshness; the REST list remains source of truth.
+
+## Stream behavior from current SDK hook
+
+`useNotificationStream` currently:
+
+1. Builds websocket URL from `deployment.backend_host`.
+2. Chooses `wss` for `https` and `ws` for `http` hosts.
+3. Supports channel and org/workspace filters.
+4. Sends ping every 30 seconds.
+5. Reconnects with exponential backoff up to max attempts.
+
+## Integration pattern
+
+```tsx
+import { useNotificationStream } from "@wacht/react-router";
+
+export function StreamStatus() {
+  const { isConnected, connectionError, reconnect } = useNotificationStream({
+    enabled: true,
+    channels: ["user", "organization"],
+    organizationIds: [123],
+  });
+
+  return (
+    <div>
+      Stream: {isConnected ? "Connected" : "Disconnected"}
+      {connectionError ? <button onClick={() => reconnect()}>Reconnect</button> : null}
+    </div>
+  );
+}
+```
+
+## Correct consistency model
+
+1. Use stream events to reduce perceived latency.
+2. Keep inbox API (`useNotifications`) as canonical data store.
+3. On reconnect, refetch list to reconcile missed messages.
+4. Deduplicate by notification ID when mixing stream + fetch updates.
+
+## Operational guidance
+
+1. Instrument disconnect and reconnect attempt metrics.
+2. Distinguish transient network errors from auth/session errors.
+3. Surface non-intrusive reconnect UI state to users.
+4. Avoid infinite reconnect loops without backoff caps.
+
+## Validation checklist
+
+1. New notifications appear without manual refresh during healthy stream.
+2. Stream disconnect does not break inbox actions.
+3. Reconnect reconciles missed events with no duplicates.
+4. Scope/channel filters constrain both stream and list surfaces.

@@ -1,0 +1,107 @@
+---
+title: Contract Validation
+description: Backend-driven validation status for Rust SDK route/method parity.
+---
+
+This page tracks Rust SDK parity against backend routers, using backend handlers as source of truth.
+
+Rust backend API docs now live under `/docs/sdks/rust/backend/*` as Rust-native pages.
+
+## Scope
+
+- `deployment_routes.rs`
+- `api_auth_routes.rs`
+- `ai_routes.rs`
+- `server_routes.rs` (backend-specific routes only)
+
+## Completed in this pass
+
+- Organization/workspace role listing aligned to scoped contracts only:
+  - `GET /organizations/{organization_id}/roles`
+  - `GET /workspaces/{workspace_id}/roles`
+- Removed stale Rust-only workspace creation method that had no backend route:
+  - removed SDK `POST /workspaces` surface
+  - workspace creation remains organization-scoped: `POST /organizations/{organization_id}/workspaces`
+- `analytics` aligned to `GET /analytics` with `from` and `to` query window.
+- API auth key revoke/rotate aligned to app-scoped routes:
+  - `POST /api-auth/apps/{app_slug}/keys/{key_id}/revoke`
+  - `POST /api-auth/apps/{app_slug}/keys/{key_id}/rotate`
+- API auth coverage expanded with rate limit scheme routes:
+  - `GET/POST /api-auth/rate-limit-schemes`
+  - `GET/PATCH/DELETE /api-auth/rate-limit-schemes/{slug}`
+- API auth coverage expanded with audit routes:
+  - `GET /api-auth/apps/{app_slug}/audit/logs`
+  - `GET /api-auth/apps/{app_slug}/audit/analytics`
+  - `GET /api-auth/apps/{app_slug}/audit/timeseries`
+- OAuth routes normalized to backend paths (removed stale deployment-prefixed routes):
+  - `/oauth/apps...`
+  - `/oauth/apps/{oauth_app_slug}/scopes...`
+  - `/oauth/apps/{oauth_app_slug}/clients...`
+  - `/oauth/apps/{oauth_app_slug}/clients/{oauth_client_id}/grants...`
+- OAuth app creation now uses multipart payload to match backend handler expectations.
+
+## Known remaining gaps
+
+No unresolved gaps from the previously tracked list in this doc.
+
+Previously listed webhook coverage gaps are now implemented in `wacht-rs`, including:
+
+- Event catalog lifecycle routes:
+  - `GET/POST /webhooks/event-catalogs`
+  - `GET/PUT /webhooks/event-catalogs/{slug}`
+  - `POST /webhooks/event-catalogs/{slug}/append-events`
+  - `POST /webhooks/event-catalogs/{slug}/archive-event`
+- App catalog route:
+  - `GET /webhooks/apps/{app_slug}/catalog`
+- Replay task lifecycle routes:
+  - `GET /webhooks/apps/{app_slug}/deliveries/replay/{task_id}`
+  - `POST /webhooks/apps/{app_slug}/deliveries/replay/{task_id}/cancel`
+
+## Validation command
+
+```bash
+cd wacht-rs
+cargo check -q
+```
+
+Status: passing after the contract fixes listed above.
+
+Additional verification run for scoped-role change:
+
+```bash
+cd /Users/snipextt/code/wacht/platform-api
+cargo check -q -p platform
+
+cd /Users/snipextt/code/wacht/wacht-rs
+cargo check -q
+
+cd /Users/snipextt/code/wacht/console
+pnpm exec tsc --noEmit
+
+cd /Users/snipextt/code/wacht/node
+pnpm exec tsc --noEmit
+```
+
+## Current matrix snapshot
+
+Backend router scope validated:
+
+- `deployment_routes.rs`
+- `api_auth_routes.rs`
+- `ai_routes.rs`
+- `server_routes.rs` (`backend_specific_routes` only, excluding billing and console-only routes)
+
+Verb + path parity result after fixes:
+
+- Backend routes in scope: `210`
+- Rust SDK routes: `210`
+- Missing: `0`
+- Extra: `0`
+
+## Docs coverage snapshot
+
+Current snapshot:
+
+- Backend routes in scope: `210`
+- Rust docs method keys: `214`
+- Rust docs method pages: `214`

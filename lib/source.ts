@@ -8,9 +8,9 @@ export const source = loader({
   baseUrl: docsRoute,
   source: docs.toFumadocsSource(),
   plugins: [lucideIconsPlugin()],
-});
+}) as any;
 
-export function getPageImage(page: InferPageType<typeof source>) {
+export function getPageImage(page: InferPageType<typeof source> | any) {
   const segments = [...page.slugs, 'image.png'];
 
   return {
@@ -19,7 +19,7 @@ export function getPageImage(page: InferPageType<typeof source>) {
   };
 }
 
-export function getPageMarkdownUrl(page: InferPageType<typeof source>) {
+export function getPageMarkdownUrl(page: InferPageType<typeof source> | any) {
   const segments = [...page.slugs, 'content.md'];
 
   return {
@@ -28,7 +28,7 @@ export function getPageMarkdownUrl(page: InferPageType<typeof source>) {
   };
 }
 
-export async function getLLMText(page: InferPageType<typeof source>) {
+export async function getLLMText(page: InferPageType<typeof source> | any) {
   const processed = await page.data.getText('processed');
 
   return `# ${page.data.title} (${page.url})

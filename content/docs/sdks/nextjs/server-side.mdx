@@ -1,0 +1,211 @@
+---
+title: Server-side Auth
+description: Read auth state in route handlers and server components, understand token types and permission checks, and use the privileged Wacht server client.
+---
+
+Once middleware has normalized the request, the server-side helpers are straightforward.
+
+They all answer some version of the same question: what auth context is attached to this request, and what can it do?
+
+## Import from the server entrypoint
+
+```ts
+import { ... } from '@wacht/nextjs/server';
+```
+
+Use this entrypoint for:
+
+- request auth
+- server component auth
+- JWT claim inspection
+- the privileged server client
+
+## `getAuth(request)` is the flexible entry point
+
+Use `getAuth()` when the route can handle both authenticated and unauthenticated requests.
+
+```ts
+import { getAuth } from '@wacht/nextjs/server';
+
+export async function GET(request: Request) {
+  const auth = await getAuth(request);
+
+  return Response.json({
+    isAuthenticated: auth.isAuthenticated,
+    userId: auth.userId,
+    organizationId: auth.organizationId,
+    workspaceId: auth.workspaceId,
+    tokenType: auth.tokenType,
+  });
+}
+```
+
+This is usually the right choice for routes that want to branch on auth state rather than fail immediately.
+
+## `requireAuth(request)` is the strict version
+
+Use `requireAuth()` when the route should stop immediately unless the request is authenticated.
+
+```ts
+import { requireAuth } from '@wacht/nextjs/server';
+
+export async function POST(request: Request) {
+  const auth = await requireAuth(request);
+
+  return Response.json({
+    userId: auth.userId,
+    organizationId: auth.organizationId,
+  });
+}
+```
+
+Internally, this is just `getAuth()` followed by `auth.protect()`.
+
+## `auth(await headers())` is for server components
+
+In server components, the usual entry point is:
+
+```tsx
+import { headers } from 'next/headers';
+import { NavigateToSignIn } from '@wacht/nextjs';
+import { auth } from '@wacht/nextjs/server';
+
+export default async function AccountPage() {
+  const wacht = auth(await headers());
+
+  if (!wacht.isAuthenticated || !wacht.userId) {
+    return <NavigateToSignIn />;
+  }
+
+  return <div>{wacht.userId}</div>;
+}
+```
+
+This only works properly if middleware has already run.
+
+The helper is reading the serialized auth state from the request headers. It is not doing the full cookie handshake by itself inside the component.
+
+## The auth object is normalized
+
+The server helpers return a normalized auth object rather than exposing the raw transport details.
+
+That object includes things like:
+
+- `isAuthenticated`
+- `userId`
+- `sessionId`
+- `organizationId`
+- `workspaceId`
+- `organizationPermissions`
+- `workspacePermissions`
+- `tokenType`
+- `ownerUserId`
+- `identity`
+- `metadata`
+- `has()`
+- `protect()`
+- `redirectToSignIn()`
+
+This is true for both user-session auth and gateway-authenticated bearer tokens. The point of the server integration is to give you one shape to work with even when the original credential source was different.
+
+## Token type matters
+
+Wacht recognizes more than one token type on the server side.
+
+The Next.js integration can expose auth objects backed by:
+
+- `session_token`
+- `oauth_token`
+- `api_key`
+- `machine_token`
+
+In practice, the most common distinction is between:
+
+- a normal browser-backed session token
+- a bearer credential such as an API key or OAuth access token
+
+This matters because `protect()` can enforce accepted token types. By default, the session-oriented checks expect a session token.
+
+If your route is intended to accept other token types, be explicit about that policy.
+
+## Permission checks belong on the auth object
+
+The auth object exposes both permission lists and helper checks.
+
+That means you can:
+
+- inspect `organizationPermissions` and `workspacePermissions`
+- call `has()` directly
+- use `protect()` with permission constraints
+
+```ts
+const auth = await getAuth(request);
+
+await auth.protect({
+  permission: 'workspace:members:read',
+  workspaceId: 'ws_123',
+});
+```
+
+This is cleaner than scattering permission logic around your route handlers because it keeps the check tied to the same normalized auth context that middleware resolved.
+
+## `getVerifiedJwtClaims(request)` is for raw token claims
+
+Use `getVerifiedJwtClaims()` when you need the raw verified JWT payload rather than the normalized auth object.
+
+```ts
+import { getVerifiedJwtClaims } from '@wacht/nextjs/server';
+
+export async function GET(request: Request) {
+  const claims = await getVerifiedJwtClaims(request);
+  return Response.json({ claims });
+}
+```
+
+This helper first tries the bearer token or auth cookie. If neither is available, it can still exchange the session cookie and verify the resulting auth token.
+
+That makes it useful when your code genuinely needs claims-level access instead of the higher-level auth abstraction.
+
+## `redirectToSignIn()` is available on the auth object
+
+The server auth object also exposes `redirectToSignIn()`.
+
+That helper builds a sign-in redirect using the public request URL so the user can return to the current page after authenticating.
+
+This is especially useful when you want the route or component to decide its own redirect behavior instead of pushing that decision entirely into middleware.
+
+## Use the privileged server client for backend operations
+
+`@wacht/nextjs/server` also exports a privileged backend client.
+
+### Cached client
+
+```ts
+import { wachtClient } from '@wacht/nextjs/server';
+
+export async function GET() {
+  const client = await wachtClient();
+
+  return Response.json({ ok: true });
+}
+```
+
+### Explicit client
+
+```ts
+import { createWachtServerClient } from '@wacht/nextjs/server';
+
+const client = createWachtServerClient({
+  apiKey: process.env.WACHT_API_KEY!,
+  apiUrl: process.env.WACHT_API_URL,
+});
+```
+
+Keep that client on the server. It is meant for backend work such as management operations, not browser-side auth UI.
+
+## Read next
+
+- [Authentication](./client-side)
+- [Client-side Auth](./client-side-auth)
+- [Middleware](./middleware)
+- [Quick Start](./quickstart)

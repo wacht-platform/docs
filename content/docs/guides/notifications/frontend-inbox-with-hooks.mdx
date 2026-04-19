@@ -1,0 +1,90 @@
+---
+title: "Frontend Inbox with Hooks"
+description: "Build a production inbox with pagination, scoped filters, mutation actions, and resilient refresh behavior."
+---
+
+# Frontend Inbox with Hooks
+
+`useNotifications` gives you the core read model and mutation actions for inbox UX.
+
+## What the hook provides
+
+1. Cursor pagination via `loadMore()`.
+2. Filtered list by scope/channels/severity/state.
+3. Item actions: read/unread, archive, star.
+4. Bulk actions: `markAllAsRead()`, `archiveAllRead()`.
+5. Stream-assisted freshness via internal `useNotificationStream` wiring.
+
+## Inbox composition example
+
+```tsx
+import { useNotifications } from "@wacht/react-router";
+
+export function NotificationsInbox() {
+  const {
+    notifications,
+    loading,
+    hasMore,
+    loadMore,
+    markAsRead,
+    markAsUnread,
+    archiveNotification,
+    starNotification,
+    markAllAsRead,
+    archiveAllRead,
+    refetch,
+  } = useNotifications({
+    scope: "all",
+    is_archived: false,
+    limit: 25,
+    severity: "warning",
+  });
+
+  if (loading) return <div>Loading notifications...</div>;
+
+  return (
+    <section>
+      <div>
+        <button onClick={() => markAllAsRead()}>Mark all read</button>
+        <button onClick={() => archiveAllRead()}>Archive all read</button>
+        <button onClick={() => refetch()}>Refresh</button>
+      </div>
+
+      {notifications.map((n) => (
+        <article key={n.id}>
+          <h4>{n.title}</h4>
+          <p>{n.body}</p>
+          <button onClick={() => markAsRead(n.id)}>Read</button>
+          <button onClick={() => markAsUnread(n.id)}>Unread</button>
+          <button onClick={() => archiveNotification(n.id)}>Archive</button>
+          <button onClick={() => starNotification(n.id)}>Star</button>
+        </article>
+      ))}
+
+      <button disabled={!hasMore} onClick={() => loadMore()}>
+        Load more
+      </button>
+    </section>
+  );
+}
+```
+
+## UX guidance
+
+1. Mark-as-read on explicit row open, not hover.
+2. Keep active filters in URL state for shareable support context.
+3. Render clear empty states for “no data” vs “error”.
+4. Show mutation progress on action buttons for repeated actions.
+
+## State consistency guidance
+
+1. Let hook-managed optimistic updates handle immediate UX.
+2. Call `refetch()` after bulk operations when consistency matters.
+3. Treat backend as source of truth after reconnect or tab refocus.
+
+## Validation checklist
+
+1. Filtered views remain consistent after mutations.
+2. Bulk actions affect intended filtered set.
+3. Cursor pagination preserves ordering and no duplicates.
+4. Error states are actionable and recoverable.

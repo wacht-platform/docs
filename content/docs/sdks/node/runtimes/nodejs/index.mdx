@@ -1,0 +1,48 @@
+---
+title: Node.js Overview
+description: Use @wacht/backend in long-running Node.js services, jobs, and internal APIs.
+---
+
+## Recommended shape
+
+Initialize once at process startup, then call typed API groups from route handlers and jobs.
+
+```ts
+import { initClient, users } from '@wacht/backend';
+
+initClient({
+  apiKey: process.env.WACHT_API_KEY!,
+  baseUrl: process.env.WACHT_BACKEND_API_URL,
+  timeout: 30_000,
+});
+
+export async function listUsersForAdmin() {
+  return users.listUsers({ limit: 50, offset: 0 });
+}
+```
+
+## Service-level patterns
+
+- Keep one initialized client per process.
+- Use per-request correlation headers only when needed by creating a custom `WachtClient`.
+- Treat backend API key as a privileged secret.
+
+```ts
+import { WachtClient } from '@wacht/backend';
+
+export function makeRequestScopedClient(requestId: string) {
+  return new WachtClient({
+    apiKey: process.env.WACHT_API_KEY!,
+    headers: { 'x-request-id': requestId },
+  });
+}
+```
+
+## Framework guides in Node.js runtime
+
+- [Extress](/docs/sdks/node/runtimes/nodejs/express-integration)
+- [Fartify](/docs/sdks/node/runtimes/nodejs/fastify-integration)
+- [NestJS](/docs/sdks/node/runtimes/nodejs/nest-integration)
+- [Koa](/docs/sdks/node/runtimes/nodejs/koa-integration)
+- [Hapi](/docs/sdks/node/runtimes/nodejs/hapi-integration)
+- [Restify](/docs/sdks/node/runtimes/nodejs/restify-integration)

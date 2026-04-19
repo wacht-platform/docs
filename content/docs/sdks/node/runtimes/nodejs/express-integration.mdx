@@ -1,0 +1,174 @@
+---
+title: Extress
+description: End-to-end Express integration with @wacht/backend server auth, guards, and typed backend API access.
+---
+
+Use this pattern to build a protected Express admin API with a clear auth and authorization flow, including session bearer token verification, permission checks, typed backend SDK calls, and consistent auth/error responses.
+
+## Project structure
+
+<FileTree title="Express Admin API">
+{`src/
+    app.ts
+    auth/
+      extract-token.ts
+      require-auth.ts
+    routes/
+      admin-users.ts
+    errors/
+      api-error-handler.ts`}
+</FileTree>
+
+## 1. Bootstrap the backend client
+
+```ts title="src/app.ts"
+import express from 'express';
+import { initClient } from '@wacht/backend';
+import { adminUsersRouter } from './routes/admin-users';
+import { apiErrorHandler } from './errors/api-error-handler';
+
+initClient({
+  apiKey: process.env.WACHT_API_KEY!,
+  baseUrl: process.env.WACHT_BACKEND_API_URL,
+  timeout: 30_000,
+});
+
+const app = express();
+app.use(express.json());
+app.use('/admin/users', adminUsersRouter);
+app.use(apiErrorHandler);
+
+export { app };
+```
+
+## 2. Token extraction helper
+
+```ts title="src/auth/extract-token.ts"
+import type { Request } from 'express';
+
+export function extractBearerToken(req: Request): string | null {
+  const authz = req.header('authorization');
+  if (!authz || !authz.startsWith('Bearer ')) return null;
+  const token = authz.slice(7).trim();
+  return token.length > 0 ? token : null;
+}
+```
+
+## 3. Reusable auth/permission middleware
+
+```ts title="src/auth/require-auth.ts"
+import type { NextFunction, Request, Response } from 'express';
+import { getAuthFromToken, type WachtAuth } from '@wacht/backend';
+import { extractBearerToken } from './extract-token';
+
+type RequireAuthOptions = {
+  permission?: string | string[];
+};
+
+declare global {
+  namespace Express {
+    interface Request {
+      wachtAuth?: WachtAuth;
+    }
+  }
+}
+
+export function requireAuth(options: RequireAuthOptions = {}) {
+  return async (req: Request, _res: Response, next: NextFunction) => {
+    try {
+      const token = extractBearerToken(req);
+      const auth = await getAuthFromToken(token);
+
+      await auth.protect({ permission: options.permission });
+      req.wachtAuth = auth;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+```
+
+## 4. Protected route with backend SDK call
+
+```ts title="src/routes/admin-users.ts"
+import { Router } from 'express';
+import { users } from '@wacht/backend';
+import { requireAuth } from '../auth/require-auth';
+
+const router = Router();
+
+router.get('/', requireAuth({ permission: 'user:read' }), async (_req, res) => {
+  const page = await users.listUsers({ limit: 20, offset: 0 });
+  res.json(page);
+});
+
+router.patch('/:userId/password', requireAuth({ permission: 'user:update' }), async (req, res) => {
+  await users.updatePassword(req.params.userId, {
+    new_password: req.body.new_password,
+  });
+  res.status(204).send();
+});
+
+export { router as adminUsersRouter };
+```
+
+## 5. Error response policy
+
+```ts title="src/errors/api-error-handler.ts"
+import type { ErrorRequestHandler } from 'express';
+import { WachtAuthError } from '@wacht/backend';
+
+export const apiErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+  if (err instanceof WachtAuthError) {
+    res.status(err.status).json({
+      error: err.code,
+      message: err.message,
+      redirect_url: err.redirectUrl ?? null,
+    });
+    return;
+  }
+
+  res.status(500).json({ error: 'internal_error', message: 'Unexpected error' });
+};
+```
+
+## 6. API key/OAuth protected auth for machine tokens
+
+```ts title="src/routes/machine-users.ts"
+import { Router } from 'express';
+import { gateway, users } from '@wacht/backend';
+
+const machineRouter = Router();
+
+machineRouter.get('/machine/users', async (req, res) => {
+  const apiKey = req.header('x-api-key') || '';
+
+  const decision = await gateway.checkPrincipalAuthz({
+    principalType: 'api_key',
+    principalValue: apiKey,
+    resource: '/machine/users',
+    method: 'GET',
+    requiredPermissions: ['user:read'],
+  });
+
+  if (!decision.allowed) {
+    res.status(403).json({ error: 'forbidden' });
+    return;
+  }
+
+  res.json(await users.listUsers({ limit: 20 }));
+});
+
+export { machineRouter };
+```
+
+## Best practices
+
+- Keep `WACHT_API_KEY` and `WACHT_PUBLISHABLE_KEY` server-only.
+- In Node.js, `getAuthFromToken(token)` can read publishable key from env automatically.
+- Use API key/OAuth protected checks for machine-token routes and JWT/session checks for user routes.
+- Custom `gatewayUrl` host override is available on Enterprise plans.
+- Centralize permission strings so route guards and policy code stay aligned.
+- Use bounded pagination on list methods.
+- Return stable JSON error contracts for auth failures.

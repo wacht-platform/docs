@@ -1,0 +1,70 @@
+---
+title: Server Auth
+description: Authenticate React Router requests, forward the returned headers, and use the privileged server client when you need backend access.
+---
+
+The React Router server entrypoint is `@wacht/react-router/server`.
+
+It gives you the same core server helpers used by the other frontend adapters:
+
+- `authenticateRequest(request)`
+- `getAuth(request)`
+- `requireAuth(request)`
+- `authFromHeaders(headers)`
+- `wachtClient()`
+- `createWachtServerClient()`
+
+## `authenticateRequest(request)` is the most complete helper
+
+Use `authenticateRequest()` when you need both the normalized auth object and the response headers that come back with it.
+
+That is the helper to reach for in loaders and actions when you need to keep server and client state aligned.
+
+## `getAuth(request)` is the simple entry point
+
+Use `getAuth()` when you want the normalized auth object without the extra redirect behavior.
+
+## `requireAuth(request)` is the strict version
+
+Use `requireAuth()` when the request should fail immediately unless the session is valid.
+
+## Forward the returned headers
+
+If you use `authenticateRequest()`, forward the returned headers on every response path.
+
+That includes:
+
+- successful responses
+- redirects
+- unauthorized responses
+
+If you drop those headers, the browser session and the server auth state can drift apart.
+
+## `authFromHeaders(headers)` is for the serialized auth path
+
+When middleware or a server helper has already serialized the auth state into headers, `authFromHeaders()` turns that back into the normalized auth object.
+
+That keeps request auth consistent across loader, action, and rendering code.
+
+## Privileged server client
+
+If you need backend access from the server, use the privileged client.
+
+```ts
+import { wachtClient } from '@wacht/react-router/server';
+
+export async function loader() {
+  const client = await wachtClient();
+  return client;
+}
+```
+
+For explicit configuration, use `createWachtServerClient()`.
+
+Keep that client on the server and back it with `WACHT_API_KEY`.
+
+## Read next
+
+- [Authentication](./authentication)
+- [Client-side Auth](./client-side-auth)
+- [Quick Start](./quickstart)

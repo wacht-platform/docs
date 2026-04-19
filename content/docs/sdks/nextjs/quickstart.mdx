@@ -1,0 +1,192 @@
+---
+title: Quick Start
+description: Install the Next.js package, set your Wacht keys, add middleware, wrap your app with the provider, and sign in with the hosted auth pages.
+---
+
+Use this guide to add Wacht to a Next.js app with hosted authentication.
+
+<Steps>
+## Install `@wacht/nextjs`
+
+Install the Next.js package and its core dependencies.
+
+```bash
+pnpm add @wacht/nextjs @wacht/jsx @wacht/types
+```
+
+## Set your Wacht keys
+
+Add the following key to your `.env.local` file:
+
+```bash
+NEXT_PUBLIC_WACHT_PUBLISHABLE_KEY=pk_test_xxx
+```
+
+If you plan to use the server client, add:
+
+```bash
+WACHT_API_KEY=wk_live_xxx
+```
+
+## Add `wachtMiddleware()` to your app
+
+`wachtMiddleware()` gives you access to auth state throughout your app and lets you protect private routes.
+
+If you're using Next.js 16, name the file `proxy.ts`. If you're using an older version of Next.js, use `middleware.ts` instead. The code stays the same.
+
+Create the file in the root of your app and export `wachtMiddleware()`:
+
+```ts
+import { NextResponse } from 'next/server';
+import { createRouteMatcher, wachtMiddleware } from '@wacht/nextjs/server';
+
+const isProtected = createRouteMatcher(['/account(.*)']);
+
+export default wachtMiddleware(
+  async (auth, req) => {
+    if (!isProtected(req)) return NextResponse.next();
+
+    await auth.protect();
+    return NextResponse.next();
+  },
+  {
+    apiRoutePrefixes: ['/api', '/trpc'],
+  },
+);
+
+export const config = {
+  matcher: [
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
+  ],
+};
+```
+
+In this example, `/account` is protected. All other routes stay public until you opt in to protection.
+
+## Add `DeploymentProvider` and auth controls
+
+`DeploymentProvider` gives your app access to Wacht's client-side auth context. Wrap your app once in `layout.tsx`.
+
+```tsx
+import { DeploymentInitialized, DeploymentProvider } from '@wacht/nextjs';
+import './globals.css';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <DeploymentProvider publicKey={process.env.NEXT_PUBLIC_WACHT_PUBLISHABLE_KEY!}>
+          <DeploymentInitialized>{children}</DeploymentInitialized>
+        </DeploymentProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+Then add signed-in and signed-out UI. For a first integration, use the hosted auth pages instead of embedding local sign-in forms.
+
+```tsx
+'use client';
+
+import { useState } from 'react';
+import {
+  NavigateToSignIn,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from '@wacht/nextjs';
+
+export function AuthControls() {
+  const [redirecting, setRedirecting] = useState(false);
+
+  return (
+    <>
+      <SignedIn>
+        <UserButton showName={false} />
+      </SignedIn>
+
+      <SignedOut>
+        <>
+          {redirecting ? <NavigateToSignIn /> : null}
+          <button type="button" onClick={() => setRedirecting(true)}>
+            Sign in
+          </button>
+        </>
+      </SignedOut>
+    </>
+  );
+}
+```
+
+This example uses the following components:
+
+- `SignedIn`: renders its children only when a user is signed in.
+- `SignedOut`: renders its children only when a user is signed out.
+- `UserButton`: shows the current user's account controls.
+- `NavigateToSignIn`: redirects to the hosted sign-in page.
+
+## Read auth state on the server
+
+In route handlers or server actions, use `getAuth()` or `requireAuth()`.
+
+```ts
+import { requireAuth } from '@wacht/nextjs/server';
+
+export async function GET(request: Request) {
+  const auth = await requireAuth(request);
+
+  return Response.json({
+    userId: auth.userId,
+    organizationId: auth.organizationId,
+    workspaceId: auth.workspaceId,
+  });
+}
+```
+
+In server components, use `auth(await headers())`.
+
+```tsx
+import { headers } from 'next/headers';
+import { NavigateToSignIn } from '@wacht/nextjs';
+import { auth } from '@wacht/nextjs/server';
+
+export default async function AccountPage() {
+  const wacht = auth(await headers());
+
+  if (!wacht.isAuthenticated || !wacht.userId) {
+    return <NavigateToSignIn />;
+  }
+
+  return <div>{wacht.userId}</div>;
+}
+```
+
+## Run your project
+
+Start your app locally:
+
+```bash
+pnpm dev
+```
+
+## Create your first user
+
+Visit your app, select `Sign in`, and complete the hosted authentication flow.
+</Steps>
+
+## Next steps
+
+Learn more about Wacht's authentication model, route protection, and server-side auth using the following guides:
+
+- [Authentication](./client-side)
+- [Client-side Auth](./client-side-auth)
+- [Middleware](./middleware)
+- [Server-side Auth](./server-side)
+- [Components](./components)
+- [Hooks](./hooks)

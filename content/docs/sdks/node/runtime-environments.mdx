@@ -1,0 +1,108 @@
+---
+title: Runtime Environments
+description: Use @wacht/backend across Node, Deno, Bun, serverless, and worker-style runtimes.
+---
+
+`@wacht/backend` is runtime-oriented, not framework-oriented.
+
+## Runtime matrix
+
+| Runtime | Recommended auth entrypoint | Recommended client pattern |
+| --- | --- | --- |
+| Node.js (Express/Fastify/custom) | `getAuthFromToken()` or `authenticateRequest()` after Request conversion | process-level `initClient()` |
+| Bun | `authenticateRequest()` in Request handlers | process-level `initClient()` |
+| Hono | `authenticateRequest(c.req.raw)` | process-level `initClient()` |
+| Cloudflare Workers | `authenticateRequest(request)` | request-level `initClient()` in handler |
+| Netlify Functions | `authenticateRequest(request)` | handler-level `initClient()` using env/context |
+| Generic serverless workers | `authenticateRequest(request)` | handler-level `initClient()` |
+
+## Cross-runtime invariants
+
+- API method surface is the same across runtimes.
+- Permission checks must happen before backend management operations.
+- Backend API keys stay server-side only.
+- All list endpoints should use bounded pagination (`limit`, `offset`, cursor params).
+- Node.js runtimes can resolve publishable key from env fallback.
+- Non-Node runtimes should pass `publishableKey` explicitly from runtime env bindings.
+
+## Node.js (services, workers, scripts)
+
+```ts
+import { initClient, users } from '@wacht/backend';
+
+initClient({
+  apiKey: process.env.WACHT_API_KEY!,
+  baseUrl: process.env.WACHT_BACKEND_API_URL,
+});
+
+const page = await users.listUsers({ limit: 20 });
+console.log(page.data.length);
+```
+
+## Deno
+
+Use npm specifier imports:
+
+```ts
+import { initClient, users } from 'npm:@wacht/backend';
+
+initClient({
+  apiKey: Deno.env.get('WACHT_API_KEY')!,
+  baseUrl: Deno.env.get('WACHT_BACKEND_API_URL'),
+});
+
+const me = await users.getUser('123');
+```
+
+## Bun
+
+```ts
+import { initClient, organizations } from '@wacht/backend';
+
+initClient({ apiKey: process.env.WACHT_API_KEY! });
+
+const orgs = await organizations.listOrganizations({ limit: 25 });
+```
+
+## Worker-style runtimes (Request/Response native)
+
+When `fetch` is globally available, you can use the SDK directly and pass through runtime headers:
+
+```ts
+import { authenticateRequest, initClient, users } from '@wacht/backend';
+
+initClient({
+  apiKey: env.WACHT_API_KEY,
+  baseUrl: env.WACHT_BACKEND_API_URL,
+});
+
+export default {
+  async fetch(request: Request, env: Record<string, string>) {
+    const { auth } = await authenticateRequest(request, {
+      publishableKey: env.WACHT_PUBLISHABLE_KEY,
+    });
+    await auth.protect();
+
+    const list = await users.listUsers({ limit: 5 });
+    return new Response(JSON.stringify(list.data), {
+      headers: { 'content-type': 'application/json' },
+    });
+  },
+};
+```
+
+## Runtime notes
+
+- Prefer module-level singleton initialization in long-lived processes.
+- In request-isolated runtimes, reusing one initialized client per isolate is still fine.
+- Provide a custom `fetch` implementation only when your runtime does not expose one globally.
+- Keep secrets server-only; do not expose backend API keys to browser code.
+
+## Detailed runtime guides
+
+- [Node.js](/docs/sdks/node/runtimes/nodejs)
+- [Bun](/docs/sdks/node/runtimes/bun)
+- [Hono](/docs/sdks/node/runtimes/hono)
+- [Cloudflare Workers](/docs/sdks/node/runtimes/cloudflare-workers)
+- [Netlify Functions](/docs/sdks/node/runtimes/netlify-functions)
+- [Serverless Workers](/docs/sdks/node/runtimes/serverless-workers)

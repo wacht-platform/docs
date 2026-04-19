@@ -1,0 +1,52 @@
+---
+title: Auth Layer Setup
+description: Configure and apply AuthLayer in Axum route trees.
+---
+
+`AuthLayer` validates bearer JWTs and inserts auth context into request extensions for downstream handlers.
+
+## Minimal protected app
+
+```rust
+use axum::{routing::get, Router};
+use wacht::middleware::AuthLayer;
+
+async fn protected() -> &'static str {
+    "ok"
+}
+
+pub fn app() -> Router {
+    Router::new()
+        .route("/protected", get(protected))
+        .layer(AuthLayer::new())
+}
+```
+
+## Startup behavior options
+
+`AuthLayer` supports multiple initialization patterns:
+
+- `AuthLayer::new()`
+  Reads signing material from SDK global config and panics if missing.
+- `AuthLayer::try_new()`
+  Returns `Option<AuthLayer>` instead of panicking.
+- `AuthLayer::with_public_key("...")`
+  Uses explicit public key material for this layer instance.
+
+## Explicit validation tuning
+
+```rust
+use wacht::middleware::AuthLayer;
+
+let layer = AuthLayer::with_public_key("-----BEGIN PUBLIC KEY-----...")
+    .allowed_clock_skew(10)
+    .required_issuer("https://your-deployment.fapi.trywacht.xyz")
+    .validate_exp(true)
+    .validate_nbf(true);
+```
+
+## Recommended placement
+
+- Apply `AuthLayer` at the narrowest route scope that needs auth.
+- Keep public routes outside this layer.
+- Combine with permission extractors in handlers for fine-grained authorization.

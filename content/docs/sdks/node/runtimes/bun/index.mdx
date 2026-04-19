@@ -1,0 +1,33 @@
+---
+title: Bun Overview
+description: Run @wacht/backend in Bun servers and background jobs.
+---
+
+`@wacht/backend` works natively in Bun with global `fetch`, `Request`, and `Response`.
+
+```ts
+import { initClient, webhooks } from '@wacht/backend';
+
+initClient({ apiKey: process.env.WACHT_API_KEY! });
+
+const apps = await webhooks.listWebhookApps({ limit: 20 });
+```
+
+## Runtime and framework patterns
+
+- Plain `Bun.serve` handlers for direct request routing.
+- Hono on Bun for middleware-focused routing.
+- Elysia on Bun when you want schema-first route organization.
+
+All patterns use the same backend SDK method surface.
+
+## Auth modes to implement
+
+- JWT/session auth for user-scoped protected endpoints (`authenticateRequest` + `auth.protect`).
+- API key/OAuth protected auth for machine-token endpoints (`gateway.checkPrincipalAuthz`).
+
+## Bun-specific guidance
+
+- Initialize once at module scope in Bun services.
+- Reuse global `fetch` (no custom adapter needed).
+- Keep auth checks explicit in handlers before backend operations.

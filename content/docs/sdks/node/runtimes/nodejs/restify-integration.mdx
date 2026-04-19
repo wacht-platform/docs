@@ -1,0 +1,149 @@
+---
+title: Restify
+description: Integrate @wacht/backend with Restify middleware pipelines and protected admin routes.
+---
+
+This Restify guide sets up a structured service with auth middleware, protected routes, and consistent error handling.
+
+## Project structure
+
+<FileTree title="Restify Admin Service">
+{`src/
+    server.ts
+    auth/
+      require-permission.ts
+    routes/
+      webhooks.ts
+    errors/
+      write-error.ts`}
+</FileTree>
+
+## 1. Setup and bootstrap
+
+```ts title="src/server.ts"
+import restify from 'restify';
+import { initClient } from '@wacht/backend';
+import { registerWebhookRoutes } from './routes/webhooks';
+
+initClient({
+  apiKey: process.env.WACHT_API_KEY!,
+  baseUrl: process.env.WACHT_BACKEND_API_URL,
+});
+
+const server = restify.createServer();
+server.use(restify.plugins.queryParser());
+server.use(restify.plugins.bodyParser());
+
+registerWebhookRoutes(server);
+
+export { server };
+```
+
+## 2. Guard middleware
+
+```ts title="src/auth/require-permission.ts"
+import type restify from 'restify';
+import { getAuthFromToken, WachtAuthError } from '@wacht/backend';
+import { writeError } from '../errors/write-error';
+
+function requirePermission(permission: string): restify.RequestHandler {
+  return async (req, res, next) => {
+    try {
+      const authz = req.header('authorization');
+      const token =
+        authz && authz.startsWith('Bearer ') ? authz.slice(7).trim() : null;
+
+      const auth = await getAuthFromToken(token);
+      await auth.protect({ permission });
+
+      (req as any).wachtAuth = auth;
+      return next();
+    } catch (error) {
+      if (error instanceof WachtAuthError) {
+        writeError(res, error.status, {
+          error: error.code,
+          message: error.message,
+          redirect_url: error.redirectUrl ?? null,
+        });
+        return next(false);
+      }
+      writeError(res, 500, { error: 'internal_error', message: 'Unexpected error' });
+      return next(false);
+    }
+  };
+}
+
+export { requirePermission };
+```
+
+In Node.js, publishable key lookup falls back to env when `getAuthFromToken()` options are omitted.
+
+## 3. Protected routes
+
+```ts title="src/routes/webhooks.ts"
+import type restify from 'restify';
+import { webhooks } from '@wacht/backend';
+import { requirePermission } from '../auth/require-permission';
+
+export function registerWebhookRoutes(server: restify.Server) {
+  server.get(
+    '/admin/webhooks/apps',
+    requirePermission('webhook:read'),
+    async (_req, res, next) => {
+      const page = await webhooks.listWebhookApps({ limit: 20 });
+      res.send(200, page);
+      return next();
+    },
+  );
+}
+```
+
+## 4. Error writer
+
+```ts title="src/errors/write-error.ts"
+import type restify from 'restify';
+
+export function writeError(
+  res: restify.Response,
+  status: number,
+  payload: Record<string, unknown>,
+) {
+  res.send(status, payload);
+}
+```
+
+## 5. API key/OAuth protected auth for machine-token routes
+
+```ts title="src/routes/machine-webhooks.ts"
+import type restify from 'restify';
+import { gateway, webhooks } from '@wacht/backend';
+
+export function registerMachineWebhookRoutes(server: restify.Server) {
+  server.get('/machine/webhooks/apps', async (req, res, next) => {
+    const apiKey = req.header('x-api-key') || '';
+    const decision = await gateway.checkPrincipalAuthz({
+      principalType: 'api_key',
+      principalValue: apiKey,
+      resource: '/machine/webhooks/apps',
+      method: 'GET',
+      requiredPermissions: ['webhook:read'],
+    });
+
+    if (!decision.allowed) {
+      res.send(403, { error: 'forbidden' });
+      return next(false);
+    }
+
+    res.send(200, await webhooks.listWebhookApps({ limit: 20 }));
+    return next();
+  });
+}
+```
+
+## Best practices
+
+- Keep one auth middleware factory (`requirePermission`) and reuse it.
+- Keep guards before handlers in route registration order.
+- Use API key/OAuth protected checks for machine-token routes.
+- Custom `gatewayUrl` host override is available on Enterprise plans.
+- Use structured JSON errors and avoid sending stack traces in production.

@@ -1,0 +1,63 @@
+---
+title: Bun Framework Patterns
+description: End-to-end Bun patterns for Elysia and Hono with JWT and API key/OAuth protected auth.
+---
+
+The recommended Bun pattern is: initialize once at process startup, run auth checks inside handlers, then call typed backend methods.
+
+## Elysia
+
+```ts title="src/elysia.ts"
+import { Elysia } from 'elysia';
+import { authenticateRequest, initClient, users } from '@wacht/backend';
+
+initClient({
+  apiKey: process.env.WACHT_API_KEY!,
+  baseUrl: process.env.WACHT_BACKEND_API_URL,
+});
+
+const app = new Elysia();
+
+app.get('/admin/users', async ({ request }) => {
+  const { auth } = await authenticateRequest(request);
+  await auth.protect({ permission: 'user:read' });
+  return users.listUsers({ limit: 20 });
+});
+
+export default app;
+```
+
+## Hono on Bun
+
+```ts title="src/hono.ts"
+import { Hono } from 'hono';
+import { gateway, users } from '@wacht/backend';
+
+const app = new Hono();
+
+app.get('/machine/users', async (c) => {
+  const apiKey = c.req.header('x-api-key') ?? '';
+
+  const decision = await gateway.checkPrincipalAuthz({
+    principalType: 'api_key',
+    principalValue: apiKey,
+    resource: '/machine/users',
+    method: 'GET',
+    requiredPermissions: ['user:read'],
+  });
+
+  if (!decision.allowed) {
+    return c.json({ error: 'forbidden' }, 403);
+  }
+
+  return c.json(await users.listUsers({ limit: 20 }));
+});
+
+export default app;
+```
+
+## Operational shape
+
+- User routes: bearer token + `auth.protect`.
+- Machine routes: API key/OAuth protected auth via `gateway.checkPrincipalAuthz`.
+- Keep `gatewayUrl` unset by default; enterprise deployments can override host when required.

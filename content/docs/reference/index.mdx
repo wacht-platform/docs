@@ -1,0 +1,75 @@
+---
+title: API Reference
+description: HTTP API reference for the Wacht Frontend and Platform APIs.
+---
+
+Wacht exposes two distinct HTTP APIs with different purposes, audiences, and authentication models. Understanding which one to use is the first step.
+
+<Cards className="grid-cols-1">
+  <Card title="Frontend API" href="/docs/reference/frontend-api">
+    **Runtime API · Per-deployment host · Session authentication**
+
+    The customer-facing API used by all Wacht SDKs and browser clients. Handles the full lifecycle of a user session: sign-in and sign-up flows, profile management, organizations, workspaces, notifications, AI agents, webhooks, and OAuth. This is the API your end users interact with, proxied through your deployment host.
+  </Card>
+  <Card title="Backend API" href="/docs/reference/backend-api">
+    **Management API · `https://api.wacht.dev` · API key authentication**
+
+    The server-to-server control plane for administering your Wacht deployment. Use it to provision and manage users, configure OAuth applications, manage API keys, inspect sessions, run analytics, and control webhooks. Never expose this API or its keys to the browser.
+  </Card>
+</Cards>
+
+## Choosing the right API
+
+| | Frontend API | Backend API |
+|---|---|---|
+| **Caller** | Browser, mobile, SDK | Your server, CI/CD, admin tooling |
+| **Authentication** | Session cookie or dev query param | Bearer API key |
+| **Host** | Your deployment's frontend host | `api.wacht.dev` |
+| **Purpose** | User-facing runtime flows | Administrative control plane |
+| **Exposure** | Public-facing | Private — never expose to clients |
+| **SDK wrappers** | Next.js, React Router, TanStack | Node SDK, Rust SDK |
+
+## Response format
+
+Both APIs return JSON. Successful responses wrap the payload in a `data` envelope:
+
+```json
+{
+  "data": { ... }
+}
+```
+
+List endpoints return paginated results with cursor metadata:
+
+```json
+{
+  "data": [...],
+  "has_more": true,
+  "limit": 20,
+  "offset": "cursor_token"
+}
+```
+
+Errors follow a consistent shape across both APIs:
+
+```json
+{
+  "error": {
+    "code": "resource_not_found",
+    "message": "The requested resource could not be found.",
+    "status": 404
+  }
+}
+```
+
+## SDKs
+
+For most use cases you should use an SDK rather than calling the APIs directly. The SDKs handle authentication, session management, and type safety automatically.
+
+| SDK | Language | Wraps |
+|-----|----------|-------|
+| [Next.js](/docs/sdks/nextjs/quickstart) | TypeScript | Frontend API |
+| [React Router](/docs/sdks/react-router/quickstart) | TypeScript | Frontend API |
+| [TanStack Router](/docs/sdks/tanstack-router/quickstart) | TypeScript | Frontend API |
+| [Node](/docs/sdks/node/server-auth) | TypeScript | Backend API |
+| [Rust](/docs/sdks/rust/getting-started) | Rust | Backend API |

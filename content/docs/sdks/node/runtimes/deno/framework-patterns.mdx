@@ -1,0 +1,88 @@
+---
+title: Deno Framework Patterns
+description: End-to-end patterns for Oak, Fresh, and Hono on Deno with JWT and API key/OAuth protected auth.
+---
+
+Use one shared auth module and keep framework-specific adapters thin.
+
+## Shared auth helpers
+
+```ts title="src/auth/shared.ts"
+import { authenticateRequest, gateway } from 'npm:@wacht/backend';
+
+export async function requireUserPermission(request: Request, permission: string) {
+  const { auth } = await authenticateRequest(request);
+  await auth.protect({ permission });
+}
+
+export async function requireMachinePermission(
+  request: Request,
+  permission: string,
+  resource: string,
+  method: string,
+) {
+  const apiKey = request.headers.get('x-api-key') ?? '';
+  const decision = await gateway.checkPrincipalAuthz({
+    principalType: 'api_key',
+    principalValue: apiKey,
+    resource,
+    method,
+    requiredPermissions: [permission],
+  });
+
+  if (!decision.allowed) {
+    throw new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 });
+  }
+}
+```
+
+## Oak pattern
+
+```ts title="src/oak/users.ts"
+import { Router } from 'jsr:@oak/oak/router';
+import { users } from 'npm:@wacht/backend';
+import { requireUserPermission } from '../auth/shared.ts';
+
+export const usersRouter = new Router();
+
+usersRouter.get('/admin/users', async (ctx) => {
+  const request = new Request(ctx.request.url.toString(), {
+    method: ctx.request.method,
+    headers: ctx.request.headers,
+  });
+  await requireUserPermission(request, 'user:read');
+  const page = await users.listUsers({ limit: 20 });
+  ctx.response.status = 200;
+  ctx.response.body = page;
+});
+```
+
+## Fresh route pattern
+
+```ts title="routes/api/admin/users.ts"
+import { users } from 'npm:@wacht/backend';
+import { requireUserPermission } from '../../../src/auth/shared.ts';
+
+export const handler = async (request: Request) => {
+  await requireUserPermission(request, 'user:read');
+  const page = await users.listUsers({ limit: 20 });
+  return Response.json(page);
+};
+```
+
+## Hono on Deno pattern
+
+```ts title="src/hono.ts"
+import { Hono } from 'npm:hono';
+import { users } from 'npm:@wacht/backend';
+import { requireMachinePermission } from './auth/shared.ts';
+
+const app = new Hono();
+
+app.get('/machine/users', async (c) => {
+  await requireMachinePermission(c.req.raw, 'user:read', '/machine/users', 'GET');
+  return c.json(await users.listUsers({ limit: 20 }));
+});
+
+export default app;
+```

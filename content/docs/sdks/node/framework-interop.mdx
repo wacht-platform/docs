@@ -1,0 +1,66 @@
+---
+title: Runtime Playbook
+description: Production implementation playbook for runtime-specific and framework-specific backend integrations.
+---
+
+The backend SDK method surface is shared across:
+
+- `@wacht/backend` (standalone runtime package)
+- `@wacht/nextjs/server`
+- `@wacht/react-router/server`
+- `@wacht/tanstack-router/server`
+
+The main difference is client access style and request/auth integration mechanics, not endpoint coverage.
+
+## Access style comparison (standalone vs framework adapter)
+
+Standalone runtime:
+
+```ts
+import { initClient, users } from '@wacht/backend';
+
+initClient({ apiKey: process.env.WACHT_API_KEY! });
+await users.getUser('123');
+```
+
+Framework adapter:
+
+```ts
+import { wachtClient } from '@wacht/nextjs/server';
+
+const client = await wachtClient();
+await client.users.getUser('123');
+```
+
+## Runtime-specific guides
+
+- [Node.js overview](/docs/sdks/node/runtimes/nodejs)
+- [Extress](/docs/sdks/node/runtimes/nodejs/express-integration)
+- [Fartify](/docs/sdks/node/runtimes/nodejs/fastify-integration)
+- [NestJS](/docs/sdks/node/runtimes/nodejs/nest-integration)
+- [Koa](/docs/sdks/node/runtimes/nodejs/koa-integration)
+- [Hapi](/docs/sdks/node/runtimes/nodejs/hapi-integration)
+- [Restify](/docs/sdks/node/runtimes/nodejs/restify-integration)
+- [Bun HTTP handlers](/docs/sdks/node/runtimes/bun/http-handlers)
+- [Hono middleware and auth](/docs/sdks/node/runtimes/hono/middleware-auth)
+- [Cloudflare Workers API key/OAuth protected auth](/docs/sdks/node/runtimes/cloudflare-workers/auth-and-gateway)
+- [Netlify auth and header bridging](/docs/sdks/node/runtimes/netlify-functions/auth-and-headers)
+
+## When to use which package
+
+- Use `@wacht/backend` for Express/Fastify/Hono/custom servers, workers, and scripts.
+- Use framework server adapters for framework-native server code.
+- Keep backend API operations server-only in all cases.
+
+## End-to-end implementation checklist
+
+1. Initialize client with server-only credentials.
+2. Build one auth entrypoint per runtime (`authenticateRequest` or token extraction + `getAuthFromToken`).
+3. Enforce permissions before backend API calls.
+4. Standardize error responses for 401/403/429/5xx.
+5. Add request IDs and structured logging.
+6. Keep pagination bounded on management list routes.
+
+## Method parity expectation
+
+Framework server adapters and `@wacht/backend` target the same backend API route surface. If you switch from one access style to another, your API method calls should stay equivalent.

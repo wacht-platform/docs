@@ -1,0 +1,5 @@
+{
+  "title": "Product",
+  "root": true,
+  "pages": ["index", "architecture", "deployments", "authentication", "b2b", "api-auth", "webhooks"]
+}

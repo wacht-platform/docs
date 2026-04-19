@@ -1,0 +1,108 @@
+---
+title: "Vanity Pages Implementation"
+description: "Embed hosted webhook management in your app with secure ticket issuance and route mapping."
+---
+
+# Vanity Pages Implementation
+
+This model embeds hosted webhook management pages in your product.
+
+## End-to-end flow
+
+1. User opens your webhook settings route.
+2. Backend validates RBAC + tenant ownership.
+3. Backend issues short-lived `webhook_app_access` ticket.
+4. Frontend builds iframe URL from `deployment.backend_host` + vanity path.
+5. User manages endpoints, deliveries, and replay in the embedded UI.
+
+## Backend ticket endpoint (Express)
+
+```ts
+import express from "express";
+import { WachtClient } from "@wacht/backend";
+
+const app = express();
+app.use(express.json());
+
+const wacht = new WachtClient({ apiKey: process.env.WACHT_BACKEND_API_KEY! });
+
+app.post("/api/settings/webhooks/embed-ticket", async (req, res) => {
+  const user = req.user as { canManageWebhooks?: boolean; tenantId?: string } | undefined;
+  const deploymentId = req.body?.deploymentId as string | undefined;
+
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user.canManageWebhooks) return res.status(403).json({ error: "Forbidden" });
+  if (!deploymentId) return res.status(400).json({ error: "deploymentId is required" });
+
+  // Add your tenant ownership check here before ticket issuance.
+
+  const ticket = await wacht.post<{ ticket: string; expires_at: number }>("/session/tickets", {
+    ticket_type: "webhook_app_access",
+    webhook_app_slug: `wh_${deploymentId}`,
+    expires_in: 120,
+  });
+
+  res.json(ticket);
+});
+```
+
+## Frontend embed shell with route mapping
+
+```tsx
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { useDeployment } from "@wacht/react-router";
+
+function mapToVanityWebhookPath(pathname: string): string {
+  const suffix = pathname.replace(/^\/settings\/webhooks/, "");
+  return `/webhook${suffix || ""}`;
+}
+
+export function WebhooksPage({ deploymentId }: { deploymentId: string }) {
+  const { deployment } = useDeployment();
+  const { pathname } = useLocation();
+  const [ticket, setTicket] = useState<string | null>(null);
+
+  useEffect(() => {
+    void fetch("/api/settings/webhooks/embed-ticket", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deploymentId }),
+    })
+      .then((r) => r.json())
+      .then((data: { ticket: string }) => setTicket(data.ticket));
+  }, [deploymentId]);
+
+  const src = useMemo(() => {
+    if (!deployment?.backend_host || !ticket) return null;
+    const vanityPath = mapToVanityWebhookPath(pathname);
+    return `${deployment.backend_host}/vanity${vanityPath}?ticket=${encodeURIComponent(ticket)}`;
+  }, [deployment?.backend_host, pathname, ticket]);
+
+  if (!src) return <div>Loading webhook manager...</div>;
+
+  return (
+    <iframe
+      src={src}
+      title="Webhook Manager"
+      style={{ width: "100%", height: "80vh", border: 0 }}
+      allow="clipboard-read; clipboard-write"
+    />
+  );
+}
+```
+
+## Operational considerations
+
+1. Reissue ticket when iframe session expires.
+2. Keep ticket TTL short (60-180 seconds is typical).
+3. Log ticket issuance and denial reasons.
+4. Keep iframe route mapping deterministic and test all mapped routes.
+
+## Security checklist
+
+1. Never issue management tickets from frontend code.
+2. Enforce RBAC before ticket issuance.
+3. Validate tenant ownership of `wh_<deploymentId>` before issuance.
+4. Do not persist raw tickets in long-lived client storage.
+5. Keep CSP/frame policies aligned with your embedding model.

@@ -1,0 +1,4 @@
+{
+  "title": "Netlify Functions",
+  "pages": ["index", "auth-and-headers", "framework-patterns"]
+}

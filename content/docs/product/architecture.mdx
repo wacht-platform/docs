@@ -1,0 +1,15 @@
+---
+title: Architecture
+description: How the main applications and services in the repository fit together.
+---
+
+## Core split
+
+- `console` is the admin UI
+- `platform-api` is the Rust backend control plane and worker stack
+- `frontend-api` is the Go runtime API for end-user flows
+- `react-sdk` exposes frontend integrations for supported frameworks
+
+## Documentation rule
+
+When a concept belongs to one of those surfaces, it should be documented in that surface's context instead of being repeated across unrelated pages.

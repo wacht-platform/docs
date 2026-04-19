@@ -1,0 +1,71 @@
+---
+title: "OAuth Apps for SaaS"
+description: "End-to-end guide for creating OAuth apps, managing clients, handling consent, and validating tokens with Wacht."
+---
+
+# OAuth Apps for SaaS
+
+If your SaaS needs third-party integrations or protected API resources, OAuth apps should be treated as first-class product infrastructure.
+
+This guide set covers the full lifecycle:
+
+1. Create OAuth apps and clients
+2. Configure scopes and consent behavior
+3. Handle consent UX and approvals
+4. Verify and introspect tokens in your backend
+5. Rotate secrets and revoke grants
+
+## Recommended rollout model
+
+1. Start with Console to define app, clients, and scopes.
+2. Automate app/client lifecycle through SDK OAuth operations.
+3. Use gateway authorization checks in your resource server (`gateway.checkPrincipalAuthz` in Node, `gateway().check_authz_with_principal_type` in Rust).
+4. Add operational controls for secret rotation and grant revocation.
+
+## Redirect and consent behavior (important)
+
+Two redirects exist in this OAuth flow:
+
+1. **Consent UI redirect (platform-managed)**
+The runtime `/oauth/authorize` flow redirects to `/oauth/consent/init`, which redirects users to `https://<deployment.frontend_host>/oauth/consent`.
+This path is platform-defined and is not client-configurable.
+
+2. **OAuth callback redirect (client-controlled)**
+After approve/deny, Wacht redirects back to the OAuth client `redirect_uri`.
+This is controlled by the client registration (`redirect_uris`) and must match an allowlisted URI exactly.
+
+So the consent UI route is fixed by deployment frontend host, but the final callback target is controlled by each OAuth client.
+
+## What users can configure
+
+From Console or backend management APIs:
+
+1. OAuth app: `slug`, `name`, `description`, `logo`, `supported_scopes`, `scope_definitions`, `allow_dynamic_client_registration`, `is_active`.
+2. OAuth app domain/FQDN: set at creation time (production requires explicit FQDN; non-production gets an auto-generated domain).
+3. OAuth client: `client_auth_method`, `grant_types`, `redirect_uris`, metadata fields (`client_name`, `client_uri`, `logo_uri`, `tos_uri`, `policy_uri`, `contacts`, `software_id`, `software_version`), key material (`jwks_uri`, `jwks`, `public_key_pem`), `token_endpoint_auth_signing_alg`.
+4. OAuth client lifecycle: deactivate, rotate secret.
+5. OAuth grants: list per client and revoke.
+
+## Runtime endpoints exposed by each OAuth app domain
+
+1. `GET /oauth/authorize`
+2. `POST /oauth/token`
+3. `POST /oauth/revoke`
+4. `POST /oauth/introspect`
+5. `POST /oauth/register` and `GET|PUT|DELETE /oauth/register/{client_id}` (when dynamic registration is enabled)
+6. `GET /.well-known/oauth-authorization-server`
+7. `GET /.well-known/oauth-protected-resource`
+
+## Read in this order
+
+1. [Create OAuth Apps and Clients](/docs/guides/oauth-apps/create-oauth-app-and-clients)
+2. [Implement OAuth Consent Flow](/docs/guides/oauth-apps/implement-consent-flow)
+3. [Verify Tokens and Operate OAuth Clients](/docs/guides/oauth-apps/verify-access-tokens-and-operate-clients)
+
+## Related references
+
+1. [Node SDK OAuth Apps API](/docs/sdks/node)
+2. [Rust SDK OAuth Apps Guide](/docs/sdks/rust/api-auth-oauth)
+3. [Node SDK Gateway Authz](/docs/sdks/node/server-auth)
+4. [Frontend OAuth Consent API Reference](/docs/reference/frontend-api)
+5. [Backend API Reference](/docs/reference/backend-api)

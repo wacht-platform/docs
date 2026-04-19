@@ -1,0 +1,9 @@
+{
+  "title": "Webhook Apps",
+  "pages": [
+    "overview",
+    "vanity-pages-implementation",
+    "custom-hook-flow-implementation",
+    "deliveries-replay-and-observability"
+  ]
+}

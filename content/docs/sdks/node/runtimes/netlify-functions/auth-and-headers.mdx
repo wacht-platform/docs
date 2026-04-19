@@ -1,0 +1,71 @@
+---
+title: Auth and Header Bridging
+description: Handle auth headers and guard checks in Netlify handlers and helper layers.
+---
+
+This page covers JWT/session auth propagation and API key/OAuth protected machine-token checks in Netlify function boundaries.
+
+## Complete auth utility module
+
+```ts title="netlify/functions/_shared/auth.ts"
+import { authenticateRequest, authFromHeaders } from '@wacht/backend';
+
+export async function requireAuth(request: Request, publishableKey: string) {
+  const { auth, headers } = await authenticateRequest(request, { publishableKey });
+  await auth.protect();
+  return { auth, headers };
+}
+
+export function readForwardedAuth(headers: Headers) {
+  return authFromHeaders(headers);
+}
+```
+
+## API key/OAuth protected utility module
+
+```ts
+import { gateway } from '@wacht/backend';
+
+export async function checkMachineAccess(
+  apiKey: string,
+  resource: string,
+  method: string,
+  requiredPermissions: string[],
+) {
+  return gateway.checkPrincipalAuthz(
+    {
+      principalType: 'api_key',
+      principalValue: apiKey,
+      resource,
+      method,
+      requiredPermissions,
+    },
+  );
+}
+```
+
+## Header bridge pattern
+
+If your app wraps Netlify handler logic in helper services, forward auth state via `x-wacht-auth` to avoid reparsing downstream.
+
+```ts
+import { authenticateRequest, authFromHeaders } from '@wacht/backend';
+
+export async function authenticateIncoming(request: Request, publishableKey: string) {
+  const { auth, headers } = await authenticateRequest(request, { publishableKey });
+  await auth.protect();
+  return { auth, authHeaders: headers };
+}
+
+export function loadAuthFromForwardedHeaders(headers: Headers) {
+  return authFromHeaders(headers);
+}
+```
+
+## Function-to-function calls
+
+- Forward `Authorization` when downstream handler re-verifies directly.
+- Or forward `x-wacht-auth` when you trust upstream verification within the same boundary.
+- Prefer re-verification across trust boundaries.
+- For machine routes, pass only machine tokens to API key/OAuth protected checks and avoid mixing them with session auth code paths.
+- `gatewayUrl` is optional; custom host overrides are available on Enterprise plans.

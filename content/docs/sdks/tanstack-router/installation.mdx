@@ -1,0 +1,45 @@
+---
+title: Installation
+description: Install the TanStack Router SDK and configure the environment variables required for Wacht.
+---
+
+Install the package:
+
+```bash
+pnpm add @wacht/tanstack-router
+```
+
+Set the client-facing key in your app environment:
+
+```bash
+VITE_WACHT_PUBLISHABLE_KEY=...
+```
+
+If required, point the SDK at a custom frontend auth host:
+
+```bash
+VITE_WACHT_FRONTEND_API_URL=https://frontend.wacht.dev
+```
+
+## Provider setup
+
+Wrap your router provider:
+
+```tsx
+import { DeploymentProvider } from '@wacht/tanstack-router';
+
+export function App() {
+  return (
+    <DeploymentProvider
+      publicKey={import.meta.env.VITE_WACHT_PUBLISHABLE_KEY}
+      uiOverwrites={{
+        app_name: 'Wacht',
+      }}
+    >
+      <RouterProvider router={router} />
+    </DeploymentProvider>
+  );
+}
+```
+
+`DeploymentProvider` loads the deployment for the current public key and makes the auth configuration available to the rest of the adapter.

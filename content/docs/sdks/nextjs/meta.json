@@ -1,0 +1,21 @@
+{
+  "title": "Next.js",
+  "pages": [
+    "index",
+    "quickstart",
+    "integration-model",
+    "client-side",
+    "client-side-auth",
+    "middleware",
+    "server-side",
+    "components/bootstrapping",
+    "components/auth-ui",
+    "components/account-controls",
+    "components/notifications",
+    "hooks/core-state",
+    "hooks/auth-flows",
+    "hooks/organizations-workspaces",
+    "hooks/notifications",
+    "hooks/integrations"
+  ]
+}

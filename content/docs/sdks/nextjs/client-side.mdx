@@ -1,0 +1,167 @@
+---
+title: Authentication
+description: Understand how Wacht models sessions, sign-ins, memberships, sign-out, and session tokens.
+---
+
+Before you get too far into the SDK, it helps to understand how Wacht thinks about authentication.
+
+Most of the APIs in the frontend SDKs are built around the same few ideas:
+
+- a session
+- one or more sign-ins inside that session
+- one active sign-in at a time
+- organization and workspace context on the active sign-in
+- short-lived tokens derived from the current session
+
+Once those pieces click, the rest of the auth surface starts to feel much more predictable.
+
+## Sessions come first
+
+Wacht treats the session as the main unit of client-side auth state.
+
+A session is not just "the current user". It is the full authenticated state for the client that is using your app.
+
+That session is what drives things like:
+
+- signed-in and signed-out UI
+- account switchers
+- organization and workspace selection
+- account management screens
+- short-lived tokens for backend calls
+
+If you keep that in mind, a lot of the SDK starts to make more sense. Most auth helpers are really just different ways of reading or updating the session.
+
+## A session can contain more than one sign-in
+
+Wacht makes a distinction between a session and a sign-in.
+
+The session is the container. Each successful account login becomes a sign-in inside that container. One of those sign-ins is marked as active.
+
+That means a browser session can hold more than one account at the same time. Instead of forcing users to sign out and sign back in every time they want to change accounts, Wacht can switch the active sign-in inside the existing session.
+
+This is why account switching is a first-class part of the auth model rather than an edge case.
+
+## The active sign-in is the account your app is currently operating as
+
+The active sign-in is the most important part of the session.
+
+It is the account context the rest of the app should treat as current.
+
+That usually includes:
+
+- the signed-in user
+- the active organization membership
+- the active workspace membership
+- device and location metadata
+- timing information such as expiry and last activity
+
+When your UI shows the current avatar, current account, selected organization, or selected workspace, it is usually reading from the active sign-in.
+
+## Organization and workspace selection are part of auth state
+
+Wacht keeps organization and workspace selection on the active sign-in rather than treating them as separate UI-only state.
+
+That is an important detail.
+
+It means the selected organization or workspace becomes part of the authenticated context itself. The app is not just remembering what the user clicked on. It is updating the active auth context that later requests and tokens build on.
+
+In practice, that gives you a cleaner model:
+
+- switching organizations updates the active sign-in
+- switching workspaces updates the active sign-in
+- any later token can reflect the right organization, workspace, and permissions
+
+That keeps the UI, the session, and the backend-facing auth state aligned.
+
+## In-progress auth lives in the session too
+
+The session does not just represent fully completed sign-ins.
+
+It can also contain in-progress sign-in and sign-up attempts. That is how Wacht keeps track of flows that are still underway, such as:
+
+- password verification
+- email verification
+- phone verification
+- second-factor verification
+- authenticator setup
+- profile completion
+
+This is what makes multi-step auth flows work cleanly. Instead of rebuilding the flow from scratch on each screen, the SDK can resume the current attempt from session-backed state.
+
+## Signed-in and signed-out UI are simple checks over the session
+
+When you use signed-in and signed-out helpers, they are usually doing something fairly simple underneath: checking whether the current session has an active authenticated sign-in.
+
+That is why the same model works whether you are using:
+
+- hosted auth pages
+- embedded auth UI
+- account menus
+- protected app shells
+
+The presentation can change quite a bit, but the underlying condition stays the same.
+
+## Sign-out can happen at two levels
+
+Because Wacht separates the session from the sign-in, sign-out can happen in two different ways:
+
+- remove one sign-in from the current session
+- remove all sign-ins from the current session
+
+This becomes especially useful when the session contains multiple accounts.
+
+A user might want to remove one signed-in account while keeping the rest of the session intact. In other cases, they may want to end the full session entirely.
+
+Once sign-out happens, anything derived from the previous session state should be treated as stale. That includes cached account state, membership state, and any short-lived tokens minted from the old session.
+
+## Session tokens come from the current auth context
+
+Many Wacht SDKs expose a way to mint a short-lived token for the current session.
+
+That token is derived from the auth context as it exists right now. Depending on the active state, that can include:
+
+- the session
+- the active sign-in
+- the current organization
+- the current workspace
+- the permissions available in that context
+
+That is what makes the token useful to your backend. It is a compact, signed view of the current auth state.
+
+The important thing is that these tokens are not independent of the session. If the user switches accounts, changes organization context, changes workspace context, or signs out, any cached token from the old context should be treated as invalid.
+
+## Hosted pages and embedded UI still use the same auth model
+
+Wacht supports a few different ways to present authentication:
+
+- hosted auth pages
+- embedded auth UI
+- more customized flows built on the same underlying APIs
+
+Those are different ways of presenting auth, not different auth systems.
+
+Underneath them, the same core pieces are still there:
+
+- deployment-backed auth configuration
+- session-backed client state
+- active sign-in selection
+- membership context
+- session-derived tokens
+
+Moving from hosted pages to embedded UI does not mean starting over. It usually just means taking more control over where the UI lives.
+
+## `uiOverwrites` is most useful when you embed auth inside your app
+
+If you are building sign-in, sign-up, account, or profile surfaces inside your own app, `uiOverwrites` gives you a way to adjust the UI-facing deployment settings for that embedded experience.
+
+That is helpful when you want the auth flow to live inside your product without changing the deployment itself.
+
+It does not replace the deployment configuration. It layers on top of the deployment's UI settings for that client integration.
+
+## Read next
+
+- [Quick Start](./quickstart)
+- [Integration model](./integration-model)
+- [Client-side Auth](./client-side-auth)
+- [Middleware](./middleware)
+- [Server-side Auth](./server-side)

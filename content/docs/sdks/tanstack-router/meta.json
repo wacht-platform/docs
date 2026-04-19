@@ -1,0 +1,19 @@
+{
+  "title": "TanStack Router",
+  "pages": [
+    "quickstart",
+    "integration-model",
+    "authentication",
+    "client-side-auth",
+    "server-auth",
+    "components/bootstrapping",
+    "components/auth-ui",
+    "components/account-controls",
+    "components/notifications",
+    "hooks/core-state",
+    "hooks/auth-flows",
+    "hooks/organizations-workspaces",
+    "hooks/notifications",
+    "hooks/integrations"
+  ]
+}

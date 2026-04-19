@@ -1,0 +1,61 @@
+---
+title: AI Runtime and Configuration
+description: Agents, tools, knowledge bases, MCP servers, projects, and threads.
+---
+
+Validated route domains:
+
+- `/ai/agents*`
+- `/ai/tools*`
+- `/ai/knowledge-bases*`
+- `/ai/mcp-servers*`
+- `/ai/settings`
+- `/ai/actor-projects*`
+- `/ai/actor-project-threads*`
+- `/ai/actor-mcp-servers*`
+
+Rust API surfaces:
+
+- `client.ai().agents().list_agents()`
+- `client.ai().agents().create_agent(request)`
+- `client.ai().tools().list_tools()`
+- `client.ai().knowledge_bases().fetch_knowledge_bases()`
+- `client.ai().mcp_servers().list_mcp_servers()`
+- `client.ai_settings().fetch_ai_settings()`
+- `client.ai_settings().update_ai_settings(request)`
+- `client.ai().actor_projects().list_actor_projects(actor_id)`
+- `client.ai().actor_projects().fetch_threads(project_id)`
+- `client.ai().actor_project_threads().run_thread(thread_id, request)`
+- `client.ai().actor_mcp_servers().list_actor_mcp_servers()`
+
+Rust example:
+
+```rust
+use wacht_rs::{Result, WachtClient};
+
+pub async fn ai_runtime_example(client: &WachtClient) -> Result<()> {
+    let _settings = client.ai_settings().fetch_ai_settings().send().await?;
+
+    let _run = client
+        .ai()
+        .actor_project_threads()
+        .run_thread(
+            "thread_id",
+            wacht_rs::models::ExecuteAgentRequest {
+                agent_id: None,
+                execution_type: wacht_rs::models::ExecuteAgentRequestType {
+                    new_message: Some(wacht_rs::models::NewMessageRequest {
+                        message: "Summarize current incident impact".to_string(),
+                        files: None,
+                    }),
+                    approval_response: None,
+                    cancel: None,
+                },
+            },
+        )
+        .send()
+        .await?;
+
+    Ok(())
+}
+```

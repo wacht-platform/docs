@@ -1,0 +1,29 @@
+---
+title: Next.js
+description: Add Wacht to a Next.js app with one provider on the client and request-aware auth helpers on the server.
+---
+
+`@wacht/nextjs` is the Next.js integration for Wacht.
+
+You will use two entrypoints:
+
+- `@wacht/nextjs` for the provider, client-side hooks, and session-aware UI
+- `@wacht/nextjs/server` for middleware, request auth, and the server client
+
+The usual setup looks like this:
+
+1. Mount `DeploymentProvider` once in your root layout.
+2. Send signed-out users to the hosted auth pages.
+3. Protect private routes in middleware.
+4. Read auth state in server code where you need it.
+5. Reuse the shared `Components` and `Hooks` pages when you are wiring UI and state together.
+
+## Next steps
+
+1. [Quick Start](./quickstart)
+2. [Authentication](./client-side)
+3. [Client-side Auth](./client-side-auth)
+4. [Middleware](./middleware)
+5. [Server-side Auth](./server-side)
+6. [Components](./components)
+7. [Hooks](./hooks)

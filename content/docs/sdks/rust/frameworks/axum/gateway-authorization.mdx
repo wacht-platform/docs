@@ -1,0 +1,63 @@
+---
+title: Gateway Authorization
+description: Check API key and OAuth access-token authorization in Axum handlers.
+---
+
+Use gateway checks when your endpoint accepts machine credentials such as API keys or OAuth access tokens.
+
+## API key authorization check
+
+```rust
+use wacht::{Result, WachtClient};
+use wacht::gateway::{GatewayAuthzOptions, GatewayPrincipalType};
+
+pub async fn verify_api_key(client: &WachtClient, key: &str) -> Result<()> {
+    let authz = client
+        .gateway()
+        .check_authz_with_principal_type(
+            GatewayPrincipalType::ApiKey,
+            key,
+            "GET",
+            "/v1/data",
+            GatewayAuthzOptions {
+                required_permissions: Some(vec!["data:read".to_string()]),
+                ..Default::default()
+            },
+        )
+        .await?;
+
+    if !authz.allowed {
+        return Err(wacht::Error::Auth("gateway denied request".to_string()));
+    }
+
+    let principal = authz.resolve_principal_context();
+    println!("app_slug={}", principal.identity.app_slug);
+    Ok(())
+}
+```
+
+## OAuth access-token authorization check
+
+```rust
+use wacht::gateway::{GatewayAuthzOptions, GatewayPrincipalType};
+
+let authz = client
+    .gateway()
+    .check_authz_with_principal_type(
+        GatewayPrincipalType::OauthAccessToken,
+        oauth_access_token,
+        "POST",
+        "/v1/actions/run",
+        GatewayAuthzOptions::default(),
+    )
+    .await?;
+```
+
+## Handler integration pattern
+
+- Parse incoming credential from request headers.
+- Run `check_authz_with_principal_type(...)`.
+- Enforce `authz.allowed` before business logic.
+- Use `resolve_principal_context()` for app, scope, and identity context.
+
+This keeps JWT session auth and machine-credential auth as separate, explicit flows.

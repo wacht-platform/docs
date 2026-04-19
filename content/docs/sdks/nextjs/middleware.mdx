@@ -1,0 +1,199 @@
+---
+title: Middleware
+description: Protect routes, normalize request auth state, and understand how Wacht turns session cookies or bearer tokens into a request-level auth object.
+---
+
+If you are using Wacht in Next.js, middleware is where the request-level auth story starts.
+
+It does more than decide whether a route is public or private. It is also responsible for turning the incoming request into an auth state that the rest of your app can trust.
+
+## Start with `wachtMiddleware()`
+
+```ts
+import { NextResponse } from 'next/server';
+import { createRouteMatcher, wachtMiddleware } from '@wacht/nextjs/server';
+
+const isProtected = createRouteMatcher(['/account(.*)']);
+
+export default wachtMiddleware(
+  async (auth, req) => {
+    if (!isProtected(req)) return NextResponse.next();
+
+    await auth.protect();
+    return NextResponse.next();
+  },
+  {
+    apiRoutePrefixes: ['/api', '/trpc'],
+  },
+);
+
+export const config = {
+  matcher: [
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
+  ],
+};
+```
+
+This is the right baseline for most apps:
+
+- keep the route policy in one place
+- protect the private routes explicitly
+- tell the middleware which paths should behave like APIs
+
+## What the middleware actually does
+
+Wacht middleware handles three related jobs:
+
+1. It reads whatever auth material came in with the request.
+2. It turns that into a normalized auth object.
+3. It makes that auth object available to the rest of the request pipeline.
+
+That means the middleware is not just a redirect layer. It is the bridge between request transport and application-level auth.
+
+## Wacht distinguishes transport session cookies from auth cookies
+
+There are two important cookie layers in the Next.js server integration:
+
+- `__session`
+- `__auth_<scope>`
+
+`__session` is the transport session cookie coming from the frontend auth surface.
+
+`__auth_<scope>` is the derived auth token cookie the middleware can set after it exchanges the transport session into a verified auth token.
+
+In other words:
+
+- the session cookie represents browser session state
+- the auth cookie represents a token the server SDK can validate directly
+
+That is why the middleware can get faster and more predictable after the first successful exchange. Later requests can often use the auth cookie immediately instead of having to repeat the handshake from scratch.
+
+## The handshake path
+
+If there is no usable bearer token or auth cookie, the middleware falls back to the session handshake.
+
+At a high level, it does this:
+
+1. Read the session cookie.
+2. Exchange that session into an auth token.
+3. Validate the returned auth token.
+4. Set the derived auth cookie for later requests.
+5. Continue the request with normalized auth state attached.
+
+That handshake is the reason a page request can start from a browser session cookie and still end up with a request-level auth object that the rest of the server helpers can read consistently.
+
+## Staging uses `__dev_session__`
+
+For staging and development-style deployment flows, Wacht also supports `__dev_session__`.
+
+The middleware normalizes this in two places:
+
+- it can accept `__dev_session__` from the query string
+- it can persist the normalized dev-session state back into cookies
+
+If a request comes in with `__dev_session__` in the URL, the middleware exchanges it, stores the resulting state, removes the query parameter, and redirects to the clean URL.
+
+That keeps the staging flow working without leaving the session token exposed in the address bar.
+
+## Bearer tokens are handled too
+
+The middleware does not only understand browser session cookies.
+
+It also checks:
+
+- `Authorization: Bearer ...`
+- the derived auth cookie
+
+If the bearer token or auth cookie can be parsed as a Wacht auth token, it becomes the request auth state immediately.
+
+If the bearer token does not resolve to a user session, the middleware can still try gateway auth for:
+
+- API keys
+- OAuth access tokens
+
+That is how the same middleware can support browser requests, machine-to-machine requests, and OAuth-style bearer requests without forcing all of them into the same session model.
+
+## The middleware serializes auth into the request headers
+
+Once the auth state has been resolved, the middleware serializes it into the request using `x-wacht-auth`.
+
+That header carries the normalized auth fields that later helpers read, including:
+
+- `userId`
+- `sessionId`
+- `organizationId`
+- `workspaceId`
+- organization and workspace permissions
+- token type
+- principal identity and metadata
+
+This is what makes `auth(await headers())` work in server components. It is not re-authenticating the request from scratch. It is reading the auth state that middleware already resolved and injected into the request.
+
+## `createRouteMatcher()` keeps the policy readable
+
+Once route protection starts to grow, `createRouteMatcher()` keeps the middleware from turning into a pile of pathname checks.
+
+```ts
+const isProtected = createRouteMatcher([
+  '/dashboard(.*)',
+  '/settings(.*)',
+  '/account(.*)',
+]);
+```
+
+This is a readability tool more than anything else, but it matters. Middleware gets hard to maintain quickly once route policy starts spreading across ad hoc conditionals.
+
+## Browser routes and API routes should not fail the same way
+
+One of the most important middleware options is `apiRoutePrefixes`.
+
+Browser routes usually want redirect behavior. API routes usually want a JSON error response with the right status code.
+
+That is exactly what `apiRoutePrefixes` controls:
+
+```ts
+export default wachtMiddleware(handler, {
+  apiRoutePrefixes: ['/api', '/trpc'],
+});
+```
+
+With that in place:
+
+- a browser route can redirect unauthenticated users to sign-in
+- an API route can return `401` or `403` JSON instead
+
+This is one of the easiest places to get the behavior wrong if you skip the middleware configuration and try to improvise the distinction elsewhere.
+
+## `auth.protect()` can enforce more than "is the user signed in?"
+
+`auth.protect()` is not limited to checking whether the request is authenticated.
+
+It can also enforce:
+
+- permission checks
+- organization-scoped checks
+- workspace-scoped checks
+- accepted token types
+
+```ts
+await auth.protect({
+  permission: 'org:members:read',
+  organizationId: 'org_123',
+});
+```
+
+You can also customize where failures go:
+
+- `unauthenticatedUrl`
+- `unauthorizedUrl`
+
+And you can constrain accepted token types with `token`.
+
+By default, `protect()` expects a session token. If you want to allow other token types, you need to say so explicitly.
+
+## Redirects are derived from the request URL
+
+When middleware redirects to sign-in, it builds the return URL from the public request URL rather than blindly trusting the internal server URL.
+
+That matters when the docs or app sit behind a load balancer, reverse proxy, or forwarded host setup. The middleware reads forwarded headers so the eventual `redirect_uri` points back to the public-facing URL the user actually visited.

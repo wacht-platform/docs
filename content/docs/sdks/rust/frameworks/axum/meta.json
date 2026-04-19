@@ -1,0 +1,9 @@
+{
+  "title": "Axum",
+  "pages": [
+    "index",
+    "auth-layer-setup",
+    "extractors-and-permissions",
+    "gateway-authorization"
+  ]
+}

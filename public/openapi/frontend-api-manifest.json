@@ -1,0 +1,1294 @@
+{
+  "tags": [
+    {
+      "name": "AI",
+      "slug": "ai",
+      "operations": [
+        {
+          "name": "Get Session",
+          "slug": "get-session",
+          "method": "GET",
+          "path": "/ai/session"
+        },
+        {
+          "name": "List Actor Projects",
+          "slug": "list-actor-projects",
+          "method": "GET",
+          "path": "/ai/projects"
+        },
+        {
+          "name": "Create Actor Project",
+          "slug": "create-actor-project",
+          "method": "POST",
+          "path": "/ai/projects"
+        },
+        {
+          "name": "Search Actor Projects",
+          "slug": "search-actor-projects",
+          "method": "GET",
+          "path": "/ai/projects/search"
+        },
+        {
+          "name": "Create Actor Thread",
+          "slug": "create-actor-thread",
+          "method": "POST",
+          "path": "/ai/threads"
+        },
+        {
+          "name": "Search Actor Threads",
+          "slug": "search-actor-threads",
+          "method": "GET",
+          "path": "/ai/threads/search"
+        },
+        {
+          "name": "List Actor Mcp Servers",
+          "slug": "list-actor-mcp-servers",
+          "method": "GET",
+          "path": "/ai/mcp-servers"
+        },
+        {
+          "name": "Connect Actor Mcp Server",
+          "slug": "connect-actor-mcp-server",
+          "method": "POST",
+          "path": "/ai/mcp-servers/{mcp_server_id}/connect"
+        },
+        {
+          "name": "Disconnect Actor Mcp Server",
+          "slug": "disconnect-actor-mcp-server",
+          "method": "POST",
+          "path": "/ai/mcp-servers/{mcp_server_id}/disconnect"
+        },
+        {
+          "name": "Get Actor Project",
+          "slug": "get-actor-project",
+          "method": "GET",
+          "path": "/ai/projects/{project_id}"
+        },
+        {
+          "name": "Update Actor Project",
+          "slug": "update-actor-project",
+          "method": "POST",
+          "path": "/ai/projects/{project_id}/update"
+        },
+        {
+          "name": "Archive Actor Project",
+          "slug": "archive-actor-project",
+          "method": "POST",
+          "path": "/ai/projects/{project_id}/archive"
+        },
+        {
+          "name": "Unarchive Actor Project",
+          "slug": "unarchive-actor-project",
+          "method": "POST",
+          "path": "/ai/projects/{project_id}/unarchive"
+        },
+        {
+          "name": "Get Project Board",
+          "slug": "get-project-board",
+          "method": "GET",
+          "path": "/ai/projects/{project_id}/board"
+        },
+        {
+          "name": "List Project Board Items",
+          "slug": "list-project-board-items",
+          "method": "GET",
+          "path": "/ai/projects/{project_id}/board/items"
+        },
+        {
+          "name": "Create Project Board Item",
+          "slug": "create-project-board-item",
+          "method": "POST",
+          "path": "/ai/projects/{project_id}/board/items"
+        },
+        {
+          "name": "Get Board Item",
+          "slug": "get-board-item",
+          "method": "GET",
+          "path": "/ai/projects/{project_id}/board/items/{item_id}"
+        },
+        {
+          "name": "List Board Item Events",
+          "slug": "list-board-item-events",
+          "method": "GET",
+          "path": "/ai/projects/{project_id}/board/items/{item_id}/events"
+        },
+        {
+          "name": "List Board Item Assignments",
+          "slug": "list-board-item-assignments",
+          "method": "GET",
+          "path": "/ai/projects/{project_id}/board/items/{item_id}/assignments"
+        },
+        {
+          "name": "List Board Item Task Workspace Files",
+          "slug": "list-board-item-task-workspace-files",
+          "method": "GET",
+          "path": "/ai/projects/{project_id}/board/items/{item_id}/filesystem"
+        },
+        {
+          "name": "Get Board Item Task Workspace File Content",
+          "slug": "get-board-item-task-workspace-file-content",
+          "method": "GET",
+          "path": "/ai/projects/{project_id}/board/items/{item_id}/filesystem/file"
+        },
+        {
+          "name": "Update Board Item",
+          "slug": "update-board-item",
+          "method": "POST",
+          "path": "/ai/projects/{project_id}/board/items/{item_id}/update"
+        },
+        {
+          "name": "Archive Board Item",
+          "slug": "archive-board-item",
+          "method": "POST",
+          "path": "/ai/projects/{project_id}/board/items/{item_id}/archive"
+        },
+        {
+          "name": "Unarchive Board Item",
+          "slug": "unarchive-board-item",
+          "method": "POST",
+          "path": "/ai/projects/{project_id}/board/items/{item_id}/unarchive"
+        },
+        {
+          "name": "Append Board Item Journal",
+          "slug": "append-board-item-journal",
+          "method": "POST",
+          "path": "/ai/projects/{project_id}/board/items/{item_id}/journal"
+        },
+        {
+          "name": "List Project Threads",
+          "slug": "list-project-threads",
+          "method": "GET",
+          "path": "/ai/projects/{project_id}/threads"
+        },
+        {
+          "name": "Create Project Thread",
+          "slug": "create-project-thread",
+          "method": "POST",
+          "path": "/ai/projects/{project_id}/threads"
+        },
+        {
+          "name": "Update Thread",
+          "slug": "update-thread",
+          "method": "POST",
+          "path": "/ai/threads/{thread_id}/update"
+        },
+        {
+          "name": "Archive Thread",
+          "slug": "archive-thread",
+          "method": "POST",
+          "path": "/ai/threads/{thread_id}/archive"
+        },
+        {
+          "name": "Unarchive Thread",
+          "slug": "unarchive-thread",
+          "method": "POST",
+          "path": "/ai/threads/{thread_id}/unarchive"
+        },
+        {
+          "name": "Get Thread",
+          "slug": "get-thread",
+          "method": "GET",
+          "path": "/ai/threads/{thread_id}"
+        },
+        {
+          "name": "List Thread Events",
+          "slug": "list-thread-events",
+          "method": "GET",
+          "path": "/ai/threads/{thread_id}/events"
+        },
+        {
+          "name": "List Thread Assignments",
+          "slug": "list-thread-assignments",
+          "method": "GET",
+          "path": "/ai/threads/{thread_id}/assignments"
+        },
+        {
+          "name": "List Thread Task Graphs",
+          "slug": "list-thread-task-graphs",
+          "method": "GET",
+          "path": "/ai/threads/{thread_id}/task-graphs"
+        },
+        {
+          "name": "Get Thread Messages",
+          "slug": "get-thread-messages",
+          "method": "GET",
+          "path": "/ai/threads/{thread_id}/messages"
+        },
+        {
+          "name": "List Thread Filesystem Entries",
+          "slug": "list-thread-filesystem-entries",
+          "method": "GET",
+          "path": "/ai/threads/{thread_id}/filesystem"
+        },
+        {
+          "name": "Get Thread Filesystem File Content",
+          "slug": "get-thread-filesystem-file-content",
+          "method": "GET",
+          "path": "/ai/threads/{thread_id}/filesystem/file"
+        },
+        {
+          "name": "Stream",
+          "slug": "stream",
+          "method": "GET",
+          "path": "/ai/threads/{thread_id}/stream"
+        },
+        {
+          "name": "Run Thread",
+          "slug": "run-thread",
+          "method": "POST",
+          "path": "/ai/threads/{thread_id}/run"
+        }
+      ]
+    },
+    {
+      "name": "API Auth",
+      "slug": "api-auth",
+      "operations": [
+        {
+          "name": "Get Session",
+          "slug": "get-session",
+          "method": "GET",
+          "path": "/api-auth/session"
+        },
+        {
+          "name": "Get Keys",
+          "slug": "get-keys",
+          "method": "GET",
+          "path": "/api-auth/keys"
+        },
+        {
+          "name": "Create Key",
+          "slug": "create-key",
+          "method": "POST",
+          "path": "/api-auth/keys"
+        },
+        {
+          "name": "Rotate Key",
+          "slug": "rotate-key",
+          "method": "POST",
+          "path": "/api-auth/keys/{id}/rotate"
+        },
+        {
+          "name": "Revoke Key",
+          "slug": "revoke-key",
+          "method": "POST",
+          "path": "/api-auth/keys/{id}/revoke"
+        },
+        {
+          "name": "Get Audit Logs",
+          "slug": "get-audit-logs",
+          "method": "GET",
+          "path": "/api-auth/audit/logs"
+        },
+        {
+          "name": "Get Audit Analytics",
+          "slug": "get-audit-analytics",
+          "method": "GET",
+          "path": "/api-auth/audit/analytics"
+        },
+        {
+          "name": "Get Audit Timeseries",
+          "slug": "get-audit-timeseries",
+          "method": "GET",
+          "path": "/api-auth/audit/timeseries"
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "slug": "auth",
+      "operations": [
+        {
+          "name": "Sign In",
+          "slug": "sign-in",
+          "method": "POST",
+          "path": "/auth/signin"
+        },
+        {
+          "name": "Sign Up",
+          "slug": "sign-up",
+          "method": "POST",
+          "path": "/auth/signup"
+        },
+        {
+          "name": "Init O Auth2",
+          "slug": "init-o-auth2",
+          "method": "POST",
+          "path": "/auth/oauth2/init"
+        },
+        {
+          "name": "O Auth2 Callback",
+          "slug": "o-auth2-callback",
+          "method": "GET",
+          "path": "/auth/oauth2/callback"
+        },
+        {
+          "name": "Complete Profile",
+          "slug": "complete-profile",
+          "method": "POST",
+          "path": "/auth/complete-profile"
+        },
+        {
+          "name": "Check Identifier Availability",
+          "slug": "check-identifier-availability",
+          "method": "GET",
+          "path": "/auth/identifier-availability"
+        },
+        {
+          "name": "Prepare Verification",
+          "slug": "prepare-verification",
+          "method": "POST",
+          "path": "/auth/prepare-verification"
+        },
+        {
+          "name": "Attempt Verification",
+          "slug": "attempt-verification",
+          "method": "POST",
+          "path": "/auth/attempt-verification"
+        },
+        {
+          "name": "Verify Magic Link",
+          "slug": "verify-magic-link",
+          "method": "GET",
+          "path": "/auth/verify-magic-link"
+        },
+        {
+          "name": "Forgot Password",
+          "slug": "forgot-password",
+          "method": "POST",
+          "path": "/auth/forgot-password"
+        },
+        {
+          "name": "Reset Password",
+          "slug": "reset-password",
+          "method": "POST",
+          "path": "/auth/reset-password"
+        },
+        {
+          "name": "Identify",
+          "slug": "identify",
+          "method": "POST",
+          "path": "/auth/identify"
+        },
+        {
+          "name": "S S O Metadata",
+          "slug": "s-s-o-metadata",
+          "method": "GET",
+          "path": "/auth/sso/metadata"
+        },
+        {
+          "name": "S S O Login",
+          "slug": "s-s-o-login",
+          "method": "POST",
+          "path": "/auth/sso/login"
+        },
+        {
+          "name": "Enterprise S S O Callback",
+          "slug": "enterprise-s-s-o-callback",
+          "method": "POST",
+          "path": "/auth/sso/callback"
+        },
+        {
+          "name": "O I D C Callback",
+          "slug": "o-i-d-c-callback",
+          "method": "GET",
+          "path": "/auth/sso/oidc/callback"
+        },
+        {
+          "name": "Begin Passkey Login",
+          "slug": "begin-passkey-login",
+          "method": "POST",
+          "path": "/auth/passkey/login/begin"
+        },
+        {
+          "name": "Finish Passkey Login",
+          "slug": "finish-passkey-login",
+          "method": "POST",
+          "path": "/auth/passkey/login/finish"
+        }
+      ]
+    },
+    {
+      "name": "Deployment",
+      "slug": "deployment",
+      "operations": [
+        {
+          "name": "Get Deployment",
+          "slug": "get-deployment",
+          "method": "GET",
+          "path": "/deployment"
+        },
+        {
+          "name": "Validate Invitation",
+          "slug": "validate-invitation",
+          "method": "GET",
+          "path": "/deployment/invitations/validate"
+        }
+      ]
+    },
+    {
+      "name": "Me",
+      "slug": "me",
+      "operations": [
+        {
+          "name": "Get User",
+          "slug": "get-user",
+          "method": "GET",
+          "path": "/me"
+        },
+        {
+          "name": "Update User",
+          "slug": "update-user",
+          "method": "POST",
+          "path": "/me"
+        },
+        {
+          "name": "Get User Organization Memberships",
+          "slug": "get-user-organization-memberships",
+          "method": "GET",
+          "path": "/me/organization-memberships"
+        },
+        {
+          "name": "Get User Workspace Memberships",
+          "slug": "get-user-workspace-memberships",
+          "method": "GET",
+          "path": "/me/workspace-memberships"
+        },
+        {
+          "name": "Get User Email Addresses",
+          "slug": "get-user-email-addresses",
+          "method": "GET",
+          "path": "/me/email-addresses"
+        },
+        {
+          "name": "Create User Email Address",
+          "slug": "create-user-email-address",
+          "method": "POST",
+          "path": "/me/email-addresses"
+        },
+        {
+          "name": "Get User Email Address",
+          "slug": "get-user-email-address",
+          "method": "GET",
+          "path": "/me/email-addresses/{id}"
+        },
+        {
+          "name": "Delete User Email Address",
+          "slug": "delete-user-email-address",
+          "method": "POST",
+          "path": "/me/email-addresses/{id}/delete"
+        },
+        {
+          "name": "Prepare Email Verification",
+          "slug": "prepare-email-verification",
+          "method": "POST",
+          "path": "/me/email-addresses/{id}/prepare-verification"
+        },
+        {
+          "name": "Attempt Email Verification",
+          "slug": "attempt-email-verification",
+          "method": "POST",
+          "path": "/me/email-addresses/{id}/attempt-verification"
+        },
+        {
+          "name": "Get User Phone Numbers",
+          "slug": "get-user-phone-numbers",
+          "method": "GET",
+          "path": "/me/phone-numbers"
+        },
+        {
+          "name": "Add Phone Number",
+          "slug": "add-phone-number",
+          "method": "POST",
+          "path": "/me/phone-numbers"
+        },
+        {
+          "name": "Get Phone Number",
+          "slug": "get-phone-number",
+          "method": "GET",
+          "path": "/me/phone-numbers/{id}"
+        },
+        {
+          "name": "Delete Phone Number",
+          "slug": "delete-phone-number",
+          "method": "POST",
+          "path": "/me/phone-numbers/{id}/delete"
+        },
+        {
+          "name": "Prepare Phone Verification",
+          "slug": "prepare-phone-verification",
+          "method": "POST",
+          "path": "/me/phone-numbers/{id}/prepare-verification"
+        },
+        {
+          "name": "Attempt Phone Verification",
+          "slug": "attempt-phone-verification",
+          "method": "POST",
+          "path": "/me/phone-numbers/{id}/attempt-verification"
+        },
+        {
+          "name": "Upload Profile Picture",
+          "slug": "upload-profile-picture",
+          "method": "POST",
+          "path": "/me/profile-picture"
+        },
+        {
+          "name": "Generate Authenticator",
+          "slug": "generate-authenticator",
+          "method": "POST",
+          "path": "/me/authenticator"
+        },
+        {
+          "name": "Verify Authenticator",
+          "slug": "verify-authenticator",
+          "method": "POST",
+          "path": "/me/authenticator/attempt-verification"
+        },
+        {
+          "name": "Delete Authenticator",
+          "slug": "delete-authenticator",
+          "method": "POST",
+          "path": "/me/authenticator/{id}/delete"
+        },
+        {
+          "name": "Generate Backup Codes",
+          "slug": "generate-backup-codes",
+          "method": "POST",
+          "path": "/me/backup-codes"
+        },
+        {
+          "name": "Regenerate Backup Codes",
+          "slug": "regenerate-backup-codes",
+          "method": "POST",
+          "path": "/me/backup-codes/regenerate"
+        },
+        {
+          "name": "Get User Signins",
+          "slug": "get-user-signins",
+          "method": "GET",
+          "path": "/me/signins"
+        },
+        {
+          "name": "Sign Out From Session",
+          "slug": "sign-out-from-session",
+          "method": "POST",
+          "path": "/me/signins/{id}/signout"
+        },
+        {
+          "name": "Make Email Primary",
+          "slug": "make-email-primary",
+          "method": "POST",
+          "path": "/me/email-addresses/{id}/make-primary"
+        },
+        {
+          "name": "Make Phone Primary",
+          "slug": "make-phone-primary",
+          "method": "POST",
+          "path": "/me/phone-numbers/{id}/make-primary"
+        },
+        {
+          "name": "Update Password",
+          "slug": "update-password",
+          "method": "POST",
+          "path": "/me/update-password"
+        },
+        {
+          "name": "Remove Password",
+          "slug": "remove-password",
+          "method": "POST",
+          "path": "/me/remove-password"
+        },
+        {
+          "name": "Delete Account",
+          "slug": "delete-account",
+          "method": "POST",
+          "path": "/me/account/delete"
+        },
+        {
+          "name": "Disconnect Social Connection",
+          "slug": "disconnect-social-connection",
+          "method": "POST",
+          "path": "/me/social-connections/{id}/disconnect"
+        },
+        {
+          "name": "Init Connect Social",
+          "slug": "init-connect-social",
+          "method": "POST",
+          "path": "/me/init-sso-connection"
+        },
+        {
+          "name": "Connect Social Callback",
+          "slug": "connect-social-callback",
+          "method": "POST",
+          "path": "/me/sso-connection-callback"
+        },
+        {
+          "name": "Get Passkeys",
+          "slug": "get-passkeys",
+          "method": "GET",
+          "path": "/me/passkeys"
+        },
+        {
+          "name": "Begin Passkey Registration",
+          "slug": "begin-passkey-registration",
+          "method": "POST",
+          "path": "/me/passkeys/register/begin"
+        },
+        {
+          "name": "Finish Passkey Registration",
+          "slug": "finish-passkey-registration",
+          "method": "POST",
+          "path": "/me/passkeys/register/finish"
+        },
+        {
+          "name": "Delete Passkey",
+          "slug": "delete-passkey",
+          "method": "POST",
+          "path": "/me/passkeys/{id}/delete"
+        },
+        {
+          "name": "Rename Passkey",
+          "slug": "rename-passkey",
+          "method": "PATCH",
+          "path": "/me/passkeys/{id}"
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "slug": "notifications",
+      "operations": [
+        {
+          "name": "List",
+          "slug": "list",
+          "method": "GET",
+          "path": "/notifications"
+        },
+        {
+          "name": "Get Scope Unread",
+          "slug": "get-scope-unread",
+          "method": "GET",
+          "path": "/notifications/scope-unread"
+        },
+        {
+          "name": "Mark As Read",
+          "slug": "mark-as-read",
+          "method": "POST",
+          "path": "/notifications/{id}/read"
+        },
+        {
+          "name": "Mark As Unread",
+          "slug": "mark-as-unread",
+          "method": "POST",
+          "path": "/notifications/{id}/unread"
+        },
+        {
+          "name": "Archive",
+          "slug": "archive",
+          "method": "POST",
+          "path": "/notifications/{id}/archive"
+        },
+        {
+          "name": "Star",
+          "slug": "star",
+          "method": "POST",
+          "path": "/notifications/{id}/star"
+        },
+        {
+          "name": "Mark All As Read",
+          "slug": "mark-all-as-read",
+          "method": "POST",
+          "path": "/notifications/mark-all-read"
+        },
+        {
+          "name": "Archive All Read",
+          "slug": "archive-all-read",
+          "method": "POST",
+          "path": "/notifications/archive-all-read"
+        },
+        {
+          "name": "Stream",
+          "slug": "stream",
+          "method": "GET",
+          "path": "/notifications/stream"
+        }
+      ]
+    },
+    {
+      "name": "OAuth",
+      "slug": "oauth",
+      "operations": [
+        {
+          "name": "Init",
+          "slug": "init",
+          "method": "GET",
+          "path": "/oauth/consent/init"
+        },
+        {
+          "name": "Details",
+          "slug": "details",
+          "method": "GET",
+          "path": "/oauth/consent/details"
+        },
+        {
+          "name": "Submit",
+          "slug": "submit",
+          "method": "POST",
+          "path": "/oauth/consent/submit"
+        }
+      ]
+    },
+    {
+      "name": "Organizations",
+      "slug": "organizations",
+      "operations": [
+        {
+          "name": "Create Organization",
+          "slug": "create-organization",
+          "method": "POST",
+          "path": "/organizations"
+        },
+        {
+          "name": "Accept Invitation",
+          "slug": "accept-invitation",
+          "method": "POST",
+          "path": "/organizations/invitations/accept"
+        },
+        {
+          "name": "Update Organization",
+          "slug": "update-organization",
+          "method": "POST",
+          "path": "/organizations/{id}/update"
+        },
+        {
+          "name": "Delete Organization",
+          "slug": "delete-organization",
+          "method": "POST",
+          "path": "/organizations/{id}/delete"
+        },
+        {
+          "name": "Remove Member",
+          "slug": "remove-member",
+          "method": "POST",
+          "path": "/organizations/{id}/members/{memberId}/remove"
+        },
+        {
+          "name": "Add Member Role",
+          "slug": "add-member-role",
+          "method": "POST",
+          "path": "/organizations/{id}/members/{memberId}/roles/{roleId}/add"
+        },
+        {
+          "name": "Remove Member Role",
+          "slug": "remove-member-role",
+          "method": "POST",
+          "path": "/organizations/{id}/members/{memberId}/roles/{roleId}/remove"
+        },
+        {
+          "name": "Leave Organization",
+          "slug": "leave-organization",
+          "method": "POST",
+          "path": "/organizations/{id}/leave"
+        },
+        {
+          "name": "Get Organization Members",
+          "slug": "get-organization-members",
+          "method": "GET",
+          "path": "/organizations/{id}/members"
+        },
+        {
+          "name": "Get Organization Invitations",
+          "slug": "get-organization-invitations",
+          "method": "GET",
+          "path": "/organizations/{id}/invitations"
+        },
+        {
+          "name": "Invite Member",
+          "slug": "invite-member",
+          "method": "POST",
+          "path": "/organizations/{id}/invitations"
+        },
+        {
+          "name": "Discard Invitation",
+          "slug": "discard-invitation",
+          "method": "POST",
+          "path": "/organizations/{id}/invitations/{invitationId}/discard"
+        },
+        {
+          "name": "Resend Invitation",
+          "slug": "resend-invitation",
+          "method": "POST",
+          "path": "/organizations/{id}/invitations/{invitationId}/resend"
+        },
+        {
+          "name": "Create Organization Role",
+          "slug": "create-organization-role",
+          "method": "POST",
+          "path": "/organizations/{id}/roles"
+        },
+        {
+          "name": "Get Organization Roles",
+          "slug": "get-organization-roles",
+          "method": "GET",
+          "path": "/organizations/{id}/roles"
+        },
+        {
+          "name": "Remove Organization Roles",
+          "slug": "remove-organization-roles",
+          "method": "POST",
+          "path": "/organizations/{id}/roles/{roleId}/remove"
+        },
+        {
+          "name": "Get Organization Domains",
+          "slug": "get-organization-domains",
+          "method": "GET",
+          "path": "/organizations/{id}/domains"
+        },
+        {
+          "name": "Add Organization Domain",
+          "slug": "add-organization-domain",
+          "method": "POST",
+          "path": "/organizations/{id}/domains"
+        },
+        {
+          "name": "Verify Organization Domain",
+          "slug": "verify-organization-domain",
+          "method": "POST",
+          "path": "/organizations/{id}/domains/{domainId}/verify"
+        },
+        {
+          "name": "Delete Organization Domain",
+          "slug": "delete-organization-domain",
+          "method": "POST",
+          "path": "/organizations/{id}/domains/{domainId}/delete"
+        },
+        {
+          "name": "Get Enterprise Connections",
+          "slug": "get-enterprise-connections",
+          "method": "GET",
+          "path": "/organizations/{id}/enterprise-connections"
+        },
+        {
+          "name": "Create Enterprise Connection",
+          "slug": "create-enterprise-connection",
+          "method": "POST",
+          "path": "/organizations/{id}/enterprise-connections"
+        },
+        {
+          "name": "Test Enterprise Connection Config",
+          "slug": "test-enterprise-connection-config",
+          "method": "POST",
+          "path": "/organizations/{id}/enterprise-connections/test"
+        },
+        {
+          "name": "Update Enterprise Connection",
+          "slug": "update-enterprise-connection",
+          "method": "POST",
+          "path": "/organizations/{id}/enterprise-connections/{connectionId}/update"
+        },
+        {
+          "name": "Delete Enterprise Connection",
+          "slug": "delete-enterprise-connection",
+          "method": "POST",
+          "path": "/organizations/{id}/enterprise-connections/{connectionId}/delete"
+        },
+        {
+          "name": "Test Enterprise Connection",
+          "slug": "test-enterprise-connection",
+          "method": "POST",
+          "path": "/organizations/{id}/enterprise-connections/{connectionId}/test"
+        },
+        {
+          "name": "Generate S C I M Token",
+          "slug": "generate-s-c-i-m-token",
+          "method": "POST",
+          "path": "/organizations/{id}/enterprise-connections/{connectionId}/scim/token"
+        },
+        {
+          "name": "Get S C I M Token",
+          "slug": "get-s-c-i-m-token",
+          "method": "GET",
+          "path": "/organizations/{id}/enterprise-connections/{connectionId}/scim/token"
+        },
+        {
+          "name": "Revoke S C I M Token",
+          "slug": "revoke-s-c-i-m-token",
+          "method": "POST",
+          "path": "/organizations/{id}/enterprise-connections/{connectionId}/scim/token/revoke"
+        }
+      ]
+    },
+    {
+      "name": "SCIM",
+      "slug": "scim",
+      "operations": [
+        {
+          "name": "Get Service Provider Config",
+          "slug": "get-service-provider-config",
+          "method": "GET",
+          "path": "/scim/v2/{connectionId}/ServiceProviderConfig"
+        },
+        {
+          "name": "Get Schemas",
+          "slug": "get-schemas",
+          "method": "GET",
+          "path": "/scim/v2/{connectionId}/Schemas"
+        },
+        {
+          "name": "Get Resource Types",
+          "slug": "get-resource-types",
+          "method": "GET",
+          "path": "/scim/v2/{connectionId}/ResourceTypes"
+        },
+        {
+          "name": "Create User",
+          "slug": "create-user",
+          "method": "POST",
+          "path": "/scim/v2/{connectionId}/Users"
+        },
+        {
+          "name": "List Users",
+          "slug": "list-users",
+          "method": "GET",
+          "path": "/scim/v2/{connectionId}/Users"
+        },
+        {
+          "name": "Get User",
+          "slug": "get-user",
+          "method": "GET",
+          "path": "/scim/v2/{connectionId}/Users/{userId}"
+        },
+        {
+          "name": "Replace User",
+          "slug": "replace-user",
+          "method": "PUT",
+          "path": "/scim/v2/{connectionId}/Users/{userId}"
+        },
+        {
+          "name": "Patch User",
+          "slug": "patch-user",
+          "method": "PATCH",
+          "path": "/scim/v2/{connectionId}/Users/{userId}"
+        },
+        {
+          "name": "Delete User",
+          "slug": "delete-user",
+          "method": "DELETE",
+          "path": "/scim/v2/{connectionId}/Users/{userId}"
+        },
+        {
+          "name": "Create Group",
+          "slug": "create-group",
+          "method": "POST",
+          "path": "/scim/v2/{connectionId}/Groups"
+        },
+        {
+          "name": "List Groups",
+          "slug": "list-groups",
+          "method": "GET",
+          "path": "/scim/v2/{connectionId}/Groups"
+        },
+        {
+          "name": "Get Group",
+          "slug": "get-group",
+          "method": "GET",
+          "path": "/scim/v2/{connectionId}/Groups/{groupId}"
+        },
+        {
+          "name": "Replace Group",
+          "slug": "replace-group",
+          "method": "PUT",
+          "path": "/scim/v2/{connectionId}/Groups/{groupId}"
+        },
+        {
+          "name": "Patch Group",
+          "slug": "patch-group",
+          "method": "PATCH",
+          "path": "/scim/v2/{connectionId}/Groups/{groupId}"
+        },
+        {
+          "name": "Delete Group",
+          "slug": "delete-group",
+          "method": "DELETE",
+          "path": "/scim/v2/{connectionId}/Groups/{groupId}"
+        }
+      ]
+    },
+    {
+      "name": "Session",
+      "slug": "session",
+      "operations": [
+        {
+          "name": "Get Current Session",
+          "slug": "get-current-session",
+          "method": "GET",
+          "path": "/session"
+        },
+        {
+          "name": "Get Token",
+          "slug": "get-token",
+          "method": "GET",
+          "path": "/session/token"
+        },
+        {
+          "name": "Switch Active Sign In",
+          "slug": "switch-active-sign-in",
+          "method": "POST",
+          "path": "/session/switch-sign-in"
+        },
+        {
+          "name": "Sign Out",
+          "slug": "sign-out",
+          "method": "POST",
+          "path": "/session/sign-out"
+        },
+        {
+          "name": "Switch Organization",
+          "slug": "switch-organization",
+          "method": "POST",
+          "path": "/session/switch-organization"
+        },
+        {
+          "name": "Switch Workspace",
+          "slug": "switch-workspace",
+          "method": "POST",
+          "path": "/session/switch-workspace"
+        },
+        {
+          "name": "Exchange Ticket",
+          "slug": "exchange-ticket",
+          "method": "GET",
+          "path": "/session/ticket/exchange"
+        }
+      ]
+    },
+    {
+      "name": "Waitlist",
+      "slug": "waitlist",
+      "operations": [
+        {
+          "name": "Join Waitlist",
+          "slug": "join-waitlist",
+          "method": "POST",
+          "path": "/waitlist/join"
+        }
+      ]
+    },
+    {
+      "name": "Webhook",
+      "slug": "webhook",
+      "operations": [
+        {
+          "name": "Get Session",
+          "slug": "get-session",
+          "method": "GET",
+          "path": "/webhook/session"
+        },
+        {
+          "name": "Get Settings",
+          "slug": "get-settings",
+          "method": "GET",
+          "path": "/webhook/settings"
+        },
+        {
+          "name": "Update Settings",
+          "slug": "update-settings",
+          "method": "PUT",
+          "path": "/webhook/settings"
+        },
+        {
+          "name": "Get Endpoints",
+          "slug": "get-endpoints",
+          "method": "GET",
+          "path": "/webhook/endpoints"
+        },
+        {
+          "name": "Create Endpoint",
+          "slug": "create-endpoint",
+          "method": "POST",
+          "path": "/webhook/endpoints"
+        },
+        {
+          "name": "Update Endpoint",
+          "slug": "update-endpoint",
+          "method": "PUT",
+          "path": "/webhook/endpoints/{id}"
+        },
+        {
+          "name": "Delete Endpoint",
+          "slug": "delete-endpoint",
+          "method": "DELETE",
+          "path": "/webhook/endpoints/{id}"
+        },
+        {
+          "name": "Test Endpoint",
+          "slug": "test-endpoint",
+          "method": "POST",
+          "path": "/webhook/endpoints/{id}/test"
+        },
+        {
+          "name": "Get Events",
+          "slug": "get-events",
+          "method": "GET",
+          "path": "/webhook/events"
+        },
+        {
+          "name": "Get Deliveries",
+          "slug": "get-deliveries",
+          "method": "GET",
+          "path": "/webhook/deliveries"
+        },
+        {
+          "name": "List Replay Tasks",
+          "slug": "list-replay-tasks",
+          "method": "GET",
+          "path": "/webhook/deliveries/replay"
+        },
+        {
+          "name": "Replay Delivery",
+          "slug": "replay-delivery",
+          "method": "POST",
+          "path": "/webhook/deliveries/replay"
+        },
+        {
+          "name": "Get Replay Task Status",
+          "slug": "get-replay-task-status",
+          "method": "GET",
+          "path": "/webhook/deliveries/replay/{task_id}"
+        },
+        {
+          "name": "Cancel Replay Task",
+          "slug": "cancel-replay-task",
+          "method": "POST",
+          "path": "/webhook/deliveries/replay/{task_id}/cancel"
+        },
+        {
+          "name": "Get Delivery",
+          "slug": "get-delivery",
+          "method": "GET",
+          "path": "/webhook/deliveries/{id}"
+        },
+        {
+          "name": "Get Analytics",
+          "slug": "get-analytics",
+          "method": "GET",
+          "path": "/webhook/analytics"
+        },
+        {
+          "name": "Get Timeseries",
+          "slug": "get-timeseries",
+          "method": "GET",
+          "path": "/webhook/analytics/timeseries"
+        },
+        {
+          "name": "Get Stats",
+          "slug": "get-stats",
+          "method": "GET",
+          "path": "/webhook/stats"
+        },
+        {
+          "name": "Get Catalog",
+          "slug": "get-catalog",
+          "method": "GET",
+          "path": "/webhook/catalog"
+        },
+        {
+          "name": "Rotate Secret",
+          "slug": "rotate-secret",
+          "method": "POST",
+          "path": "/webhook/rotate-secret"
+        }
+      ]
+    },
+    {
+      "name": "Well Known",
+      "slug": "well-known",
+      "operations": [
+        {
+          "name": "Get Metadata",
+          "slug": "get-metadata",
+          "method": "GET",
+          "path": "/.well-known/meta"
+        },
+        {
+          "name": "Get Jwk",
+          "slug": "get-jwk",
+          "method": "GET",
+          "path": "/.well-known/jwk"
+        },
+        {
+          "name": "Get Jwks",
+          "slug": "get-jwks",
+          "method": "GET",
+          "path": "/.well-known/jwks.json"
+        }
+      ]
+    },
+    {
+      "name": "Workspaces",
+      "slug": "workspaces",
+      "operations": [
+        {
+          "name": "Create Workspace",
+          "slug": "create-workspace",
+          "method": "POST",
+          "path": "/workspaces"
+        },
+        {
+          "name": "Update Workspace",
+          "slug": "update-workspace",
+          "method": "POST",
+          "path": "/workspaces/{id}/update"
+        },
+        {
+          "name": "Delete Workspace",
+          "slug": "delete-workspace",
+          "method": "POST",
+          "path": "/workspaces/{id}/delete"
+        },
+        {
+          "name": "Get Workspace Members",
+          "slug": "get-workspace-members",
+          "method": "GET",
+          "path": "/workspaces/{id}/members"
+        },
+        {
+          "name": "Remove Member",
+          "slug": "remove-member",
+          "method": "POST",
+          "path": "/workspaces/{id}/members/{memberId}/remove"
+        },
+        {
+          "name": "Get Workspace Roles",
+          "slug": "get-workspace-roles",
+          "method": "GET",
+          "path": "/workspaces/{id}/roles"
+        },
+        {
+          "name": "Create Workspace Role",
+          "slug": "create-workspace-role",
+          "method": "POST",
+          "path": "/workspaces/{id}/roles"
+        },
+        {
+          "name": "Delete Workspace Role",
+          "slug": "delete-workspace-role",
+          "method": "POST",
+          "path": "/workspaces/{id}/roles/{roleId}/delete"
+        },
+        {
+          "name": "Add Workspace Member Role",
+          "slug": "add-workspace-member-role",
+          "method": "POST",
+          "path": "/workspaces/{id}/members/{membershipId}/roles/{roleId}/add"
+        },
+        {
+          "name": "Remove Workspace Member Role",
+          "slug": "remove-workspace-member-role",
+          "method": "POST",
+          "path": "/workspaces/{id}/members/{membershipId}/roles/{roleId}/remove"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+---
+title: Fartify
+description: End-to-end Fastify integration with @wacht/backend auth guards and typed backend operations.
+---
+
+Use this setup to run a Fastify admin service with a reusable guard pipeline and typed backend access, covering `preHandler` auth verification, permission enforcement, backend API calls, and explicit auth/error handling.
+
+## Project structure
+
+<FileTree title="Fartify Service">
+{`src/
+    server.ts
+    plugins/
+      wacht-auth.ts
+    routes/
+      organizations.ts`}
+</FileTree>
+
+## 1. Server bootstrap
+
+```ts title="src/server.ts"
+import Fastify from 'fastify';
+import { initClient } from '@wacht/backend';
+import { organizationsRoutes } from './routes/organizations';
+import { wachtAuthPlugin } from './plugins/wacht-auth';
+
+initClient({
+  apiKey: process.env.WACHT_API_KEY!,
+  baseUrl: process.env.WACHT_BACKEND_API_URL,
+});
+
+const app = Fastify({ logger: true });
+await app.register(wachtAuthPlugin);
+await app.register(organizationsRoutes, { prefix: '/admin/organizations' });
+
+await app.listen({ port: 3000, host: '0.0.0.0' });
+```
+
+## 2. Auth plugin (request decoration + guard)
+
+```ts title="src/plugins/wacht-auth.ts"
+import fp from 'fastify-plugin';
+import { getAuthFromToken, type WachtAuth, WachtAuthError } from '@wacht/backend';
+
+declare module 'fastify' {
+  interface FastifyRequest {
+    wachtAuth?: WachtAuth;
+  }
+  interface FastifyInstance {
+    requireWachtPermission: (permission?: string | string[]) => unknown;
+  }
+}
+
+function extractToken(header?: string): string | null {
+  if (!header || !header.startsWith('Bearer ')) return null;
+  const token = header.slice(7).trim();
+  return token.length > 0 ? token : null;
+}
+
+export const wachtAuthPlugin = fp(async (app) => {
+  app.decorate('requireWachtPermission', (permission?: string | string[]) => {
+    return async (request: any, reply: any) => {
+      try {
+        const token = extractToken(request.headers.authorization);
+        const auth = await getAuthFromToken(token);
+        await auth.protect({ permission });
+        request.wachtAuth = auth;
+      } catch (error) {
+        if (error instanceof WachtAuthError) {
+          return reply.status(error.status).send({
+            error: error.code,
+            message: error.message,
+            redirect_url: error.redirectUrl ?? null,
+          });
+        }
+        return reply.status(500).send({ error: 'internal_error' });
+      }
+    };
+  });
+});
+```
+
+## 3. Protected routes
+
+```ts title="src/routes/organizations.ts"
+import type { FastifyPluginAsync } from 'fastify';
+import { organizations } from '@wacht/backend';
+
+export const organizationsRoutes: FastifyPluginAsync = async (app) => {
+  app.get(
+    '/',
+    { preHandler: app.requireWachtPermission('organization:read') },
+    async () => organizations.listOrganizations({ limit: 20 }),
+  );
+
+  app.patch(
+    '/:organizationId',
+    { preHandler: app.requireWachtPermission('organization:update') },
+    async (request: any) => {
+      return organizations.updateOrganization(request.params.organizationId, request.body);
+    },
+  );
+};
+```
+
+## 4. API key/OAuth protected auth for machine tokens
+
+```ts title="src/routes/machine-organizations.ts"
+import type { FastifyPluginAsync } from 'fastify';
+import { gateway, organizations } from '@wacht/backend';
+
+export const machineOrganizationRoutes: FastifyPluginAsync = async (app) => {
+  app.get('/machine/organizations', async (request, reply) => {
+    const apiKey = request.headers['x-api-key'];
+    const decision = await gateway.checkPrincipalAuthz({
+      principalType: 'api_key',
+      principalValue: typeof apiKey === 'string' ? apiKey : '',
+      resource: '/machine/organizations',
+      method: 'GET',
+      requiredPermissions: ['organization:read'],
+    });
+
+    if (!decision.allowed) {
+      return reply.status(403).send({ error: 'forbidden' });
+    }
+
+    return organizations.listOrganizations({ limit: 20 });
+  });
+};
+```
+
+## Best practices
+
+- Use `preHandler` for guards so handlers stay business-only.
+- Decorate request with normalized auth state once.
+- Keep one shared SDK client initialized for the process.
+- In Node.js, publishable key options can be omitted when env vars are configured.
+- Use API key/OAuth protected checks for machine-token endpoints.
+- Custom `gatewayUrl` host override is available on Enterprise plans.
+- Keep auth failures structured and machine-readable.

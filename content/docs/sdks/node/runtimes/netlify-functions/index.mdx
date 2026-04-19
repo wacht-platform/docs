@@ -1,0 +1,76 @@
+---
+title: Netlify Functions Overview
+description: Build protected Netlify Function endpoints with @wacht/backend.
+---
+
+Netlify Functions expose standard `Request` handlers, so you can use `authenticateRequest()` directly.
+
+## 1. Function layout
+
+<FileTree title="Netlify Function">
+{`netlify/
+    functions/
+      admin-users.ts`}
+</FileTree>
+
+## 2. End-to-end function
+
+```ts title="netlify/functions/admin-users.ts"
+import { authenticateRequest, initClient, users } from '@wacht/backend';
+
+export default async (request: Request, context: { env: Record<string, string> }) => {
+  initClient({
+    apiKey: context.env.WACHT_API_KEY,
+    baseUrl: context.env.WACHT_BACKEND_API_URL,
+  });
+
+  const { auth } = await authenticateRequest(request, {
+    publishableKey: context.env.WACHT_PUBLISHABLE_KEY,
+  });
+  await auth.protect({ permission: 'user:read' });
+
+  const page = await users.listUsers({ limit: 20 });
+  return new Response(JSON.stringify(page), {
+    headers: { 'content-type': 'application/json' },
+  });
+};
+```
+
+## 3. API key/OAuth protected auth for machine-token endpoints
+
+```ts
+import { gateway, users } from '@wacht/backend';
+
+export async function machineUsers(request: Request, context: { env: Record<string, string> }) {
+  const apiKey = request.headers.get('x-api-key') || '';
+
+  const decision = await gateway.checkPrincipalAuthz(
+    {
+      principalType: 'api_key',
+      principalValue: apiKey,
+      resource: '/machine/users',
+      method: 'GET',
+      requiredPermissions: ['user:read'],
+    },
+  );
+
+  if (!decision.allowed) {
+    return new Response(JSON.stringify({ error: 'forbidden' }), {
+      status: 403,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  return new Response(JSON.stringify(await users.listUsers({ limit: 20 })), {
+    headers: { 'content-type': 'application/json' },
+  });
+}
+```
+
+## 4. Operational guidance
+
+- Keep function latency predictable by avoiding repeated expensive setup outside `initClient`.
+- Return typed JSON error responses for auth failures.
+- Preserve authorization headers through any Netlify edge routing layer.
+- Log authorization `request_id` for denied machine-token decisions.
+- `gatewayUrl` is optional; custom host overrides are available on Enterprise plans.

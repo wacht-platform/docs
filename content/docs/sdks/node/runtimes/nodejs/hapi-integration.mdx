@@ -1,0 +1,119 @@
+---
+title: Hapi
+description: Integrate @wacht/backend in Hapi with route pre-handlers and permission guards.
+---
+
+This Hapi guide covers a full admin-service flow using pre-handlers, permission checks, and typed backend API calls.
+
+## Project structure
+
+<FileTree title="Hapi Admin Service">
+{`src/
+    server.ts
+    auth/
+      require-permission.ts
+    routes/
+      organizations.ts`}
+</FileTree>
+
+## 1. Bootstrap server + client
+
+```ts title="src/server.ts"
+import Hapi from '@hapi/hapi';
+import { initClient } from '@wacht/backend';
+import { registerOrganizationRoutes } from './routes/organizations';
+
+initClient({
+  apiKey: process.env.WACHT_API_KEY!,
+  baseUrl: process.env.WACHT_BACKEND_API_URL,
+});
+
+const server = Hapi.server({ port: 3000, host: '0.0.0.0' });
+registerOrganizationRoutes(server);
+
+export { server };
+```
+
+## 2. Auth pre-handler
+
+```ts title="src/auth/require-permission.ts"
+import type Hapi from '@hapi/hapi';
+import { getAuthFromToken } from '@wacht/backend';
+
+async function requirePermission(request: Hapi.Request, h: Hapi.ResponseToolkit, permission: string) {
+  const authz = request.headers.authorization;
+  const token =
+    authz && authz.startsWith('Bearer ') ? authz.slice(7).trim() : null;
+
+  const auth = await getAuthFromToken(token);
+
+  try {
+    await auth.protect({ permission });
+  } catch {
+    return h.response({ error: 'forbidden' }).code(403).takeover();
+  }
+
+  (request.app as any).wachtAuth = auth;
+  return h.continue;
+}
+
+export { requirePermission };
+```
+
+## 3. Protected route
+
+```ts title="src/routes/organizations.ts"
+import type Hapi from '@hapi/hapi';
+import { organizations } from '@wacht/backend';
+import { requirePermission } from '../auth/require-permission';
+
+export function registerOrganizationRoutes(server: Hapi.Server) {
+  server.route({
+    method: 'GET',
+    path: '/admin/organizations',
+    options: {
+      pre: [{ method: (req, h) => requirePermission(req, h, 'organization:read') }],
+    },
+    handler: async () => organizations.listOrganizations({ limit: 20 }),
+  });
+}
+```
+
+## 4. API key/OAuth protected auth route for machine tokens
+
+```ts title="src/routes/machine-organizations.ts"
+import type Hapi from '@hapi/hapi';
+import { gateway, organizations } from '@wacht/backend';
+
+export function registerMachineOrganizationRoutes(server: Hapi.Server) {
+  server.route({
+    method: 'GET',
+    path: '/machine/organizations',
+    handler: async (request, h) => {
+      const apiKey = request.headers['x-api-key'];
+      const decision = await gateway.checkPrincipalAuthz({
+        principalType: 'api_key',
+        principalValue: typeof apiKey === 'string' ? apiKey : '',
+        resource: '/machine/organizations',
+        method: 'GET',
+        requiredPermissions: ['organization:read'],
+      });
+
+      if (!decision.allowed) {
+        return h.response({ error: 'forbidden' }).code(403);
+      }
+
+      return organizations.listOrganizations({ limit: 20 });
+    },
+  });
+}
+```
+
+## Best practices
+
+- Use `options.pre` for guard logic and keep handlers business-only.
+- Store normalized auth context on `request.app`.
+- In Node.js, publishable key can be resolved from env automatically.
+- Use API key/OAuth protected checks for machine-token endpoints.
+- Custom `gatewayUrl` host override is available on Enterprise plans.
+- Keep permission strings centralized for consistency.

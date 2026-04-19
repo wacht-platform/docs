@@ -1,0 +1,1360 @@
+{
+  "tags": [
+    {
+      "name": "AI",
+      "slug": "ai",
+      "operations": [
+        {
+          "name": "Get Ai Agents",
+          "slug": "get-ai-agents",
+          "method": "GET",
+          "path": "/ai/agents"
+        },
+        {
+          "name": "Create Ai Agent",
+          "slug": "create-ai-agent",
+          "method": "POST",
+          "path": "/ai/agents"
+        },
+        {
+          "name": "Get Ai Agent By Id",
+          "slug": "get-ai-agent-by-id",
+          "method": "GET",
+          "path": "/ai/agents/{agent_id}"
+        },
+        {
+          "name": "Update Ai Agent",
+          "slug": "update-ai-agent",
+          "method": "PATCH",
+          "path": "/ai/agents/{agent_id}"
+        },
+        {
+          "name": "Delete Ai Agent",
+          "slug": "delete-ai-agent",
+          "method": "DELETE",
+          "path": "/ai/agents/{agent_id}"
+        },
+        {
+          "name": "Get Ai Agent Details",
+          "slug": "get-ai-agent-details",
+          "method": "GET",
+          "path": "/ai/agents/{agent_id}/details"
+        },
+        {
+          "name": "Import Agent Skill Bundle",
+          "slug": "import-agent-skill-bundle",
+          "method": "POST",
+          "path": "/ai/agents/{agent_id}/skills"
+        },
+        {
+          "name": "Delete Agent Skill",
+          "slug": "delete-agent-skill",
+          "method": "DELETE",
+          "path": "/ai/agents/{agent_id}/skills/{skill_slug}"
+        },
+        {
+          "name": "List Skill Tree",
+          "slug": "list-skill-tree",
+          "method": "GET",
+          "path": "/ai/agents/{agent_id}/skills/tree"
+        },
+        {
+          "name": "Read Skill File",
+          "slug": "read-skill-file",
+          "method": "GET",
+          "path": "/ai/agents/{agent_id}/skills/file"
+        },
+        {
+          "name": "Get Agent Sub Agents",
+          "slug": "get-agent-sub-agents",
+          "method": "GET",
+          "path": "/ai/agents/{agent_id}/sub-agents"
+        },
+        {
+          "name": "Attach Sub Agent To Agent",
+          "slug": "attach-sub-agent-to-agent",
+          "method": "POST",
+          "path": "/ai/agents/{agent_id}/sub-agents/{sub_agent_id}"
+        },
+        {
+          "name": "Detach Sub Agent From Agent",
+          "slug": "detach-sub-agent-from-agent",
+          "method": "DELETE",
+          "path": "/ai/agents/{agent_id}/sub-agents/{sub_agent_id}"
+        },
+        {
+          "name": "Get Ai Tools",
+          "slug": "get-ai-tools",
+          "method": "GET",
+          "path": "/ai/tools"
+        },
+        {
+          "name": "Create Ai Tool",
+          "slug": "create-ai-tool",
+          "method": "POST",
+          "path": "/ai/tools"
+        },
+        {
+          "name": "Get Ai Tool By Id",
+          "slug": "get-ai-tool-by-id",
+          "method": "GET",
+          "path": "/ai/tools/{tool_id}"
+        },
+        {
+          "name": "Update Ai Tool",
+          "slug": "update-ai-tool",
+          "method": "PATCH",
+          "path": "/ai/tools/{tool_id}"
+        },
+        {
+          "name": "Delete Ai Tool",
+          "slug": "delete-ai-tool",
+          "method": "DELETE",
+          "path": "/ai/tools/{tool_id}"
+        },
+        {
+          "name": "Get Agent Tools",
+          "slug": "get-agent-tools",
+          "method": "GET",
+          "path": "/ai/agents/{agent_id}/tools"
+        },
+        {
+          "name": "Attach Tool To Agent",
+          "slug": "attach-tool-to-agent",
+          "method": "POST",
+          "path": "/ai/agents/{agent_id}/tools/{tool_id}"
+        },
+        {
+          "name": "Detach Tool From Agent",
+          "slug": "detach-tool-from-agent",
+          "method": "DELETE",
+          "path": "/ai/agents/{agent_id}/tools/{tool_id}"
+        },
+        {
+          "name": "Get Ai Knowledge Bases",
+          "slug": "get-ai-knowledge-bases",
+          "method": "GET",
+          "path": "/ai/knowledge-bases"
+        },
+        {
+          "name": "Create Ai Knowledge Base",
+          "slug": "create-ai-knowledge-base",
+          "method": "POST",
+          "path": "/ai/knowledge-bases"
+        },
+        {
+          "name": "Get Ai Knowledge Base By Id",
+          "slug": "get-ai-knowledge-base-by-id",
+          "method": "GET",
+          "path": "/ai/knowledge-bases/{kb_id}"
+        },
+        {
+          "name": "Update Ai Knowledge Base",
+          "slug": "update-ai-knowledge-base",
+          "method": "PATCH",
+          "path": "/ai/knowledge-bases/{kb_id}"
+        },
+        {
+          "name": "Delete Ai Knowledge Base",
+          "slug": "delete-ai-knowledge-base",
+          "method": "DELETE",
+          "path": "/ai/knowledge-bases/{kb_id}"
+        },
+        {
+          "name": "Get Knowledge Base Documents",
+          "slug": "get-knowledge-base-documents",
+          "method": "GET",
+          "path": "/ai/knowledge-bases/{kb_id}/documents"
+        },
+        {
+          "name": "Upload Knowledge Base Document",
+          "slug": "upload-knowledge-base-document",
+          "method": "POST",
+          "path": "/ai/knowledge-bases/{kb_id}/documents"
+        },
+        {
+          "name": "Delete Knowledge Base Document",
+          "slug": "delete-knowledge-base-document",
+          "method": "DELETE",
+          "path": "/ai/knowledge-bases/{kb_id}/documents/{document_id}"
+        },
+        {
+          "name": "Get Mcp Servers",
+          "slug": "get-mcp-servers",
+          "method": "GET",
+          "path": "/ai/mcp-servers"
+        },
+        {
+          "name": "Create Mcp Server",
+          "slug": "create-mcp-server",
+          "method": "POST",
+          "path": "/ai/mcp-servers"
+        },
+        {
+          "name": "Discover Mcp Server Auth",
+          "slug": "discover-mcp-server-auth",
+          "method": "POST",
+          "path": "/ai/mcp-servers/discover"
+        },
+        {
+          "name": "Get Mcp Server By Id",
+          "slug": "get-mcp-server-by-id",
+          "method": "GET",
+          "path": "/ai/mcp-servers/{mcp_server_id}"
+        },
+        {
+          "name": "Update Mcp Server",
+          "slug": "update-mcp-server",
+          "method": "PATCH",
+          "path": "/ai/mcp-servers/{mcp_server_id}"
+        },
+        {
+          "name": "Delete Mcp Server",
+          "slug": "delete-mcp-server",
+          "method": "DELETE",
+          "path": "/ai/mcp-servers/{mcp_server_id}"
+        },
+        {
+          "name": "Get Agent Knowledge Bases",
+          "slug": "get-agent-knowledge-bases",
+          "method": "GET",
+          "path": "/ai/agents/{agent_id}/knowledge-bases"
+        },
+        {
+          "name": "Attach Knowledge Base To Agent",
+          "slug": "attach-knowledge-base-to-agent",
+          "method": "POST",
+          "path": "/ai/agents/{agent_id}/knowledge-bases/{kb_id}"
+        },
+        {
+          "name": "Detach Knowledge Base From Agent",
+          "slug": "detach-knowledge-base-from-agent",
+          "method": "DELETE",
+          "path": "/ai/agents/{agent_id}/knowledge-bases/{kb_id}"
+        },
+        {
+          "name": "Get Ai Settings",
+          "slug": "get-ai-settings",
+          "method": "GET",
+          "path": "/ai/settings"
+        },
+        {
+          "name": "Update Ai Settings",
+          "slug": "update-ai-settings",
+          "method": "PUT",
+          "path": "/ai/settings"
+        },
+        {
+          "name": "List Actor Projects Flat",
+          "slug": "list-actor-projects-flat",
+          "method": "GET",
+          "path": "/ai/actor-projects"
+        },
+        {
+          "name": "Create Actor Project Flat",
+          "slug": "create-actor-project-flat",
+          "method": "POST",
+          "path": "/ai/actor-projects"
+        },
+        {
+          "name": "Search Actor Projects",
+          "slug": "search-actor-projects",
+          "method": "GET",
+          "path": "/ai/actor-projects/search"
+        },
+        {
+          "name": "List Actor Mcp Servers",
+          "slug": "list-actor-mcp-servers",
+          "method": "GET",
+          "path": "/ai/actor-mcp-servers"
+        },
+        {
+          "name": "Connect Actor Mcp Server",
+          "slug": "connect-actor-mcp-server",
+          "method": "POST",
+          "path": "/ai/actor-mcp-servers/{mcp_server_id}/connect"
+        },
+        {
+          "name": "Disconnect Actor Mcp Server",
+          "slug": "disconnect-actor-mcp-server",
+          "method": "POST",
+          "path": "/ai/actor-mcp-servers/{mcp_server_id}/disconnect"
+        },
+        {
+          "name": "Get Actor Project By Id",
+          "slug": "get-actor-project-by-id",
+          "method": "GET",
+          "path": "/ai/actor-projects/{project_id}"
+        },
+        {
+          "name": "Update Actor Project",
+          "slug": "update-actor-project",
+          "method": "POST",
+          "path": "/ai/actor-projects/{project_id}/update"
+        },
+        {
+          "name": "Archive Actor Project",
+          "slug": "archive-actor-project",
+          "method": "POST",
+          "path": "/ai/actor-projects/{project_id}/archive"
+        },
+        {
+          "name": "Unarchive Actor Project",
+          "slug": "unarchive-actor-project",
+          "method": "POST",
+          "path": "/ai/actor-projects/{project_id}/unarchive"
+        },
+        {
+          "name": "Get Project Task Board By Project Id",
+          "slug": "get-project-task-board-by-project-id",
+          "method": "GET",
+          "path": "/ai/actor-projects/{project_id}/board"
+        },
+        {
+          "name": "List Project Task Board Items",
+          "slug": "list-project-task-board-items",
+          "method": "GET",
+          "path": "/ai/actor-projects/{project_id}/board/items"
+        },
+        {
+          "name": "Create Project Task Board Item",
+          "slug": "create-project-task-board-item",
+          "method": "POST",
+          "path": "/ai/actor-projects/{project_id}/board/items"
+        },
+        {
+          "name": "Get Project Task Board Item By Id",
+          "slug": "get-project-task-board-item-by-id",
+          "method": "GET",
+          "path": "/ai/actor-projects/{project_id}/board/items/{item_id}"
+        },
+        {
+          "name": "List Project Task Board Item Events",
+          "slug": "list-project-task-board-item-events",
+          "method": "GET",
+          "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/events"
+        },
+        {
+          "name": "List Project Task Board Item Assignments",
+          "slug": "list-project-task-board-item-assignments",
+          "method": "GET",
+          "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/assignments"
+        },
+        {
+          "name": "List Project Task Board Item Filesystem",
+          "slug": "list-project-task-board-item-filesystem",
+          "method": "GET",
+          "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/filesystem"
+        },
+        {
+          "name": "Get Project Task Board Item Filesystem File",
+          "slug": "get-project-task-board-item-filesystem-file",
+          "method": "GET",
+          "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/filesystem/file"
+        },
+        {
+          "name": "Append Project Task Board Item Journal",
+          "slug": "append-project-task-board-item-journal",
+          "method": "POST",
+          "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/journal"
+        },
+        {
+          "name": "Update Project Task Board Item",
+          "slug": "update-project-task-board-item",
+          "method": "POST",
+          "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/update"
+        },
+        {
+          "name": "Archive Project Task Board Item",
+          "slug": "archive-project-task-board-item",
+          "method": "POST",
+          "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/archive"
+        },
+        {
+          "name": "Unarchive Project Task Board Item",
+          "slug": "unarchive-project-task-board-item",
+          "method": "POST",
+          "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/unarchive"
+        },
+        {
+          "name": "List Agent Threads",
+          "slug": "list-agent-threads",
+          "method": "GET",
+          "path": "/ai/actor-projects/{project_id}/threads"
+        },
+        {
+          "name": "Create Agent Thread",
+          "slug": "create-agent-thread",
+          "method": "POST",
+          "path": "/ai/actor-projects/{project_id}/threads"
+        },
+        {
+          "name": "Search Actor Project Threads",
+          "slug": "search-actor-project-threads",
+          "method": "GET",
+          "path": "/ai/actor-project-threads/search"
+        },
+        {
+          "name": "Get Agent Thread By Id",
+          "slug": "get-agent-thread-by-id",
+          "method": "GET",
+          "path": "/ai/actor-project-threads/{thread_id}"
+        },
+        {
+          "name": "Update Agent Thread",
+          "slug": "update-agent-thread",
+          "method": "POST",
+          "path": "/ai/actor-project-threads/{thread_id}/update"
+        },
+        {
+          "name": "Archive Agent Thread",
+          "slug": "archive-agent-thread",
+          "method": "POST",
+          "path": "/ai/actor-project-threads/{thread_id}/archive"
+        },
+        {
+          "name": "Unarchive Agent Thread",
+          "slug": "unarchive-agent-thread",
+          "method": "POST",
+          "path": "/ai/actor-project-threads/{thread_id}/unarchive"
+        },
+        {
+          "name": "List Pending Thread Events",
+          "slug": "list-pending-thread-events",
+          "method": "GET",
+          "path": "/ai/actor-project-threads/{thread_id}/events"
+        },
+        {
+          "name": "List Assignments For Thread",
+          "slug": "list-assignments-for-thread",
+          "method": "GET",
+          "path": "/ai/actor-project-threads/{thread_id}/assignments"
+        },
+        {
+          "name": "Get Latest Thread Task Graph",
+          "slug": "get-latest-thread-task-graph",
+          "method": "GET",
+          "path": "/ai/actor-project-threads/{thread_id}/task-graphs"
+        },
+        {
+          "name": "Get Agent Thread Messages",
+          "slug": "get-agent-thread-messages",
+          "method": "GET",
+          "path": "/ai/actor-project-threads/{thread_id}/messages"
+        },
+        {
+          "name": "List Agent Thread Filesystem",
+          "slug": "list-agent-thread-filesystem",
+          "method": "GET",
+          "path": "/ai/actor-project-threads/{thread_id}/filesystem"
+        },
+        {
+          "name": "Get Agent Thread Filesystem File",
+          "slug": "get-agent-thread-filesystem-file",
+          "method": "GET",
+          "path": "/ai/actor-project-threads/{thread_id}/filesystem/file"
+        },
+        {
+          "name": "Execute Agent Thread Async",
+          "slug": "execute-agent-thread-async",
+          "method": "POST",
+          "path": "/ai/actor-project-threads/{thread_id}/run"
+        },
+        {
+          "name": "Create Actor",
+          "slug": "create-actor",
+          "method": "POST",
+          "path": "/ai/actors"
+        }
+      ]
+    },
+    {
+      "name": "API Auth",
+      "slug": "api-auth",
+      "operations": [
+        {
+          "name": "List Api Auth Apps",
+          "slug": "list-api-auth-apps",
+          "method": "GET",
+          "path": "/api-auth/apps"
+        },
+        {
+          "name": "Create Api Auth App",
+          "slug": "create-api-auth-app",
+          "method": "POST",
+          "path": "/api-auth/apps"
+        },
+        {
+          "name": "Get Api Auth App",
+          "slug": "get-api-auth-app",
+          "method": "GET",
+          "path": "/api-auth/apps/{app_slug}"
+        },
+        {
+          "name": "Update Api Auth App",
+          "slug": "update-api-auth-app",
+          "method": "PATCH",
+          "path": "/api-auth/apps/{app_slug}"
+        },
+        {
+          "name": "Delete Api Auth App",
+          "slug": "delete-api-auth-app",
+          "method": "DELETE",
+          "path": "/api-auth/apps/{app_slug}"
+        },
+        {
+          "name": "List Rate Limit Schemes",
+          "slug": "list-rate-limit-schemes",
+          "method": "GET",
+          "path": "/api-auth/rate-limit-schemes"
+        },
+        {
+          "name": "Create Rate Limit Scheme",
+          "slug": "create-rate-limit-scheme",
+          "method": "POST",
+          "path": "/api-auth/rate-limit-schemes"
+        },
+        {
+          "name": "Get Rate Limit Scheme",
+          "slug": "get-rate-limit-scheme",
+          "method": "GET",
+          "path": "/api-auth/rate-limit-schemes/{slug}"
+        },
+        {
+          "name": "Update Rate Limit Scheme",
+          "slug": "update-rate-limit-scheme",
+          "method": "PATCH",
+          "path": "/api-auth/rate-limit-schemes/{slug}"
+        },
+        {
+          "name": "Delete Rate Limit Scheme",
+          "slug": "delete-rate-limit-scheme",
+          "method": "DELETE",
+          "path": "/api-auth/rate-limit-schemes/{slug}"
+        },
+        {
+          "name": "List Api Keys",
+          "slug": "list-api-keys",
+          "method": "GET",
+          "path": "/api-auth/apps/{app_slug}/keys"
+        },
+        {
+          "name": "Create Api Key",
+          "slug": "create-api-key",
+          "method": "POST",
+          "path": "/api-auth/apps/{app_slug}/keys"
+        },
+        {
+          "name": "Revoke Api Key For App",
+          "slug": "revoke-api-key-for-app",
+          "method": "POST",
+          "path": "/api-auth/apps/{app_slug}/keys/{key_id}/revoke"
+        },
+        {
+          "name": "Rotate Api Key For App",
+          "slug": "rotate-api-key-for-app",
+          "method": "POST",
+          "path": "/api-auth/apps/{app_slug}/keys/{key_id}/rotate"
+        },
+        {
+          "name": "Get Api Audit Logs",
+          "slug": "get-api-audit-logs",
+          "method": "GET",
+          "path": "/api-auth/apps/{app_slug}/audit/logs"
+        },
+        {
+          "name": "Get Api Audit Analytics",
+          "slug": "get-api-audit-analytics",
+          "method": "GET",
+          "path": "/api-auth/apps/{app_slug}/audit/analytics"
+        },
+        {
+          "name": "Get Api Audit Timeseries",
+          "slug": "get-api-audit-timeseries",
+          "method": "GET",
+          "path": "/api-auth/apps/{app_slug}/audit/timeseries"
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "slug": "analytics",
+      "operations": [
+        {
+          "name": "Get Analytics Stats",
+          "slug": "get-analytics-stats",
+          "method": "GET",
+          "path": "/analytics"
+        }
+      ]
+    },
+    {
+      "name": "Default",
+      "slug": "default",
+      "operations": [
+        {
+          "name": "Get Deployment With Settings",
+          "slug": "get-deployment-with-settings",
+          "method": "GET",
+          "path": "/"
+        }
+      ]
+    },
+    {
+      "name": "Invitations",
+      "slug": "invitations",
+      "operations": [
+        {
+          "name": "Get Invited User List",
+          "slug": "get-invited-user-list",
+          "method": "GET",
+          "path": "/invitations"
+        },
+        {
+          "name": "Invite User",
+          "slug": "invite-user",
+          "method": "POST",
+          "path": "/invitations"
+        },
+        {
+          "name": "Delete Invitation",
+          "slug": "delete-invitation",
+          "method": "DELETE",
+          "path": "/invitations/{invitation_id}"
+        }
+      ]
+    },
+    {
+      "name": "JWT Templates",
+      "slug": "jwt-templates",
+      "operations": [
+        {
+          "name": "Get Deployment Jwt Templates",
+          "slug": "get-deployment-jwt-templates",
+          "method": "GET",
+          "path": "/jwt-templates"
+        },
+        {
+          "name": "Create Deployment Jwt Template",
+          "slug": "create-deployment-jwt-template",
+          "method": "POST",
+          "path": "/jwt-templates"
+        },
+        {
+          "name": "Update Deployment Jwt Template",
+          "slug": "update-deployment-jwt-template",
+          "method": "PATCH",
+          "path": "/jwt-templates/{id}"
+        },
+        {
+          "name": "Delete Deployment Jwt Template",
+          "slug": "delete-deployment-jwt-template",
+          "method": "DELETE",
+          "path": "/jwt-templates/{id}"
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "slug": "notifications",
+      "operations": [
+        {
+          "name": "Create Notification",
+          "slug": "create-notification",
+          "method": "POST",
+          "path": "/notifications"
+        }
+      ]
+    },
+    {
+      "name": "OAuth",
+      "slug": "oauth",
+      "operations": [
+        {
+          "name": "List Oauth Apps",
+          "slug": "list-oauth-apps",
+          "method": "GET",
+          "path": "/oauth/apps"
+        },
+        {
+          "name": "Create Oauth App",
+          "slug": "create-oauth-app",
+          "method": "POST",
+          "path": "/oauth/apps"
+        },
+        {
+          "name": "Update Oauth App",
+          "slug": "update-oauth-app",
+          "method": "PATCH",
+          "path": "/oauth/apps/{oauth_app_slug}"
+        },
+        {
+          "name": "Verify Oauth App Domain",
+          "slug": "verify-oauth-app-domain",
+          "method": "POST",
+          "path": "/oauth/apps/{oauth_app_slug}/verify-domain"
+        },
+        {
+          "name": "Update Oauth Scope",
+          "slug": "update-oauth-scope",
+          "method": "PATCH",
+          "path": "/oauth/apps/{oauth_app_slug}/scopes/{scope}"
+        },
+        {
+          "name": "Archive Oauth Scope",
+          "slug": "archive-oauth-scope",
+          "method": "POST",
+          "path": "/oauth/apps/{oauth_app_slug}/scopes/{scope}/archive"
+        },
+        {
+          "name": "Unarchive Oauth Scope",
+          "slug": "unarchive-oauth-scope",
+          "method": "POST",
+          "path": "/oauth/apps/{oauth_app_slug}/scopes/{scope}/unarchive"
+        },
+        {
+          "name": "Set Oauth Scope Mapping",
+          "slug": "set-oauth-scope-mapping",
+          "method": "POST",
+          "path": "/oauth/apps/{oauth_app_slug}/scopes/{scope}/mapping"
+        },
+        {
+          "name": "List Oauth Clients",
+          "slug": "list-oauth-clients",
+          "method": "GET",
+          "path": "/oauth/apps/{oauth_app_slug}/clients"
+        },
+        {
+          "name": "Create Oauth Client",
+          "slug": "create-oauth-client",
+          "method": "POST",
+          "path": "/oauth/apps/{oauth_app_slug}/clients"
+        },
+        {
+          "name": "Update Oauth Client",
+          "slug": "update-oauth-client",
+          "method": "PATCH",
+          "path": "/oauth/apps/{oauth_app_slug}/clients/{oauth_client_id}"
+        },
+        {
+          "name": "Deactivate Oauth Client",
+          "slug": "deactivate-oauth-client",
+          "method": "DELETE",
+          "path": "/oauth/apps/{oauth_app_slug}/clients/{oauth_client_id}"
+        },
+        {
+          "name": "Rotate Oauth Client Secret",
+          "slug": "rotate-oauth-client-secret",
+          "method": "POST",
+          "path": "/oauth/apps/{oauth_app_slug}/clients/{oauth_client_id}/rotate-secret"
+        },
+        {
+          "name": "List Oauth Grants",
+          "slug": "list-oauth-grants",
+          "method": "GET",
+          "path": "/oauth/apps/{oauth_app_slug}/clients/{oauth_client_id}/grants"
+        },
+        {
+          "name": "Revoke Oauth Grant",
+          "slug": "revoke-oauth-grant",
+          "method": "POST",
+          "path": "/oauth/apps/{oauth_app_slug}/clients/{oauth_client_id}/grants/{grant_id}/revoke"
+        }
+      ]
+    },
+    {
+      "name": "Organizations",
+      "slug": "organizations",
+      "operations": [
+        {
+          "name": "Get Organization List",
+          "slug": "get-organization-list",
+          "method": "GET",
+          "path": "/organizations"
+        },
+        {
+          "name": "Create Organization",
+          "slug": "create-organization",
+          "method": "POST",
+          "path": "/organizations"
+        },
+        {
+          "name": "Get Organization Details",
+          "slug": "get-organization-details",
+          "method": "GET",
+          "path": "/organizations/{organization_id}"
+        },
+        {
+          "name": "Update Organization",
+          "slug": "update-organization",
+          "method": "PATCH",
+          "path": "/organizations/{organization_id}"
+        },
+        {
+          "name": "Delete Organization",
+          "slug": "delete-organization",
+          "method": "DELETE",
+          "path": "/organizations/{organization_id}"
+        },
+        {
+          "name": "Create Workspace For Organization",
+          "slug": "create-workspace-for-organization",
+          "method": "POST",
+          "path": "/organizations/{organization_id}/workspaces"
+        },
+        {
+          "name": "Get Organization Members",
+          "slug": "get-organization-members",
+          "method": "GET",
+          "path": "/organizations/{organization_id}/members"
+        },
+        {
+          "name": "Add Organization Member",
+          "slug": "add-organization-member",
+          "method": "POST",
+          "path": "/organizations/{organization_id}/members"
+        },
+        {
+          "name": "Remove Organization Member",
+          "slug": "remove-organization-member",
+          "method": "DELETE",
+          "path": "/organizations/{organization_id}/members/{membership_id}"
+        },
+        {
+          "name": "Update Organization Member",
+          "slug": "update-organization-member",
+          "method": "PATCH",
+          "path": "/organizations/{organization_id}/members/{membership_id}"
+        },
+        {
+          "name": "Get Organization Roles",
+          "slug": "get-organization-roles",
+          "method": "GET",
+          "path": "/organizations/{organization_id}/roles"
+        },
+        {
+          "name": "Create Organization Role",
+          "slug": "create-organization-role",
+          "method": "POST",
+          "path": "/organizations/{organization_id}/roles"
+        },
+        {
+          "name": "Update Organization Role",
+          "slug": "update-organization-role",
+          "method": "PATCH",
+          "path": "/organizations/{organization_id}/roles/{role_id}"
+        },
+        {
+          "name": "Delete Organization Role",
+          "slug": "delete-organization-role",
+          "method": "DELETE",
+          "path": "/organizations/{organization_id}/roles/{role_id}"
+        }
+      ]
+    },
+    {
+      "name": "Segments",
+      "slug": "segments",
+      "operations": [
+        {
+          "name": "List Segments",
+          "slug": "list-segments",
+          "method": "GET",
+          "path": "/segments"
+        },
+        {
+          "name": "Create Segment",
+          "slug": "create-segment",
+          "method": "POST",
+          "path": "/segments"
+        },
+        {
+          "name": "Get Segment Data",
+          "slug": "get-segment-data",
+          "method": "POST",
+          "path": "/segments/data"
+        },
+        {
+          "name": "Update Segment",
+          "slug": "update-segment",
+          "method": "PATCH",
+          "path": "/segments/{id}"
+        },
+        {
+          "name": "Delete Segment",
+          "slug": "delete-segment",
+          "method": "DELETE",
+          "path": "/segments/{id}"
+        },
+        {
+          "name": "Assign Segment",
+          "slug": "assign-segment",
+          "method": "POST",
+          "path": "/segments/{id}/assign"
+        },
+        {
+          "name": "Remove Segment",
+          "slug": "remove-segment",
+          "method": "POST",
+          "path": "/segments/{id}/remove"
+        }
+      ]
+    },
+    {
+      "name": "Session",
+      "slug": "session",
+      "operations": [
+        {
+          "name": "Create Backend Session Ticket",
+          "slug": "create-backend-session-ticket",
+          "method": "POST",
+          "path": "/session/tickets"
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "slug": "settings",
+      "operations": [
+        {
+          "name": "Update Deployment Auth Settings",
+          "slug": "update-deployment-auth-settings",
+          "method": "PATCH",
+          "path": "/settings/auth"
+        },
+        {
+          "name": "Update Deployment Display Settings",
+          "slug": "update-deployment-display-settings",
+          "method": "PATCH",
+          "path": "/settings/display"
+        },
+        {
+          "name": "Update Deployment Restrictions",
+          "slug": "update-deployment-restrictions",
+          "method": "PATCH",
+          "path": "/settings/restrictions"
+        },
+        {
+          "name": "Update Deployment B2b Settings",
+          "slug": "update-deployment-b2b-settings",
+          "method": "PATCH",
+          "path": "/settings/b2b"
+        },
+        {
+          "name": "Get Deployment Social Connections",
+          "slug": "get-deployment-social-connections",
+          "method": "GET",
+          "path": "/settings/social-connections"
+        },
+        {
+          "name": "Upsert Deployment Social Connection",
+          "slug": "upsert-deployment-social-connection",
+          "method": "PUT",
+          "path": "/settings/social-connections"
+        },
+        {
+          "name": "Update Smtp Config",
+          "slug": "update-smtp-config",
+          "method": "POST",
+          "path": "/settings/email/smtp"
+        },
+        {
+          "name": "Remove Smtp Config",
+          "slug": "remove-smtp-config",
+          "method": "DELETE",
+          "path": "/settings/email/smtp"
+        },
+        {
+          "name": "Verify Smtp Connection",
+          "slug": "verify-smtp-connection",
+          "method": "POST",
+          "path": "/settings/email/smtp/verify"
+        },
+        {
+          "name": "Get Deployment Email Template",
+          "slug": "get-deployment-email-template",
+          "method": "GET",
+          "path": "/settings/email-templates/{template_name}"
+        },
+        {
+          "name": "Update Deployment Email Template",
+          "slug": "update-deployment-email-template",
+          "method": "PATCH",
+          "path": "/settings/email-templates/{template_name}"
+        },
+        {
+          "name": "Upload Image",
+          "slug": "upload-image",
+          "method": "POST",
+          "path": "/settings/upload/{image_type}"
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "slug": "users",
+      "operations": [
+        {
+          "name": "Get Active User List",
+          "slug": "get-active-user-list",
+          "method": "GET",
+          "path": "/users"
+        },
+        {
+          "name": "Create User",
+          "slug": "create-user",
+          "method": "POST",
+          "path": "/users"
+        },
+        {
+          "name": "Get User Details",
+          "slug": "get-user-details",
+          "method": "GET",
+          "path": "/users/{user_id}/details"
+        },
+        {
+          "name": "Update User",
+          "slug": "update-user",
+          "method": "PATCH",
+          "path": "/users/{user_id}"
+        },
+        {
+          "name": "Delete User",
+          "slug": "delete-user",
+          "method": "DELETE",
+          "path": "/users/{user_id}"
+        },
+        {
+          "name": "Update User Password",
+          "slug": "update-user-password",
+          "method": "PATCH",
+          "path": "/users/{user_id}/password"
+        },
+        {
+          "name": "Add User Email",
+          "slug": "add-user-email",
+          "method": "POST",
+          "path": "/users/{user_id}/emails"
+        },
+        {
+          "name": "Update User Email",
+          "slug": "update-user-email",
+          "method": "PATCH",
+          "path": "/users/{user_id}/emails/{email_id}"
+        },
+        {
+          "name": "Delete User Email",
+          "slug": "delete-user-email",
+          "method": "DELETE",
+          "path": "/users/{user_id}/emails/{email_id}"
+        },
+        {
+          "name": "Add User Phone",
+          "slug": "add-user-phone",
+          "method": "POST",
+          "path": "/users/{user_id}/phones"
+        },
+        {
+          "name": "Update User Phone",
+          "slug": "update-user-phone",
+          "method": "PATCH",
+          "path": "/users/{user_id}/phones/{phone_id}"
+        },
+        {
+          "name": "Delete User Phone",
+          "slug": "delete-user-phone",
+          "method": "DELETE",
+          "path": "/users/{user_id}/phones/{phone_id}"
+        },
+        {
+          "name": "Delete User Social Connection",
+          "slug": "delete-user-social-connection",
+          "method": "DELETE",
+          "path": "/users/{user_id}/social-connections/{connection_id}"
+        }
+      ]
+    },
+    {
+      "name": "Waitlist",
+      "slug": "waitlist",
+      "operations": [
+        {
+          "name": "Get User Waitlist",
+          "slug": "get-user-waitlist",
+          "method": "GET",
+          "path": "/waitlist"
+        },
+        {
+          "name": "Approve Waitlist User",
+          "slug": "approve-waitlist-user",
+          "method": "POST",
+          "path": "/waitlist/{waitlist_user_id}/approve"
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "slug": "webhooks",
+      "operations": [
+        {
+          "name": "List Webhook Apps",
+          "slug": "list-webhook-apps",
+          "method": "GET",
+          "path": "/webhooks/apps"
+        },
+        {
+          "name": "Create Webhook App",
+          "slug": "create-webhook-app",
+          "method": "POST",
+          "path": "/webhooks/apps"
+        },
+        {
+          "name": "List Event Catalogs",
+          "slug": "list-event-catalogs",
+          "method": "GET",
+          "path": "/webhooks/event-catalogs"
+        },
+        {
+          "name": "Create Event Catalog",
+          "slug": "create-event-catalog",
+          "method": "POST",
+          "path": "/webhooks/event-catalogs"
+        },
+        {
+          "name": "Get Event Catalog",
+          "slug": "get-event-catalog",
+          "method": "GET",
+          "path": "/webhooks/event-catalogs/{slug}"
+        },
+        {
+          "name": "Update Event Catalog",
+          "slug": "update-event-catalog",
+          "method": "PUT",
+          "path": "/webhooks/event-catalogs/{slug}"
+        },
+        {
+          "name": "Append Events To Catalog",
+          "slug": "append-events-to-catalog",
+          "method": "POST",
+          "path": "/webhooks/event-catalogs/{slug}/append-events"
+        },
+        {
+          "name": "Archive Event In Catalog",
+          "slug": "archive-event-in-catalog",
+          "method": "POST",
+          "path": "/webhooks/event-catalogs/{slug}/archive-event"
+        },
+        {
+          "name": "Update Webhook App",
+          "slug": "update-webhook-app",
+          "method": "PATCH",
+          "path": "/webhooks/apps/{app_slug}"
+        },
+        {
+          "name": "Get Webhook App",
+          "slug": "get-webhook-app",
+          "method": "GET",
+          "path": "/webhooks/apps/{app_slug}"
+        },
+        {
+          "name": "Delete Webhook App",
+          "slug": "delete-webhook-app",
+          "method": "DELETE",
+          "path": "/webhooks/apps/{app_slug}"
+        },
+        {
+          "name": "Rotate Webhook Secret",
+          "slug": "rotate-webhook-secret",
+          "method": "POST",
+          "path": "/webhooks/apps/{app_slug}/rotate-secret"
+        },
+        {
+          "name": "Get Webhook Events",
+          "slug": "get-webhook-events",
+          "method": "GET",
+          "path": "/webhooks/apps/{app_slug}/events"
+        },
+        {
+          "name": "Get Webhook Catalog",
+          "slug": "get-webhook-catalog",
+          "method": "GET",
+          "path": "/webhooks/apps/{app_slug}/catalog"
+        },
+        {
+          "name": "List Webhook Endpoints",
+          "slug": "list-webhook-endpoints",
+          "method": "GET",
+          "path": "/webhooks/apps/{app_slug}/endpoints"
+        },
+        {
+          "name": "Create Webhook Endpoint For App",
+          "slug": "create-webhook-endpoint-for-app",
+          "method": "POST",
+          "path": "/webhooks/apps/{app_slug}/endpoints"
+        },
+        {
+          "name": "Update Webhook Endpoint For App",
+          "slug": "update-webhook-endpoint-for-app",
+          "method": "PATCH",
+          "path": "/webhooks/apps/{app_slug}/endpoints/{endpoint_id}"
+        },
+        {
+          "name": "Delete Webhook Endpoint For App",
+          "slug": "delete-webhook-endpoint-for-app",
+          "method": "DELETE",
+          "path": "/webhooks/apps/{app_slug}/endpoints/{endpoint_id}"
+        },
+        {
+          "name": "Get Webhook Stats",
+          "slug": "get-webhook-stats",
+          "method": "GET",
+          "path": "/webhooks/apps/{app_slug}/stats"
+        },
+        {
+          "name": "Get App Webhook Deliveries",
+          "slug": "get-app-webhook-deliveries",
+          "method": "GET",
+          "path": "/webhooks/apps/{app_slug}/deliveries"
+        },
+        {
+          "name": "Test Webhook Endpoint",
+          "slug": "test-webhook-endpoint",
+          "method": "POST",
+          "path": "/webhooks/apps/{app_slug}/endpoints/{endpoint_id}/test"
+        },
+        {
+          "name": "Trigger Webhook Event",
+          "slug": "trigger-webhook-event",
+          "method": "POST",
+          "path": "/webhooks/apps/{app_slug}/trigger"
+        },
+        {
+          "name": "Get Webhook Delivery Details For App",
+          "slug": "get-webhook-delivery-details-for-app",
+          "method": "GET",
+          "path": "/webhooks/apps/{app_slug}/deliveries/{delivery_id}"
+        },
+        {
+          "name": "List Webhook Replay Tasks",
+          "slug": "list-webhook-replay-tasks",
+          "method": "GET",
+          "path": "/webhooks/apps/{app_slug}/deliveries/replay"
+        },
+        {
+          "name": "Replay Webhook Delivery",
+          "slug": "replay-webhook-delivery",
+          "method": "POST",
+          "path": "/webhooks/apps/{app_slug}/deliveries/replay"
+        },
+        {
+          "name": "Get Webhook Replay Task Status",
+          "slug": "get-webhook-replay-task-status",
+          "method": "GET",
+          "path": "/webhooks/apps/{app_slug}/deliveries/replay/{task_id}"
+        },
+        {
+          "name": "Cancel Webhook Replay Task",
+          "slug": "cancel-webhook-replay-task",
+          "method": "POST",
+          "path": "/webhooks/apps/{app_slug}/deliveries/replay/{task_id}/cancel"
+        },
+        {
+          "name": "Reactivate Webhook Endpoint",
+          "slug": "reactivate-webhook-endpoint",
+          "method": "POST",
+          "path": "/webhooks/endpoints/{endpoint_id}/reactivate"
+        },
+        {
+          "name": "Get Webhook Analytics",
+          "slug": "get-webhook-analytics",
+          "method": "GET",
+          "path": "/webhooks/apps/{app_slug}/analytics"
+        },
+        {
+          "name": "Get Webhook Timeseries",
+          "slug": "get-webhook-timeseries",
+          "method": "GET",
+          "path": "/webhooks/apps/{app_slug}/timeseries"
+        }
+      ]
+    },
+    {
+      "name": "Workspaces",
+      "slug": "workspaces",
+      "operations": [
+        {
+          "name": "Get Workspace List",
+          "slug": "get-workspace-list",
+          "method": "GET",
+          "path": "/workspaces"
+        },
+        {
+          "name": "Get Workspace Details",
+          "slug": "get-workspace-details",
+          "method": "GET",
+          "path": "/workspaces/{workspace_id}"
+        },
+        {
+          "name": "Update Workspace",
+          "slug": "update-workspace",
+          "method": "PATCH",
+          "path": "/workspaces/{workspace_id}"
+        },
+        {
+          "name": "Delete Workspace",
+          "slug": "delete-workspace",
+          "method": "DELETE",
+          "path": "/workspaces/{workspace_id}"
+        },
+        {
+          "name": "Get Workspace Roles",
+          "slug": "get-workspace-roles",
+          "method": "GET",
+          "path": "/workspaces/{workspace_id}/roles"
+        },
+        {
+          "name": "Create Workspace Role",
+          "slug": "create-workspace-role",
+          "method": "POST",
+          "path": "/workspaces/{workspace_id}/roles"
+        },
+        {
+          "name": "Update Workspace Role",
+          "slug": "update-workspace-role",
+          "method": "PATCH",
+          "path": "/workspaces/{workspace_id}/roles/{role_id}"
+        },
+        {
+          "name": "Delete Workspace Role",
+          "slug": "delete-workspace-role",
+          "method": "DELETE",
+          "path": "/workspaces/{workspace_id}/roles/{role_id}"
+        },
+        {
+          "name": "Get Workspace Members",
+          "slug": "get-workspace-members",
+          "method": "GET",
+          "path": "/workspaces/{workspace_id}/members"
+        },
+        {
+          "name": "Add Workspace Member",
+          "slug": "add-workspace-member",
+          "method": "POST",
+          "path": "/workspaces/{workspace_id}/members"
+        },
+        {
+          "name": "Remove Workspace Member",
+          "slug": "remove-workspace-member",
+          "method": "DELETE",
+          "path": "/workspaces/{workspace_id}/members/{membership_id}"
+        },
+        {
+          "name": "Update Workspace Member",
+          "slug": "update-workspace-member",
+          "method": "PATCH",
+          "path": "/workspaces/{workspace_id}/members/{membership_id}"
+        }
+      ]
+    }
+  ]
+}

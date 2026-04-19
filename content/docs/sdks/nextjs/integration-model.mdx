@@ -1,0 +1,173 @@
+---
+title: Integration model
+description: Understand how the Next.js SDK loads deployment settings, routes users through hosted pages, and lets you override UI behavior where needed.
+---
+
+Wacht's Next.js SDK is built around one idea: your app does not hardcode the auth flow up front. It loads the deployment configuration for the current public key, then the client helpers and UI components read from that configuration.
+
+That is why the same SDK can support hosted pages, embedded UI, and more customized setups without changing the underlying auth model.
+
+## Start with the deployment
+
+On the client, everything starts with `DeploymentProvider`.
+
+```tsx
+import { DeploymentProvider } from '@wacht/nextjs';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <DeploymentProvider publicKey={process.env.NEXT_PUBLIC_WACHT_PUBLISHABLE_KEY!}>
+          {children}
+        </DeploymentProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+When the provider mounts, it:
+
+- reads the `publicKey`
+- decodes the backend host from the key
+- requests `/deployment`
+- stores the resulting deployment config in context
+
+From that point on, the rest of the client SDK reads from the loaded deployment.
+
+That includes:
+
+- hosted page URLs such as `sign_in_page_url` and `sign_up_page_url`
+- redirect targets after sign-in, sign-up, and sign-out
+- branding such as the logo and favicon
+- light and dark mode UI settings
+- deployment mode, including staging behavior
+
+## Hosted pages are the default path
+
+For most apps, the natural starting point is hosted auth pages.
+
+That means:
+
+- wrap the app with `DeploymentProvider`
+- use `NavigateToSignIn` and `NavigateToSignUp`
+- protect private routes in middleware
+- show account state with `SignedIn`, `SignedOut`, and `UserButton`
+
+The important detail is that those helpers do not guess where to send users. They read the URLs from the loaded deployment config.
+
+For example, `NavigateToSignIn` and `NavigateToSignUp` use the current deployment's `ui_settings.sign_in_page_url` and `ui_settings.sign_up_page_url`. They also preserve `redirect_uri`, so users can return to the page they started from after completing auth.
+
+## Embedded UI uses the same deployment settings
+
+If you want the auth experience inside your own app, you can render Wacht components directly.
+
+Common examples are:
+
+- `UserButton`
+- `ManageAccount`
+- `SignedInAccounts`
+- `NotificationBell`
+- `NotificationPopover`
+
+This is still the same integration model. You are not switching to a different backend or a different session system. You are using the same deployment, the same cookies or development session handling, and the same client context. The difference is only where the UI lives.
+
+## `uiOverwrites` lets you override deployment UI settings
+
+The Next.js `DeploymentProvider` accepts a `uiOverwrites` prop:
+
+```tsx
+import { DeploymentProvider } from '@wacht/nextjs';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <DeploymentProvider
+          publicKey={process.env.NEXT_PUBLIC_WACHT_PUBLISHABLE_KEY!}
+          uiOverwrites={{
+            app_name: 'Acme',
+            after_signin_redirect_url: '/app',
+            after_signup_redirect_url: '/onboarding',
+          }}
+        >
+          {children}
+        </DeploymentProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+This is especially useful when you are building auth UI inside your own app instead of sending users to Wacht's hosted pages.
+
+If you are embedding things like sign-in, sign-up, account, or profile flows directly in your application, `uiOverwrites` gives you a way to adjust the UI-facing deployment settings for that embedded experience without changing the deployment itself.
+
+This is not a second config source that replaces the deployment. It layers on top of the deployment's UI settings for that client integration.
+
+In practice, that means:
+
+- deployment settings remain the base
+- your overrides are applied client-side
+- the merge is shallow
+
+The shallow merge matters. Overriding a top-level field like `app_name` or `after_signin_redirect_url` is straightforward. If you override a nested object such as `light_mode_settings` or `dark_mode_settings`, you are replacing that nested object at the top level rather than deeply merging each inner field.
+
+Use `uiOverwrites` when you want to adjust the UI behavior for a specific app shell without changing the deployment itself.
+
+Good examples:
+
+- changing the displayed app name
+- changing the redirect target after sign-in
+- swapping the logo or favicon
+- adjusting light or dark mode settings for the embedded experience
+
+## Client helpers depend on the loaded deployment
+
+Once the deployment is in context, the client helpers become thin wrappers over that config.
+
+`useNavigation()` uses the deployment to build auth URLs. That is how `navigateToSignIn()`, `navigateToSignUp()`, and `navigateToAccountSelection()` know where to send the user.
+
+`useClient()` uses the deployment's `backend_host` to send requests back to Wacht. In production it sends requests with `credentials: 'include'`, so the browser includes the auth cookies automatically.
+
+This is why `DeploymentProvider` is not optional plumbing. It is the piece that tells the client SDK which deployment it is talking to and how that deployment is configured.
+
+## Staging mode is handled for you
+
+The provider also handles Wacht's staging behavior.
+
+If the public key points at a staging deployment, the SDK carries a development session using `__dev_session__`. It reads the value from the URL when needed, persists it, and appends it to later deployment and client requests.
+
+You do not need to wire that flow yourself. It is part of the provider, the navigation helpers, and the client fetcher.
+
+## The server side is separate on purpose
+
+Client-side deployment loading and server-side auth are related, but they are not the same thing.
+
+On the server, you work with:
+
+- `wachtMiddleware()`
+- `getAuth(request)`
+- `requireAuth(request)`
+- `auth(await headers())`
+
+These helpers normalize the incoming request into an auth object you can trust in middleware, route handlers, and server components.
+
+The client side decides where auth pages live and how UI should behave. The server side answers a different question: who is making this request, and what are they allowed to do?
+
+## Read next
+
+- [Quick Start](./quickstart)
+- [Authentication](./client-side)
+- [Client-side Auth](./client-side-auth)
+- [Middleware](./middleware)
+- [Server-side Auth](./server-side)

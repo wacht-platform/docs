@@ -1,13 +1,51 @@
 ---
-title: Hello World
-description: Your first document
+title: Documentation
+description: Build with Wacht using product documentation, SDK documentation, and generated API contracts.
 ---
 
-Welcome to the docs! You can start writing documents in `/content/docs`.
+Wacht provides the infrastructure needed to ship identity, B2B access control, API authentication, webhooks, and embedded AI runtime features.
 
-## What is Next?
+Use this documentation to move between product concepts, framework integrations, and exact API contracts without mixing those concerns together.
 
 <Cards>
-  <Card title="Learn more about Next.js" href="https://nextjs.org/docs" />
-  <Card title="Learn more about Fumadocs" href="https://fumadocs.dev" />
+  <Card title="Product" href="/docs/product">
+    Platform model, architecture, deployments, auth surfaces, and operational concepts.
+  </Card>
+  <Card title="SDKs" href="/docs/sdks">
+    Framework and runtime packages for React, Next.js, React Router, TanStack Router, Node, and Rust.
+  </Card>
+  <Card title="Guides" href="/docs/guides">
+    End-to-end implementation playbooks for auth, webhooks, OAuth apps, API auth, notifications, deployment events, and AI agents.
+  </Card>
+  <Card title="API Reference" href="/docs/reference">
+    Generated endpoint and schema contracts from the checked-in OpenAPI specifications.
+  </Card>
 </Cards>
+
+## Getting started
+
+If you are evaluating the platform, start with [Product](/docs/product).
+
+If you are integrating an application, go to [SDKs](/docs/sdks).
+
+If you are implementing a full workflow, go to [Guides](/docs/guides).
+
+If you need exact contracts, use [API Reference](/docs/reference).
+
+## Core surfaces
+
+### Console
+
+The operator UI used to configure projects, deployments, authentication, billing, API authentication, webhooks, and AI features.
+
+### Platform API
+
+The Rust control plane, gateway, OAuth services, and worker stack used by operators and platform infrastructure.
+
+### Frontend API
+
+The customer-facing runtime API for sessions, organizations, workspaces, notifications, and end-user auth flows.
+
+### SDKs
+
+Frontend and server integrations layered on top of the runtime surfaces.

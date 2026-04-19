@@ -1,0 +1,141 @@
+---
+title: "Verify Tokens and Operate OAuth Clients"
+description: "Verify OAuth access tokens in your resource server, rotate client secrets, and revoke grants safely."
+---
+
+# Verify Tokens and Operate OAuth Clients
+
+After consent and token issuance, your backend must verify every access token before serving protected resources.
+
+This page focuses on runtime operations and post-launch controls.
+
+## Verify OAuth token in resource server
+
+```ts
+import { WachtClient } from "@wacht/backend";
+
+const client = new WachtClient({
+  apiKey: process.env.WACHT_BACKEND_API_KEY!,
+});
+
+export async function verifyOAuthRequest(token: string, method: string, resource: string) {
+  const authz = await client.gateway.checkPrincipalAuthz({
+    principalType: "oauth_access_token",
+    principalValue: token,
+    method,
+    resource,
+    requiredPermissions: ["mcp:invoke"],
+  });
+
+  return {
+    clientId: authz.headers["x-wacht-oauth-client-id"],
+    grantedResource: authz.headers["x-wacht-granted-resource"],
+    oauthResource: authz.metadata?.oauth_resource,
+    scopes: authz.metadata?.scopes || [],
+    expiresAt: authz.metadata?.expires_at,
+  };
+}
+```
+
+## Verify OAuth token in Rust resource server
+
+```rust
+use wacht::{WachtClient, WachtConfig};
+use wacht::gateway::{GatewayAuthzOptions, GatewayPrincipalType};
+
+let api_key = std::env::var("WACHT_BACKEND_API_KEY").expect("WACHT_BACKEND_API_KEY is required");
+let frontend_host = std::env::var("WACHT_FRONTEND_HOST").expect("WACHT_FRONTEND_HOST is required");
+let client = WachtClient::new(WachtConfig::new(api_key, frontend_host)).expect("valid Wacht config");
+
+let authz = client
+    .gateway()
+    .check_authz_with_principal_type(
+        GatewayPrincipalType::OauthAccessToken,
+        access_token,
+        "POST",
+        "mcp",
+        GatewayAuthzOptions {
+            required_permissions: Some(vec!["mcp:invoke".to_string()]),
+            ..Default::default()
+        },
+    )
+    .await?;
+
+if !authz.allowed {
+    // Reject request in your framework middleware/handler.
+}
+
+let principal = authz.resolve_principal_context();
+let scopes = principal.metadata.scopes;
+let granted_resource = principal.metadata.granted_resource;
+```
+
+## Runtime endpoint controls to expose in your app integrations
+
+From each OAuth app issuer domain:
+
+1. `POST /oauth/token` (code exchange and refresh)
+2. `POST /oauth/introspect` (token state and claims)
+3. `POST /oauth/revoke` (token invalidation)
+4. `POST /oauth/register` and `GET|PUT|DELETE /oauth/register/{client_id}` (if dynamic registration is enabled)
+
+## What operators can control after launch
+
+From backend management APIs/console:
+
+1. Rotate client secrets: `POST /deployments/{deployment_id}/oauth/apps/{oauth_app_slug}/clients/{oauth_client_id}/rotate-secret`
+2. Deactivate clients
+3. Revoke grants for a specific client/user grant
+4. Disable app (`is_active=false`)
+5. Archive/unarchive scopes and update scope mapping metadata
+
+## For MCP resource servers
+
+This is the same verification model to use for protected machine endpoints:
+
+1. Use `mcp-auth` middleware.
+2. Verify bearer token with `gateway.checkPrincipalAuthz`.
+3. Pass resolved subject/scopes into tool handlers.
+
+## Operational playbook
+
+### Rotate client secret
+
+Use your OAuth client rotation flow and deploy secret updates atomically.
+
+```ts
+const rotated = await client.oauth.rotateOAuthClientSecret(
+  "mcp-auth",
+  oauthClient.id,
+);
+```
+
+Persist the new secret immediately; Wacht only returns secret material at creation/rotation time.
+
+### Revoke grants
+
+When users disconnect integrations or incidents happen, revoke active grants for the target client.
+
+```rust
+client.oauth()
+    .revoke_oauth_grant("mcp-auth", &oauth_client.id, grant_id)
+    .send()
+    .await?;
+```
+
+### Audit and monitoring
+
+Track:
+
+1. token verification failures by client ID,
+2. denied scope attempts,
+3. grant revocations,
+4. secret rotation timestamp and actor.
+
+## Related references
+
+1. [Node SDK Gateway Authz](/docs/sdks/node/server-auth)
+2. [Node SDK OAuth Apps API](/docs/sdks/node)
+3. [Rust SDK OAuth Apps Guide](/docs/sdks/rust/api-auth-oauth)
+4. [Backend API Reference](/docs/reference/backend-api)
+5. [Frontend OAuth Consent API Reference](/docs/reference/frontend-api)

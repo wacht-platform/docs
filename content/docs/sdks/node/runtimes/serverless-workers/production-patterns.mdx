@@ -1,0 +1,31 @@
+---
+title: Production Patterns
+description: Reliability and security patterns for serverless worker deployments.
+---
+
+## Auth pipeline
+
+1. Parse and verify inbound token with `authenticateRequest()`.
+2. Enforce permissions with `auth.protect()`.
+3. Call backend APIs after guard success only.
+
+## Failure handling
+
+Use explicit status classes:
+
+- `401` for unauthenticated
+- `403` for authenticated but unauthorized
+- `429` for rate-limited upstream checks
+- `5xx` for transient backend issues
+
+## Observability
+
+- Attach request IDs from your platform and pass as custom headers when needed.
+- Log authorization `request_id` whenever you use `gateway.checkAuthz()` or `checkPrincipalAuthz()`.
+- Avoid logging raw tokens or backend API keys.
+
+## Performance
+
+- Keep request handlers small and deterministic.
+- Avoid per-request dynamic module imports.
+- Prefer bounded list queries (`limit`) for admin APIs.

@@ -1,0 +1,35 @@
+---
+title: Organizations and Workspaces
+description: Scoped B2B resource operations in the Rust SDK.
+---
+
+This category is fully scoped to organization/workspace IDs.
+
+Role listing contracts:
+
+- `GET /organizations/{organization_id}/roles`
+- `GET /workspaces/{workspace_id}/roles`
+
+Rust usage:
+
+```rust
+let org_roles = client
+    .organizations()
+    .roles()
+    .fetch_roles("organization_id")
+    .send()
+    .await?;
+
+let workspace_roles = client
+    .workspaces()
+    .roles()
+    .fetch_roles("workspace_id")
+    .send()
+    .await?;
+```
+
+Validated method groups:
+
+- `organizations.*` (CRUD + members + roles + create workspace for organization)
+- `workspaces.*` (CRUD + members + roles)
+

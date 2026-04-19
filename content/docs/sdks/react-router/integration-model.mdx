@@ -1,0 +1,79 @@
+---
+title: Integration model
+description: Understand how the React Router SDK loads deployment settings, uses hosted pages, and fits into embedded auth flows.
+---
+
+Wacht's React Router SDK works the same way the other frontend adapters do: it loads deployment settings first, then everything else reads from that deployment.
+
+That is what ties the browser UI, hosted pages, and request helpers back to the same auth setup.
+
+## Start with the provider
+
+In React Router, the integration starts with `DeploymentProvider`.
+
+```tsx
+import { DeploymentProvider } from '@wacht/react-router';
+
+export function AppProviders({ children }: { children: React.ReactNode }) {
+  return (
+    <DeploymentProvider publicKey={import.meta.env.VITE_WACHT_PUBLISHABLE_KEY}>
+      {children}
+    </DeploymentProvider>
+  );
+}
+```
+
+When the provider mounts, it loads the deployment for the current public key and makes that configuration available to the rest of the adapter.
+
+That deployment is where the SDK learns things like:
+
+- which hosted sign-in and sign-up pages to use
+- where to send users after sign-in or sign-out
+- what branding and UI settings should apply
+- whether the deployment is in staging mode
+
+## Hosted pages are the default path
+
+The easiest setup is still to send users to Wacht's hosted auth pages.
+
+That gives you a clean starting point:
+
+- the deployment decides the auth URLs
+- the router app decides when to send the user there
+- the rest of the UI can stay focused on your product
+
+## `uiOverwrites` is for embedded auth surfaces
+
+If you are building sign-in, sign-up, account, or profile screens inside your app, `uiOverwrites` lets you adjust the deployment UI settings for that embedded experience.
+
+That is useful when you want the auth flow to live inside your app but still want the deployment to remain the source of truth.
+
+The provider merges your overrides on top of the loaded deployment settings. The base deployment still comes first.
+
+## Client and server use the same deployment
+
+The browser-side helpers and the server-side request helpers both read from the same deployment-backed model.
+
+On the client, that affects things like:
+
+- `SignedIn`
+- `SignedOut`
+- `UserButton`
+- `useSession()`
+- `useNavigation()`
+
+On the server, it affects helpers such as:
+
+- `authenticateRequest()`
+- `getAuth()`
+- `requireAuth()`
+- `authFromHeaders()`
+
+The adapter is thin on purpose. It does not invent a second auth system for the router.
+
+## Read next
+
+- [Quick Start](./quickstart)
+- [Authentication](./authentication)
+- [Client-side Auth](./client-side-auth)
+- [Server Auth](./server-auth)

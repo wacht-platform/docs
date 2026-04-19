@@ -1,0 +1,53 @@
+---
+title: Server Auth
+description: Authenticate requests and verify session tokens in backend JavaScript runtimes.
+---
+
+`@wacht/backend` exposes server auth helpers for non-framework runtimes.
+
+## Core helpers
+
+- `authenticateRequest(request, options?)`
+- `getAuth(request, options?)`
+- `authFromHeaders(headers, options?)`
+- `verifyAuthToken(token, options?)`
+
+## Basic request auth
+
+```ts
+import { authenticateRequest } from '@wacht/backend';
+
+export async function handler(request: Request) {
+  const auth = await authenticateRequest(request, {
+    signInUrl: 'https://app.example.com/sign-in',
+  });
+
+  await auth.protect({ permission: 'user:read' });
+
+  return new Response(JSON.stringify({ userId: auth.userId }), {
+    headers: { 'content-type': 'application/json' },
+  });
+}
+```
+
+## Token-only verification
+
+```ts
+import { verifyAuthToken } from '@wacht/backend';
+
+const payload = await verifyAuthToken(token);
+if (!payload) {
+  throw new Error('Invalid token');
+}
+```
+
+## Publishable key resolution
+
+For Node.js runtimes, `publishableKey` is optional when env is configured.
+
+- `WACHT_PUBLISHABLE_KEY`
+- `NEXT_PUBLIC_WACHT_PUBLISHABLE_KEY`
+
+In non-Node runtimes (for example Workers with `env` bindings), pass `publishableKey` explicitly in options.
+
+For API-key and OAuth access-token gateway checks, use the `gateway` API group under backend methods.

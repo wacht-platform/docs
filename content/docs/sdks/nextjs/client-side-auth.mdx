@@ -1,0 +1,174 @@
+---
+title: Client-side Auth
+description: Use the Next.js client-side helpers for hosted auth pages, signed-in UI, account management, and custom auth flows.
+---
+
+Once you have the auth model clear, the client-side API is much easier to work with.
+
+The Next.js package gives you a small set of building blocks that cover most apps:
+
+- session-aware UI such as `SignedIn` and `SignedOut`
+- redirect helpers such as `NavigateToSignIn`
+- account surfaces such as `UserButton` and `ManageAccount`
+- hooks for session, user, sign-in, sign-up, and navigation
+
+For most apps, that is enough to start with hosted pages and then gradually embed more of the auth experience inside the app.
+
+## Start with signed-in and signed-out UI
+
+The simplest client-side primitives are still the most useful.
+
+```tsx
+'use client';
+
+import { useState } from 'react';
+import {
+  NavigateToSignIn,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from '@wacht/nextjs';
+
+export function AuthControls() {
+  const [redirecting, setRedirecting] = useState(false);
+
+  return (
+    <>
+      <SignedIn>
+        <UserButton showName={false} />
+      </SignedIn>
+
+      <SignedOut>
+        <>
+          {redirecting ? <NavigateToSignIn /> : null}
+          <button type="button" onClick={() => setRedirecting(true)}>
+            Sign in
+          </button>
+        </>
+      </SignedOut>
+    </>
+  );
+}
+```
+
+This is still the right place to start for most applications.
+
+`SignedIn` and `SignedOut` let you shape the shell around auth state, while `UserButton` gives you a ready-made account entry point without having to build one from scratch.
+
+## Hosted auth pages use the deployment settings
+
+If you are using hosted pages, the main helpers are:
+
+- `NavigateToSignIn`
+- `NavigateToSignUp`
+- `useNavigation()`
+
+These do not hardcode auth URLs in your app. They read the current deployment settings and build the correct auth URL from there, including the redirect back into your app.
+
+That keeps the client-side behavior aligned with the deployment rather than scattering sign-in and sign-up URLs through the codebase.
+
+## `useSession()` is the main app-level auth hook
+
+`useSession()` is the hook you reach for when the app needs to understand the current auth state.
+
+It gives you:
+
+- the current session
+- loading and error state
+- `switchSignIn()`
+- `switchOrganization()`
+- `switchWorkspace()`
+- `signOut()`
+- `getToken()`
+- `exchangeTicket()`
+- `refetch()`
+
+This is the hook to use when the app needs to react to account changes, context switching, or sign-out.
+
+## `useUser()` is for profile and security data
+
+When you need to manage the authenticated user in more detail, use `useUser()`.
+
+That is where the profile and security operations live, including:
+
+- profile updates
+- email addresses
+- phone numbers
+- authenticators
+- passkeys
+- backup codes
+
+`useSession()` tells you which account is active. `useUser()` is the layer you use to manage that account.
+
+## Use `useSignIn()` and `useSignUp()` when you need more control
+
+If you want to go beyond hosted pages, the two main hooks are:
+
+- `useSignIn()`
+- `useSignUp()`
+
+These hooks expose the lower-level auth flow state and actions needed for embedded auth experiences.
+
+That includes support for flows such as:
+
+- email and username sign-in
+- OTP-based sign-in
+- magic links
+- OAuth and enterprise SSO
+- passkeys
+- profile completion
+- verification steps during sign-in and sign-up
+
+This is the layer you use when you want to build auth screens inside your app while still using Wacht's underlying flow model.
+
+## Account and auth surfaces are already available as components
+
+You do not always need to build the UI yourself.
+
+The Next.js package already exports a set of useful client-side components, including:
+
+- `UserButton`
+- `UserControls`
+- `ManageAccount`
+- `SignedInAccounts`
+- `NotificationBell`
+- `NotificationPopover`
+- `NotificationPanel`
+
+There are also components for specific auth flows:
+
+- `SignInForm`
+- `SignUpForm`
+- `AcceptInvite`
+- `MagicLinkVerification`
+- `SSOCallback`
+- `WaitlistForm`
+
+Even if you do not use these immediately, they are useful to know about because they let you move from hosted pages toward embedded auth without having to implement every screen from scratch.
+
+## `useNavigation()` is useful outside the built-in redirect components
+
+If you need to move users through the auth flow from your own event handlers, use `useNavigation()`.
+
+That gives you functions such as:
+
+- `navigateToSignIn()`
+- `navigateToSignUp()`
+- `navigateToAccountSelection()`
+
+This is especially useful when the trigger is your own button, modal, menu, or app-specific flow rather than a built-in auth component.
+
+## `useClient()` is the bridge back to the frontend API
+
+`useClient()` gives you a deployment-aware fetcher for talking back to Wacht from the browser.
+
+It uses the loaded deployment configuration to send requests to the right backend host and handles things like staging session behavior for you.
+
+You usually will not need it for basic sign-in UI, but it becomes important when you are building more custom client-side flows on top of the Wacht API surface.
+
+## Read next
+
+- [Authentication](./client-side)
+- [Integration model](./integration-model)
+- [Middleware](./middleware)
+- [Server-side Auth](./server-side)

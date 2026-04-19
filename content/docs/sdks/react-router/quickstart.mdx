@@ -1,0 +1,111 @@
+---
+title: Quick Start
+description: Install the package, set your keys, mount the provider, and protect loaders with Wacht.
+---
+
+Use this guide to add Wacht to a React Router app with hosted authentication.
+
+<Steps>
+## Install `@wacht/react-router`
+
+Install the React Router package and its core dependencies.
+
+```bash
+pnpm add @wacht/react-router @wacht/jsx @wacht/types react-router
+```
+
+## Set your Wacht keys
+
+Add the following keys to your environment file:
+
+```bash
+VITE_WACHT_PUBLISHABLE_KEY=pk_test_xxx
+WACHT_API_KEY=wk_live_xxx
+```
+
+## Add `DeploymentProvider` to your app
+
+`DeploymentProvider` gives your app access to Wacht's deployment-backed client context.
+
+```tsx
+import { BrowserRouter } from 'react-router';
+import { DeploymentProvider } from '@wacht/react-router';
+
+export function App() {
+  return (
+    <DeploymentProvider publicKey={import.meta.env.VITE_WACHT_PUBLISHABLE_KEY}>
+      <BrowserRouter>{/* routes */}</BrowserRouter>
+    </DeploymentProvider>
+  );
+}
+```
+
+If you want the embedded auth UI to use app-specific UI settings, add `uiOverwrites` here.
+
+## Protect a loader
+
+Use `authenticateRequest()` in loaders or actions when a route requires an authenticated session.
+
+```tsx
+import { json, redirect, type LoaderFunctionArgs } from 'react-router';
+import { authenticateRequest } from '@wacht/react-router/server';
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const result = await authenticateRequest(request);
+
+  if (!result.auth.isAuthenticated) {
+    throw redirect('/sign-in', { headers: result.headers });
+  }
+
+  return json({ userId: result.auth.userId }, { headers: result.headers });
+}
+```
+
+Forward the returned headers on every response path. That keeps session state synchronized correctly.
+
+## Add client-side auth controls
+
+Use hosted auth pages first, then embed more of the auth surface only when you need it.
+
+```tsx
+import {
+  NavigateToSignIn,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from '@wacht/react-router';
+
+export function AuthControls() {
+  return (
+    <>
+      <SignedIn>
+        <UserButton showName={false} />
+      </SignedIn>
+
+      <SignedOut>
+        <NavigateToSignIn />
+      </SignedOut>
+    </>
+  );
+}
+```
+
+## Run your app
+
+Start the app locally:
+
+```bash
+pnpm dev
+```
+
+## Create your first user
+
+Visit the app, select `Sign in`, and complete the hosted authentication flow.
+
+## Next
+
+Use [Integration model](./integration-model) to understand the deployment-backed setup, then [Authentication](./authentication) and [Client-side Auth](./client-side-auth) for the client-side model. Finish with [Server Auth](./server-auth) for the request helper surface.
+
+- [Components](./components)
+- [Hooks](./hooks)
+</Steps>

@@ -1,0 +1,62 @@
+---
+title: Deno Overview
+description: Run @wacht/backend in Deno services with typed backend API access and explicit auth flows.
+---
+
+`@wacht/backend` runs in Deno through npm package compatibility. Use `npm:` imports and initialize the client from environment variables.
+
+## Runtime setup
+
+```json title="deno.json"
+{
+  "tasks": {
+    "dev": "deno run -A --watch src/main.ts"
+  },
+  "nodeModulesDir": "auto"
+}
+```
+
+## Project structure
+
+<FileTree title="Deno Service">
+{`src/
+    main.ts
+    auth/
+      require-auth.ts
+    routes/
+      users.ts`}
+</FileTree>
+
+## Baseline service
+
+```ts title="src/main.ts"
+import { initClient } from 'npm:@wacht/backend';
+import { routeUsers } from './routes/users.ts';
+import { requireDeploymentRead } from './auth/require-auth.ts';
+
+const apiKey = Deno.env.get('WACHT_API_KEY');
+if (!apiKey) throw new Error('WACHT_API_KEY is required');
+
+initClient({
+  apiKey,
+  baseUrl: Deno.env.get('WACHT_BACKEND_API_URL'),
+});
+
+Deno.serve(async (request) => {
+  const url = new URL(request.url);
+
+  if (url.pathname === '/admin/users' && request.method === 'GET') {
+    await requireDeploymentRead(request);
+    return routeUsers();
+  }
+
+  return new Response('Not Found', { status: 404 });
+});
+```
+
+## Auth modes
+
+- JWT/session protection: `authenticateRequest(request)` then `auth.protect(...)`.
+- API key/OAuth protected checks: `gateway.checkPrincipalAuthz(...)` before backend methods.
+
+`publishableKey` is optional when `WACHT_PUBLISHABLE_KEY` is already available in env.

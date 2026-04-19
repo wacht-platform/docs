@@ -1,0 +1,78 @@
+---
+title: Cloudflare Workers Framework Patterns
+description: Use Hono or itty-router on Workers with JWT and API key/OAuth protected auth.
+---
+
+Cloudflare’s current production guidance favors module workers, current `compatibility_date`, explicit streaming, and service bindings where possible. Keep your auth checks at the edge route boundary.
+
+## Wrangler baseline
+
+```toml title="wrangler.toml"
+name = "wacht-worker-api"
+main = "src/index.ts"
+compatibility_date = "2026-04-06"
+compatibility_flags = ["nodejs_compat"]
+```
+
+## Hono on Workers
+
+```ts title="src/hono.ts"
+import { Hono } from 'hono';
+import { authenticateRequest, initClient, users } from '@wacht/backend';
+
+type Env = {
+  WACHT_API_KEY: string;
+  WACHT_BACKEND_API_URL?: string;
+};
+
+const app = new Hono<{ Bindings: Env }>();
+
+app.use('*', async (c, next) => {
+  initClient({
+    apiKey: c.env.WACHT_API_KEY,
+    baseUrl: c.env.WACHT_BACKEND_API_URL,
+  });
+  await next();
+});
+
+app.get('/admin/users', async (c) => {
+  const { auth } = await authenticateRequest(c.req.raw);
+  await auth.protect({ permission: 'user:read' });
+  return c.json(await users.listUsers({ limit: 20 }));
+});
+
+export default app;
+```
+
+## itty-router pattern
+
+```ts title="src/itty.ts"
+import { AutoRouter } from 'itty-router';
+import { gateway, users } from '@wacht/backend';
+
+const router = AutoRouter();
+
+router.get('/machine/users', async (request: Request) => {
+  const apiKey = request.headers.get('x-api-key') ?? '';
+
+  const decision = await gateway.checkPrincipalAuthz({
+    principalType: 'api_key',
+    principalValue: apiKey,
+    resource: '/machine/users',
+    method: 'GET',
+    requiredPermissions: ['user:read'],
+  });
+
+  if (!decision.allowed) {
+    return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 });
+  }
+
+  return Response.json(await users.listUsers({ limit: 20 }));
+});
+
+export default {
+  fetch: (request: Request, env: { WACHT_API_KEY: string; WACHT_BACKEND_API_URL?: string }) => {
+    return router.fetch(request, env);
+  },
+};
+```

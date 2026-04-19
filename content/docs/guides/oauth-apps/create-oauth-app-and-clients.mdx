@@ -1,0 +1,199 @@
+---
+title: "Create OAuth Apps and Clients"
+description: "Set up OAuth apps, scopes, and clients in a way that is safe for production SaaS deployments."
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+# Create OAuth Apps and Clients
+
+Use this flow for provider setup before any consent or token exchange happens.
+
+OAuth app/client creation is available through backend deployment-scoped APIs and both SDKs.
+
+## Step 1: Create OAuth app in Console
+
+In Console OAuth settings, create the app with:
+
+1. Stable app `slug` (avoid renaming later).
+2. User-facing app name and description.
+3. Verified domain/FQDN.
+4. Supported scopes and scope definitions.
+
+## Step 2: Add scopes with clear contracts
+
+Good scope design is specific and additive:
+
+1. `agents:run` for agent execution only.
+2. `mcp:invoke` for MCP tool invocation.
+3. `workspace:read` for workspace data reads.
+
+Avoid broad scopes like `*` or ambiguous names.
+
+## Step 3: Create OAuth clients
+
+Per environment (dev/staging/prod), create separate OAuth clients:
+
+1. Register exact redirect URIs.
+2. Use least privilege scopes.
+3. Store client secret only in server-side secret managers.
+
+## What is configurable from Console or backend APIs
+
+### OAuth app settings
+
+1. `slug` (create-time identity; use a stable value)
+2. `name`, `description`, optional `logo`
+3. `supported_scopes` and `scope_definitions` (including category and permission mappings)
+4. `allow_dynamic_client_registration`
+5. `is_active`
+
+### OAuth app domain behavior
+
+1. Production deployments require an explicit `fqdn` at creation.
+2. Non-production deployments auto-generate an OAuth domain.
+3. Domain verification uses `POST /deployments/{deployment_id}/oauth/apps/{oauth_app_slug}/verify-domain`.
+4. `fqdn` is create-time; app updates do not include `fqdn`.
+
+### OAuth client settings
+
+1. `client_auth_method`: `client_secret_basic`, `client_secret_post`, `client_secret_jwt`, `none`, `private_key_jwt`
+2. `grant_types`: supports `authorization_code` and `refresh_token`
+3. `redirect_uris`
+4. optional metadata: `client_name`, `client_uri`, `logo_uri`, `tos_uri`, `policy_uri`, `contacts`, `software_id`, `software_version`
+5. key material for `private_key_jwt`: exactly one of `jwks_uri`, `jwks`, `public_key_pem`
+6. `token_endpoint_auth_signing_alg`
+
+## Hard validation rules to design for
+
+1. `authorization_code` is required for OAuth clients.
+2. `client_credentials` is currently disabled.
+3. If `authorization_code` is enabled, at least one `redirect_uri` is required.
+4. Redirect URIs must be valid `http`/`https` URLs with no fragment.
+5. For `private_key_jwt`, exactly one key material source is required on create.
+6. `jwks_uri` must use `https` for `private_key_jwt`.
+7. `jwks_uri`/`jwks`/`public_key_pem` are rejected for non-`private_key_jwt` clients.
+
+## Create via SDK
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+import { WachtClient } from "@wacht/backend";
+
+const client = new WachtClient({
+  apiKey: process.env.WACHT_BACKEND_API_KEY!,
+});
+
+const app = await client.oauth.createOAuthApp({
+  slug: "mcp-auth",
+  name: "MCP Auth App",
+  description: "OAuth provider for MCP access",
+  fqdn: "auth.example.com",
+  supported_scopes: ["mcp:invoke", "workspace:read"],
+});
+
+const oauthClient = await client.oauth.createOAuthClient("mcp-auth", {
+  client_auth_method: "client_secret_basic",
+  grant_types: ["authorization_code", "refresh_token"],
+  redirect_uris: ["https://app.example.com/oauth/callback"],
+  client_name: "MCP Auth Web Client",
+});
+```
+</Tab>
+<Tab>
+```rust
+use wacht::models::{CreateOAuthAppRequest, CreateOAuthClientRequest};
+
+let app = client.oauth()
+    .create_oauth_app(
+        CreateOAuthAppRequest {
+            slug: "mcp-auth".to_string(),
+            name: "MCP Auth App".to_string(),
+            description: Some("OAuth provider for MCP access".to_string()),
+            fqdn: Some("auth.example.com".to_string()),
+            supported_scopes: Some(vec!["mcp:invoke".to_string(), "workspace:read".to_string()]),
+            scope_definitions: None,
+            allow_dynamic_client_registration: Some(false),
+            logo_file: None,
+            logo_filename: None,
+        },
+    )
+    .send()
+    .await?;
+
+let oauth_client = client.oauth()
+    .create_oauth_client(
+        "mcp-auth",
+        CreateOAuthClientRequest {
+            client_auth_method: "client_secret_basic".to_string(),
+            grant_types: vec!["authorization_code".to_string(), "refresh_token".to_string()],
+            redirect_uris: vec!["https://app.example.com/oauth/callback".to_string()],
+            client_name: Some("MCP Auth Web Client".to_string()),
+            client_uri: None,
+            logo_uri: None,
+            tos_uri: None,
+            policy_uri: None,
+            contacts: None,
+            software_id: None,
+            software_version: None,
+            token_endpoint_auth_signing_alg: None,
+            jwks_uri: None,
+            jwks: None,
+            public_key_pem: None,
+        },
+    )
+    .send()
+    .await?;
+```
+</Tab>
+</Tabs>
+
+## Update existing app/client settings
+
+Use these updates instead of creating new app slugs for every config change.
+
+```ts
+await client.oauth.updateOAuthApp("mcp-auth", {
+  name: "MCP Auth App",
+  description: "OAuth provider for MCP access",
+  allow_dynamic_client_registration: false,
+  is_active: true,
+});
+
+await client.oauth.updateOAuthClient("mcp-auth", oauthClient.id, {
+  redirect_uris: [
+    "https://app.example.com/oauth/callback",
+    "https://staging.app.example.com/oauth/callback",
+  ],
+  grant_types: ["authorization_code", "refresh_token"],
+});
+```
+
+## SDK operations to use
+
+Use these SDK operations in automation flows:
+
+1. `client.oauth.listOAuthApps()`
+2. `client.oauth.createOAuthApp(request)`
+3. `client.oauth.updateOAuthApp(oauthAppSlug, request)`
+4. `client.oauth.createOAuthClient(oauthAppSlug, request)`
+5. `client.oauth.updateOAuthClient(oauthAppSlug, oauthClientId, request)`
+6. `client.oauth.rotateOAuthClientSecret(oauthAppSlug, oauthClientId)`
+
+Use direct backend endpoints only when SDKs are not available in your runtime.
+
+## Production checklist
+
+1. Different client IDs per environment.
+2. Redirect URIs pinned and reviewed.
+3. Secret rotation policy documented.
+4. Scope names and descriptions versioned in docs.
+5. Deprovisioning flow exists for leaked client secrets.
+
+## Related references
+
+1. [Frontend OAuth Consent API Reference](/docs/reference/frontend-api)
+2. [Node SDK OAuth Apps API](/docs/sdks/node)
+3. [Rust SDK OAuth Apps Guide](/docs/sdks/rust/api-auth-oauth)
+4. [Backend API Reference](/docs/reference/backend-api)

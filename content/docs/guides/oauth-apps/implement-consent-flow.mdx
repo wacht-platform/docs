@@ -1,0 +1,98 @@
+---
+title: "Implement OAuth Consent Flow"
+description: "Originate OAuth flows, use hosted consent, and handle callback/token exchange correctly."
+---
+
+# Implement OAuth Consent Flow
+
+In the current product model, integrators usually do **not** render consent UI themselves.
+You only originate the OAuth flow and handle the callback.
+
+The consent page route itself is platform-defined: users are redirected to the deployment frontend host at `/oauth/consent`.
+The final callback is still sent to the OAuth client’s registered `redirect_uri`.
+
+## Hosted consent flow (recommended)
+
+1. OAuth client starts at `GET /oauth/authorize` on your OAuth app domain.
+2. Runtime redirects to `GET /oauth/consent/init?handoff_id=...`.
+3. Wacht-hosted consent UI is rendered at `https://<deployment.frontend_host>/oauth/consent`.
+4. After approve/deny, backend redirects to OAuth client `redirect_uri` with `code` (approve) or `error=access_denied` (deny).
+
+## What you implement as an OAuth client
+
+1. Build the `/oauth/authorize` URL.
+2. Redirect user to that URL.
+3. Handle callback at your registered `redirect_uri`.
+4. Exchange `code` at `/oauth/token`.
+
+## Where to get required values
+
+### From Console
+
+1. Open `OAuth` in Console and select your app (`/oauth/:slug`).
+2. Use app domain (`fqdn`) to derive issuer: `https://<fqdn>`.
+3. Authorization URL is `https://<fqdn>/oauth/authorize`.
+4. Token URL is `https://<fqdn>/oauth/token`.
+5. Pick `client_id` from the app's OAuth clients table.
+6. Use one of that client's registered `redirect_uris`.
+7. Use scopes from the app's active `supported_scopes`.
+
+### From backend management API
+
+1. List app: `GET /deployments/{deployment_id}/oauth/apps`
+2. List clients for app: `GET /deployments/{deployment_id}/oauth/apps/{oauth_app_slug}/clients`
+3. Build issuer from app `fqdn`: `https://{fqdn}`
+4. Read `client_id`, `redirect_uris`, and `grant_types` from the client object
+
+### Store in your app config
+
+Persist these as environment/config values in your OAuth client service:
+
+1. `OAUTH_ISSUER` (for example `https://auth.example.com`)
+2. `OAUTH_CLIENT_ID`
+3. `OAUTH_REDIRECT_URI`
+4. `OAUTH_SCOPES` (space-delimited)
+
+Example authorize redirect:
+
+```ts
+const issuer = process.env.OAUTH_ISSUER!;
+const clientId = process.env.OAUTH_CLIENT_ID!;
+const redirectUri = process.env.OAUTH_REDIRECT_URI!;
+const scopes = process.env.OAUTH_SCOPES ?? "mcp:invoke workspace:read";
+
+const authorizeUrl = new URL(`${issuer}/oauth/authorize`);
+authorizeUrl.searchParams.set("response_type", "code");
+authorizeUrl.searchParams.set("client_id", clientId);
+authorizeUrl.searchParams.set("redirect_uri", redirectUri);
+authorizeUrl.searchParams.set("scope", scopes);
+authorizeUrl.searchParams.set("state", crypto.randomUUID()); // Persist and validate on callback
+
+window.location.assign(authorizeUrl.toString());
+```
+
+## Consent enforcement behavior
+
+1. `granted_resource` must be a canonical Wacht URN (`urn:wacht:user:*`, `urn:wacht:organization:*`, `urn:wacht:workspace:*`).
+2. Resource selection is constrained to resources the signed-in user can access.
+3. Approved scopes are filtered by scope definitions and the selected resource category/permission mapping.
+4. Consent session and CSRF tokens expire; clients should handle retry and session refresh paths.
+
+## UX requirements for production
+
+1. Show human-readable scope descriptions (`scope_definitions`).
+2. Always show target resource and app/client identity.
+3. Handle consent expiry (`expires_at`) with retry path.
+4. Require explicit action for destructive scopes.
+
+## Security requirements
+
+1. Use cookie session auth (`credentials: include`) for consent endpoints.
+2. Enforce CSRF token usage on submit.
+3. Do not auto-approve hidden scopes.
+4. Log user, client, scopes, resource, and decision.
+
+## Related references
+
+1. [Frontend OAuth Consent API Reference](/docs/reference/frontend-api)
+2. [Verify Tokens and Operate OAuth Clients](/docs/guides/oauth-apps/verify-access-tokens-and-operate-clients)

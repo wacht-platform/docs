@@ -1,0 +1,64 @@
+---
+title: Extractors and Permissions
+description: Use typed Axum extractors for authenticated and permission-gated handlers.
+---
+
+After `AuthLayer` runs, handlers can use typed extractors from `wacht::middleware`.
+
+## `RequireAuth`
+
+Use `RequireAuth` when the route must be authenticated.
+
+```rust
+use axum::response::IntoResponse;
+use wacht::middleware::RequireAuth;
+
+async fn me(auth: RequireAuth) -> impl IntoResponse {
+    format!("user_id={} session_id={}", auth.user_id, auth.session_id)
+}
+```
+
+## `OptionalAuth`
+
+Use `OptionalAuth` when guests are allowed and auth context is optional.
+
+```rust
+use wacht::middleware::OptionalAuth;
+
+async fn landing(auth: OptionalAuth) -> String {
+    match auth.0 {
+        Some(ctx) => format!("hello {}", ctx.user_id),
+        None => "hello anonymous".to_string(),
+    }
+}
+```
+
+## `RequirePermission<T>`
+
+Define a permission type and scope, then gate the handler.
+
+```rust
+use axum::response::IntoResponse;
+use wacht::middleware::{Permission, PermissionScope, RequireAuth, RequirePermission};
+
+struct CanManageWorkspace;
+
+impl Permission for CanManageWorkspace {
+    const PERMISSION: &'static str = "workspace:manage";
+    const SCOPE: PermissionScope = PermissionScope::Workspace;
+}
+
+async fn manage_workspace(
+    _perm: RequirePermission<CanManageWorkspace>,
+    auth: RequireAuth,
+) -> impl IntoResponse {
+    format!("workspace action by {}", auth.user_id)
+}
+```
+
+## Common failure semantics
+
+- Missing/invalid auth context -> `401 Unauthorized`
+- Missing required permission -> `403 Forbidden`
+
+This behavior is handled by extractor rejections so your handlers stay focused on business logic.

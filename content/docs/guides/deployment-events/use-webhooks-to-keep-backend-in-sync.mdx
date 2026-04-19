@@ -1,0 +1,737 @@
+---
+title: "Keep your backend in sync"
+description: "Webhook envelope contract and representative payload examples for deployment events."
+---
+
+## Use Webhooks to Keep Your Backend in Sync
+
+Every webhook delivery uses this envelope:
+
+```json
+{
+  "type": "<event_name>",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {}
+}
+```
+
+`data` is the delivered event payload.
+
+The payload sections below are representative examples to guide receiver implementation. Treat the active event catalog and backend API reference as the authoritative contract surface for production validation.
+
+## User Events
+
+### user.created
+```json
+{
+  "type": "user.created",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "12345",
+    "entity_type": "user",
+    "id": "12345",
+    "first_name": "Ava",
+    "last_name": "Stone",
+    "username": "ava",
+    "profile_picture_url": "",
+    "schema_version": "v1",
+    "disabled": false,
+    "second_factor_policy": "optional",
+    "availability": "active",
+    "last_password_reset_at": null,
+    "active_organization_membership_id": null,
+    "active_workspace_membership_id": null,
+    "deployment_id": "24239923154394947",
+    "public_metadata": {},
+    "private_metadata": {},
+    "primary_email_address_id": "4001",
+    "primary_email_address": "ava@example.com",
+    "primary_phone_number_id": "5001",
+    "primary_phone_number": "+15551234567",
+    "email_addresses": [],
+    "phone_numbers": [],
+    "social_connections": [],
+    "segments": [],
+    "has_password": true,
+    "has_backup_codes": false
+  }
+}
+```
+
+### user.updated
+```json
+{
+  "type": "user.updated",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "12345",
+    "entity_type": "user",
+    "id": "12345",
+    "first_name": "Ava",
+    "last_name": "Stone",
+    "username": "ava",
+    "profile_picture_url": "",
+    "schema_version": "v1",
+    "disabled": false,
+    "second_factor_policy": "optional",
+    "availability": "active",
+    "last_password_reset_at": null,
+    "active_organization_membership_id": null,
+    "active_workspace_membership_id": null,
+    "deployment_id": "24239923154394947",
+    "public_metadata": {},
+    "private_metadata": {},
+    "primary_email_address_id": "4001",
+    "primary_email_address": "ava@example.com",
+    "primary_phone_number_id": "5001",
+    "primary_phone_number": "+15551234567",
+    "email_addresses": [],
+    "phone_numbers": [],
+    "social_connections": [],
+    "segments": [],
+    "has_password": true,
+    "has_backup_codes": false
+  }
+}
+```
+
+### user.deleted
+```json
+{
+  "type": "user.deleted",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "12345",
+    "entity_type": "user",
+    "id": "12345",
+    "first_name": "Ava",
+    "last_name": "Stone",
+    "username": "ava"
+  }
+}
+```
+
+### user.email.added
+```json
+{
+  "type": "user.email.added",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "4001",
+    "entity_type": "user_email"
+  }
+}
+```
+
+### user.email.removed
+```json
+{
+  "type": "user.email.removed",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "4001",
+    "entity_type": "user_email"
+  }
+}
+```
+
+### user.email.verified
+```json
+{
+  "type": "user.email.verified",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "4001",
+    "entity_type": "user_email"
+  }
+}
+```
+
+### user.phone.added
+```json
+{
+  "type": "user.phone.added",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "5001",
+    "entity_type": "user_phone"
+  }
+}
+```
+
+### user.phone.removed
+```json
+{
+  "type": "user.phone.removed",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "5001",
+    "entity_type": "user_phone"
+  }
+}
+```
+
+### user.phone.verified
+```json
+{
+  "type": "user.phone.verified",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "5001",
+    "entity_type": "user_phone"
+  }
+}
+```
+
+### user.password.updated
+```json
+{
+  "type": "user.password.updated",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "12345",
+    "entity_type": "user"
+  }
+}
+```
+
+### user.mfa.enabled
+```json
+{
+  "type": "user.mfa.enabled",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "12345",
+    "entity_type": "user_authenticator",
+    "id": "991",
+    "created_at": "2026-03-04T09:59:00Z",
+    "updated_at": "2026-03-04T10:00:00Z",
+    "user_id": "12345",
+    "otp_url": "otpauth://totp/Wacht:ava@example.com?secret=***"
+  }
+}
+```
+
+### user.mfa.disabled
+```json
+{
+  "type": "user.mfa.disabled",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "12345",
+    "entity_type": "user_authenticator",
+    "id": "991",
+    "created_at": "2026-03-04T09:59:00Z",
+    "updated_at": "2026-03-04T10:00:00Z",
+    "user_id": "12345",
+    "otp_url": null
+  }
+}
+```
+
+## Session Events
+
+### session.created
+```json
+{
+  "type": "session.created",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "7001",
+    "entity_type": "session",
+    "id": "7001",
+    "created_at": "2026-03-04T10:00:00Z",
+    "updated_at": "2026-03-04T10:00:00Z",
+    "active_signin_id": "7101",
+    "signins": []
+  }
+}
+```
+
+### session.deleted
+```json
+{
+  "type": "session.deleted",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "7001",
+    "entity_type": "session",
+    "id": "7001",
+    "created_at": "2026-03-04T10:00:00Z",
+    "updated_at": "2026-03-04T10:00:00Z",
+    "active_signin_id": "7101",
+    "signins": []
+  }
+}
+```
+
+### session.expired
+```json
+{
+  "type": "session.expired",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "7001",
+    "entity_type": "session"
+  }
+}
+```
+
+## Organization Events
+
+### organization.created
+```json
+{
+  "type": "organization.created",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "8001",
+    "entity_type": "organization",
+    "id": "8001",
+    "name": "Acme Inc",
+    "image_url": "",
+    "description": "",
+    "member_count": 1,
+    "public_metadata": {},
+    "private_metadata": {},
+    "roles": [],
+    "workspaces": [],
+    "segments": []
+  }
+}
+```
+
+### organization.updated
+```json
+{
+  "type": "organization.updated",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "8001",
+    "entity_type": "organization",
+    "id": "8001",
+    "name": "Acme Inc"
+  }
+}
+```
+
+### organization.deleted
+```json
+{
+  "type": "organization.deleted",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "8001",
+    "entity_type": "organization"
+  }
+}
+```
+
+### organization.member.added
+```json
+{
+  "type": "organization.member.added",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "8101",
+    "entity_type": "organization_membership"
+  }
+}
+```
+
+### organization.member.removed
+```json
+{
+  "type": "organization.member.removed",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "8101",
+    "entity_type": "organization_membership"
+  }
+}
+```
+
+### organization.member.role.updated
+```json
+{
+  "type": "organization.member.role.updated",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "8101",
+    "entity_type": "organization_membership"
+  }
+}
+```
+
+### organization.invitation.created
+```json
+{
+  "type": "organization.invitation.created",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "8201",
+    "entity_type": "organization_invitation"
+  }
+}
+```
+
+### organization.invitation.accepted
+```json
+{
+  "type": "organization.invitation.accepted",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "8201",
+    "entity_type": "organization_invitation"
+  }
+}
+```
+
+### organization.invitation.revoked
+```json
+{
+  "type": "organization.invitation.revoked",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "8201",
+    "entity_type": "organization_invitation"
+  }
+}
+```
+
+## Workspace Events
+
+### workspace.created
+```json
+{
+  "type": "workspace.created",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "9001",
+    "entity_type": "workspace",
+    "id": "9001",
+    "name": "Production",
+    "image_url": "",
+    "description": "",
+    "member_count": 2,
+    "public_metadata": {},
+    "private_metadata": {},
+    "organization_id": "8001",
+    "organization_name": "Acme Inc",
+    "roles": [],
+    "segments": []
+  }
+}
+```
+
+### workspace.updated
+```json
+{
+  "type": "workspace.updated",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "9001",
+    "entity_type": "workspace",
+    "id": "9001",
+    "name": "Production"
+  }
+}
+```
+
+### workspace.deleted
+```json
+{
+  "type": "workspace.deleted",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "9001",
+    "entity_type": "workspace"
+  }
+}
+```
+
+### workspace.member.added
+```json
+{
+  "type": "workspace.member.added",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "9101",
+    "entity_type": "workspace_membership"
+  }
+}
+```
+
+### workspace.member.removed
+```json
+{
+  "type": "workspace.member.removed",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "9101",
+    "entity_type": "workspace_membership"
+  }
+}
+```
+
+### workspace.member.role.updated
+```json
+{
+  "type": "workspace.member.role.updated",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "9101",
+    "entity_type": "workspace_membership"
+  }
+}
+```
+
+### workspace.invitation.created
+```json
+{
+  "type": "workspace.invitation.created",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "9201",
+    "entity_type": "workspace_invitation"
+  }
+}
+```
+
+### workspace.invitation.accepted
+```json
+{
+  "type": "workspace.invitation.accepted",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "9201",
+    "entity_type": "workspace_invitation"
+  }
+}
+```
+
+### workspace.invitation.revoked
+```json
+{
+  "type": "workspace.invitation.revoked",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "9201",
+    "entity_type": "workspace_invitation"
+  }
+}
+```
+
+## API Key Events
+
+### api_key.created
+```json
+{
+  "type": "api_key.created",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "10001",
+    "entity_type": "api_key"
+  }
+}
+```
+
+### api_key.deleted
+```json
+{
+  "type": "api_key.deleted",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "10001",
+    "entity_type": "api_key"
+  }
+}
+```
+
+### api_key.rotated
+```json
+{
+  "type": "api_key.rotated",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "10001",
+    "entity_type": "api_key"
+  }
+}
+```
+
+## Agent Events
+
+### agent.created
+```json
+{
+  "type": "agent.created",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "11001",
+    "entity_type": "agent"
+  }
+}
+```
+
+### agent.updated
+```json
+{
+  "type": "agent.updated",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "11001",
+    "entity_type": "agent"
+  }
+}
+```
+
+### agent.deleted
+```json
+{
+  "type": "agent.deleted",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "11001",
+    "entity_type": "agent"
+  }
+}
+```
+
+### agent.execution.started
+```json
+{
+  "type": "agent.execution.started",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "11101",
+    "entity_type": "agent_execution"
+  }
+}
+```
+
+### agent.execution.completed
+```json
+{
+  "type": "agent.execution.completed",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "11101",
+    "entity_type": "agent_execution"
+  }
+}
+```
+
+### agent.execution.failed
+```json
+{
+  "type": "agent.execution.failed",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "11101",
+    "entity_type": "agent_execution"
+  }
+}
+```
+
+### agent.model.usage
+```json
+{
+  "type": "agent.model.usage",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "model": "gemini-2.5-flash",
+    "is_byok": false,
+    "context_id": "1234567890123456789",
+    "context_group": "support",
+    "input_tokens": 120,
+    "cached_tokens": 0,
+    "output_tokens": 32,
+    "input_cost_cents": 1,
+    "output_cost_cents": 1,
+    "search_query_count": 0,
+    "search_query_unique_count": 0,
+    "search_query_cost_cents": 0,
+    "total_cost_cents": 2,
+    "timestamp": "2026-03-04T10:00:00Z",
+    "prompt_token_count": 120,
+    "candidates_token_count": 32,
+    "total_token_count": 152,
+    "cached_content_token_count": 0,
+    "thoughts_token_count": 0
+  }
+}
+```
+
+## Execution Context Events
+
+### execution_context.message
+```json
+{
+  "type": "execution_context.message",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "context_id": "1234567890123456789",
+    "message_type": "conversation_message",
+    "data": {},
+    "timestamp": "2026-03-04T10:00:00Z"
+  }
+}
+```
+
+### execution_context.platform_event
+```json
+{
+  "type": "execution_context.platform_event",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "context_id": "1234567890123456789",
+    "message_type": "platform_event",
+    "data": {
+      "event_label": "tool.started",
+      "event_data": {}
+    },
+    "timestamp": "2026-03-04T10:00:00Z"
+  }
+}
+```
+
+### execution_context.user_input_request
+```json
+{
+  "type": "execution_context.user_input_request",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "context_id": "1234567890123456789",
+    "message_type": "user_input_request",
+    "data": {},
+    "timestamp": "2026-03-04T10:00:00Z"
+  }
+}
+```
+
+## Waitlist Events
+
+### waitlist.entry.created
+```json
+{
+  "type": "waitlist.entry.created",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "12001",
+    "entity_type": "waitlist_entry"
+  }
+}
+```
+
+### waitlist.entry.approved
+```json
+{
+  "type": "waitlist.entry.approved",
+  "timestamp": "2026-03-04T10:00:00.000Z",
+  "data": {
+    "entity_id": "12001",
+    "entity_type": "waitlist_entry"
+  }
+}
+```

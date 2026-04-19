@@ -1,0 +1,117 @@
+---
+title: "Vanity Pages Implementation"
+description: "Embed hosted API key management pages with secure ticket issuance, tenant isolation, and operational guardrails."
+---
+
+# Vanity Pages Implementation
+
+This model embeds hosted API key management inside your product.
+
+## End-to-end flow
+
+1. User opens your API keys settings route.
+2. Backend validates RBAC + tenant ownership.
+3. Backend issues short-lived `api_auth_access` ticket.
+4. Frontend embeds hosted vanity page with ticket.
+5. User creates/rotates/revokes keys without leaving your product.
+
+## One-time app provisioning
+
+```ts
+import { WachtClient } from "@wacht/backend";
+
+const client = new WachtClient({ apiKey: process.env.WACHT_BACKEND_API_KEY! });
+
+await client.apiKeys.createApiAuthApp({
+  app_slug: "aa_42",
+  name: "Acme Public API",
+  key_prefix: "acme_live",
+  description: "API keys for deployment 42",
+});
+```
+
+Recommended naming convention: `aa_<deploymentId>`.
+
+## Backend ticket endpoint (Express)
+
+```ts
+import express from "express";
+import { WachtClient } from "@wacht/backend";
+
+const app = express();
+app.use(express.json());
+
+const wacht = new WachtClient({ apiKey: process.env.WACHT_BACKEND_API_KEY! });
+
+app.post("/api/settings/api-keys/embed-ticket", async (req, res) => {
+  const user = req.user as { canManageApiKeys?: boolean; tenantId?: string } | undefined;
+  const deploymentId = req.body?.deploymentId as string | undefined;
+
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user.canManageApiKeys) return res.status(403).json({ error: "Forbidden" });
+  if (!deploymentId) return res.status(400).json({ error: "deploymentId is required" });
+
+  // Add tenant ownership check here.
+
+  const ticket = await wacht.post<{ ticket: string; expires_at: number }>("/session/tickets", {
+    ticket_type: "api_auth_access",
+    api_auth_app_slug: `aa_${deploymentId}`,
+    expires_in: 120,
+  });
+
+  res.json(ticket);
+});
+```
+
+## Frontend embed shell
+
+```tsx
+import { useEffect, useMemo, useState } from "react";
+import { useDeployment } from "@wacht/react-router";
+
+export function ApiKeysPage({ deploymentId }: { deploymentId: string }) {
+  const { deployment } = useDeployment();
+  const [ticket, setTicket] = useState<string | null>(null);
+
+  useEffect(() => {
+    void fetch("/api/settings/api-keys/embed-ticket", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deploymentId }),
+    })
+      .then((r) => r.json())
+      .then((data: { ticket: string }) => setTicket(data.ticket));
+  }, [deploymentId]);
+
+  const src = useMemo(() => {
+    if (!deployment?.backend_host || !ticket) return null;
+    return `${deployment.backend_host}/vanity/api-auth?ticket=${encodeURIComponent(ticket)}`;
+  }, [deployment?.backend_host, ticket]);
+
+  if (!src) return <div>Loading API key manager...</div>;
+  return <iframe src={src} title="API Key Manager" style={{ width: "100%", height: "80vh", border: 0 }} />;
+}
+```
+
+## Operational guidance
+
+1. Reissue ticket on session expiry, not preemptively on every render.
+2. Log all ticket issuance attempts and denials.
+3. Keep TTL short and avoid storing raw tickets long-term.
+4. Verify embed routes in staging for all role permutations.
+
+## Security checklist
+
+1. Backend-only ticket issuance.
+2. RBAC enforced before issuing `api_auth_access`.
+3. Tenant isolation check on app slug mapping.
+4. No ticket issuance for soft-deleted/suspended tenants.
+5. Audit trail for key lifecycle actions is visible to support/security.
+
+## Related docs
+
+1. [API Auth Integration Models](/docs/guides/api-auth/overview)
+2. [Custom Hook Flow Implementation](/docs/guides/api-auth/custom-hook-flow-implementation)
+3. [Building API Auth Observability Screens](/docs/guides/api-auth/audit-observability-screens)
+4. [Backend JS SDK](/docs/sdks/node)
+5. [Backend API Reference](/docs/reference/backend-api)

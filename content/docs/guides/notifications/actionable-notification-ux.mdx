@@ -1,0 +1,60 @@
+---
+title: "Designing Actionable Notification UX"
+description: "Design notification UX that drives remediation and measurable outcomes, not feed noise."
+---
+
+# Designing Actionable Notification UX
+
+Actionable notification UX means each item helps the user decide and do the next step quickly.
+
+## Outcome-driven design rules
+
+1. Title describes the event, not the UI action.
+2. Body explains impact and affected entity.
+3. CTA opens the exact remediation target.
+4. Severity reflects urgency and expected response.
+
+## Suggested information architecture
+
+1. Primary inbox list (default unarchived).
+2. Fast filters: unread, severity, scope, starred.
+3. Detail drawer/panel for context and CTA actions.
+4. Bulk actions for cleanup (`markAllAsRead`, `archiveAllRead`).
+
+## Practical template examples
+
+1. `warning`: "Webhook endpoint disabled" -> CTA: `Review endpoint`.
+2. `error`: "API key blocked by rate limit" -> CTA: `Inspect key analytics`.
+3. `success`: "Organization invite accepted" -> CTA: `Open members`.
+4. `info`: "Workspace role updated" -> CTA: `Review permissions`.
+
+## UX implementation checklist
+
+1. Keep action labels verb-first and specific.
+2. Provide meaningful empty state copy by filter context.
+3. Preserve filter state when navigating away/back.
+4. Avoid overusing red/error styling for non-urgent updates.
+5. Prefer one high-value CTA over multiple weak actions.
+
+## Measurement model
+
+Track:
+
+1. Notification open/read rate by template.
+2. CTA click-through by severity and scope.
+3. Time-to-remediation after warning/error notifications.
+4. Archive/star behavior to identify noisy templates.
+
+## Governance model
+
+1. Assign template ownership by domain team.
+2. Version template copy and metadata schemas.
+3. Review top noisy templates each release cycle.
+4. Add expiry to transient operational alerts.
+
+## Related docs
+
+1. [Backend Sending Patterns](/docs/guides/notifications/backend-sending-patterns)
+2. [Frontend Inbox with Hooks](/docs/guides/notifications/frontend-inbox-with-hooks)
+3. [Realtime Stream Handling](/docs/guides/notifications/realtime-stream-handling)
+4. [React Router Notifications Hooks](/docs/sdks/react-router/hooks/notifications)

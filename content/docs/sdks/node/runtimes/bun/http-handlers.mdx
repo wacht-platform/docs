@@ -1,0 +1,87 @@
+---
+title: Bun HTTP Handlers
+description: Protect Bun Request handlers and call backend APIs safely.
+---
+
+This guide covers both auth modes in Bun handlers: JWT/session auth and API key/OAuth protected machine-token auth.
+
+## Project structure
+
+<FileTree title="Bun Service">
+{`src/
+    server.ts
+    auth/
+      jwt-auth.ts
+      machine-auth.ts
+    handlers/
+      users.ts
+      machine-users.ts`}
+</FileTree>
+
+## 1. JWT/session auth handler
+
+```ts
+import { authenticateRequest, initClient, users } from '@wacht/backend';
+
+initClient({ apiKey: process.env.WACHT_API_KEY! });
+
+export default {
+  async fetch(request: Request) {
+    try {
+      const { auth } = await authenticateRequest(request, {
+        publishableKey: process.env.WACHT_PUBLISHABLE_KEY,
+      });
+
+      await auth.protect({ permission: 'user:read' });
+      const page = await users.listUsers({ limit: 20 });
+
+      return new Response(JSON.stringify(page), {
+        headers: { 'content-type': 'application/json' },
+      });
+    } catch {
+      return new Response(JSON.stringify({ error: 'forbidden' }), {
+        status: 403,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+  },
+};
+```
+
+## 2. API key/OAuth protected auth for machine tokens
+
+```ts
+import { gateway, users } from '@wacht/backend';
+
+export async function handleMachineRequest(apiKey: string) {
+  const decision = await gateway.checkPrincipalAuthz(
+    {
+      principalType: 'api_key',
+      principalValue: apiKey,
+      resource: '/admin/users',
+      method: 'GET',
+      requiredPermissions: ['user:read'],
+    },
+  );
+
+  if (!decision.allowed) {
+    return new Response(JSON.stringify({ error: 'forbidden' }), {
+      status: 403,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  const page = await users.listUsers({ limit: 20 });
+  return new Response(JSON.stringify(page), {
+    headers: { 'content-type': 'application/json' },
+  });
+}
+```
+
+## Bun deployment notes
+
+- Keep env injection in Bun runtime config, not source code.
+- Centralize permission constants for consistency across endpoints.
+- Keep list calls bounded (`limit`) to avoid large response payloads.
+- Log authorization `request_id` for machine-token support/debug flows.
+- `gatewayUrl` is optional; custom host overrides are available on Enterprise plans.

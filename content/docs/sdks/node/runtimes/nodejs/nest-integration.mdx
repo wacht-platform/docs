@@ -1,0 +1,160 @@
+---
+title: NestJS
+description: End-to-end NestJS integration for @wacht/backend with guards, decorators, and typed backend API usage.
+---
+
+This NestJS setup uses `@wacht/backend` with framework-native guards and service-layer SDK calls, including app-level client bootstrap, a reusable auth guard, route-level permission metadata, and typed backend API methods in services.
+
+## Project shape
+
+<FileTree title="NestJS Auth + Users Module">
+{`src/
+    main.ts
+    auth/
+      wacht-auth.guard.ts
+      permissions.decorator.ts
+    users/
+      users.controller.ts
+      users.service.ts`}
+</FileTree>
+
+## 1. Bootstrap
+
+```ts title="src/main.ts"
+import { NestFactory } from '@nestjs/core';
+import { initClient } from '@wacht/backend';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  initClient({
+    apiKey: process.env.WACHT_API_KEY!,
+    baseUrl: process.env.WACHT_BACKEND_API_URL,
+  });
+
+  const app = await NestFactory.create(AppModule);
+  await app.listen(3000);
+}
+
+bootstrap();
+```
+
+## 2. Permission decorator
+
+```ts title="src/auth/permissions.decorator.ts"
+import { SetMetadata } from '@nestjs/common';
+
+export const WACHT_PERMISSION_KEY = 'wacht_permission';
+export const WachtPermission = (permission: string | string[]) =>
+  SetMetadata(WACHT_PERMISSION_KEY, permission);
+```
+
+## 3. Guard
+
+```ts title="src/auth/wacht-auth.guard.ts"
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { getAuthFromToken } from '@wacht/backend';
+import { WACHT_PERMISSION_KEY } from './permissions.decorator';
+
+@Injectable()
+export class WachtAuthGuard implements CanActivate {
+  constructor(private readonly reflector: Reflector) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const req = context.switchToHttp().getRequest();
+    const authz = req.headers.authorization as string | undefined;
+    const token =
+      authz && authz.startsWith('Bearer ') ? authz.slice(7).trim() : null;
+
+    if (!token) throw new UnauthorizedException();
+
+    const auth = await getAuthFromToken(token);
+
+    const required = this.reflector.get<string | string[]>(
+      WACHT_PERMISSION_KEY,
+      context.getHandler(),
+    );
+
+    try {
+      await auth.protect({ permission: required });
+    } catch {
+      throw new ForbiddenException();
+    }
+
+    req.wachtAuth = auth;
+    return true;
+  }
+}
+```
+
+## 4. Controller + service
+
+```ts title="src/users/users.service.ts"
+import { Injectable } from '@nestjs/common';
+import { users } from '@wacht/backend';
+
+@Injectable()
+export class UsersService {
+  list() {
+    return users.listUsers({ limit: 20 });
+  }
+}
+```
+
+```ts title="src/users/users.controller.ts"
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { WachtAuthGuard } from '../auth/wacht-auth.guard';
+import { WachtPermission } from '../auth/permissions.decorator';
+import { UsersService } from './users.service';
+
+@Controller('admin/users')
+@UseGuards(WachtAuthGuard)
+export class UsersController {
+  constructor(private readonly service: UsersService) {}
+
+  @Get()
+  @WachtPermission('user:read')
+  list() {
+    return this.service.list();
+  }
+}
+```
+
+## 5. API key/OAuth protected auth path for machine tokens
+
+```ts title="src/machine/machine.controller.ts"
+import { Controller, Get, Headers, ForbiddenException } from '@nestjs/common';
+import { gateway, users } from '@wacht/backend';
+
+@Controller('machine')
+export class MachineController {
+  @Get('users')
+  async users(@Headers('x-api-key') apiKey = '') {
+    const decision = await gateway.checkPrincipalAuthz({
+      principalType: 'api_key',
+      principalValue: apiKey,
+      resource: '/machine/users',
+      method: 'GET',
+      requiredPermissions: ['user:read'],
+    });
+
+    if (!decision.allowed) throw new ForbiddenException();
+    return users.listUsers({ limit: 20 });
+  }
+}
+```
+
+## Best practices
+
+- Keep permission rules on handlers via decorators.
+- Avoid backend API calls directly in controllers; use services.
+- In Node.js, `getAuthFromToken(token)` can rely on publishable key env fallback.
+- Keep API key/OAuth protected checks separate from session-token guards.
+- Custom `gatewayUrl` host override is available on Enterprise plans.
+- Return structured 401/403 responses via Nest exception filters if needed.

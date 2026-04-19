@@ -1,0 +1,79 @@
+---
+title: "Backend Sending Patterns"
+description: "Publish notifications from backend domain events with reliable delivery, stable metadata, and actionable CTAs."
+---
+
+# Backend Sending Patterns
+
+Notifications should be emitted from backend business events, not frontend click handlers.
+
+## Producer design pattern
+
+1. Domain event occurs (`api_key_revoked`, `endpoint_disabled`, `invite_accepted`).
+2. Producer resolves target scope (`user_id`, `organization_id`, `workspace_id`).
+3. Producer builds template (`title`, `body`, `severity`, `ctas`, `metadata`, expiry).
+4. Producer publishes via backend SDK.
+
+## Backend JS SDK example
+
+```ts
+import { WachtClient } from "@wacht/backend";
+
+const client = new WachtClient({ apiKey: process.env.WACHT_BACKEND_API_KEY! });
+
+await client.notifications.createNotification({
+  user_id: "1234567890123456789",
+  title: "Webhook endpoint disabled",
+  body: "Endpoint https://example.com/hooks was auto-disabled after repeated failures.",
+  severity: "warning",
+  ctas: [{ label: "Review endpoint", url: "https://app.example.com/settings/webhooks/endpoints" }],
+  metadata: {
+    endpoint_id: "ep_987",
+    incident_id: "inc_456",
+    source: "webhook-delivery-worker",
+  },
+  expires_hours: 24,
+});
+```
+
+## Raw HTTP fallback
+
+```ts
+await fetch(`${process.env.WACHT_BACKEND_API_URL}/notifications`, {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${process.env.WACHT_BACKEND_API_KEY!}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    user_id: "1234567890123456789",
+    title: "Webhook endpoint disabled",
+    body: "Endpoint https://example.com/hooks was auto-disabled after repeated failures.",
+    severity: "warning",
+    ctas: [{ label: "Review endpoint", url: "https://app.example.com/settings/webhooks/endpoints" }],
+    metadata: { endpoint_id: "ep_987", incident_id: "inc_456" },
+    expires_hours: 24,
+  }),
+});
+```
+
+## Reliability rules
+
+1. Never block critical transactional paths on notification publish success.
+2. Retry with bounded policy and idempotency guard in producer layer.
+3. Keep `metadata` keys stable and documented for UI/analytics consumers.
+4. Deduplicate noisy events by window when appropriate.
+
+## Template quality rules
+
+1. Title states the event, not just “Something happened”.
+2. Body includes affected entity and impact.
+3. CTA points directly to remediation screen.
+4. Severity matches urgency and expected user action.
+
+## Validation checklist
+
+1. Scope routing (`user/org/workspace`) matches business policy.
+2. CTA destination and permissions are valid.
+3. Expiry applied to transient notifications.
+4. Producer retries and dedupe are tested under failure.

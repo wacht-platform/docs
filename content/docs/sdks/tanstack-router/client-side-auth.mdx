@@ -1,0 +1,97 @@
+---
+title: Client-side Auth
+description: Use the TanStack Router client-side helpers for hosted auth pages, signed-in UI, account management, and custom auth flows.
+---
+
+Once the auth model is clear, the client-side API is straightforward.
+
+The TanStack Router adapter gives you the pieces you need for:
+
+- session-aware UI
+- hosted auth redirects
+- account controls
+- organization and workspace controls
+- custom sign-in or sign-up flows
+
+## Start with signed-in and signed-out UI
+
+```tsx
+import {
+  NavigateToSignIn,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from '@wacht/tanstack-router';
+
+export function AuthControls() {
+  return (
+    <>
+      <SignedIn>
+        <UserButton showName={false} />
+      </SignedIn>
+
+      <SignedOut>
+        <NavigateToSignIn />
+      </SignedOut>
+    </>
+  );
+}
+```
+
+This is the simplest way to wire auth-aware UI into a TanStack Router app.
+
+`SignedIn` and `SignedOut` let you shape the shell around auth state, while `UserButton` gives you a ready-made account entry point.
+
+## Hosted auth pages use deployment settings
+
+If you are sending users to hosted auth pages, the router helpers read the destination URLs from the current deployment.
+
+That keeps sign-in and sign-up URLs in one place instead of hardcoding them through your route tree.
+
+## `useSession()` is the main app-level auth hook
+
+`useSession()` gives you the current session plus the operations that change it.
+
+Common actions include:
+
+- `switchSignIn()`
+- `switchOrganization()`
+- `switchWorkspace()`
+- `signOut()`
+- `getToken()`
+- `exchangeTicket()`
+
+Use it when the app needs to react to account changes or context switching.
+
+## `useUser()` is for profile and security data
+
+Use `useUser()` when you need to manage the current account in more detail.
+
+That includes:
+
+- profile updates
+- email addresses
+- phone numbers
+- authenticators
+- passkeys
+- backup codes
+
+## `useNavigation()` helps when the app triggers auth itself
+
+If the trigger is your own button, modal, or menu, `useNavigation()` gives you the redirect helpers:
+
+- `navigateToSignIn()`
+- `navigateToSignUp()`
+- `navigateToAccountSelection()`
+
+## Embedded auth is still an option
+
+If you want to build auth screens inside the app, the router package also re-exports the lower-level helpers and components you need for those flows.
+
+The important point is that the same session model still applies. You are not switching to a different auth system, only changing where the UI lives.
+
+## Read next
+
+- [Authentication](./authentication)
+- [Quick Start](./quickstart)
+- [Server Auth](./server-auth)

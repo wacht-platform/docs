@@ -1,0 +1,72 @@
+---
+title: Serverless Workers Overview
+description: Apply the backend SDK in request-isolated serverless worker environments.
+---
+
+Use this pattern for platforms where each request runs in a short-lived worker or function context.
+
+## Base template
+
+```ts
+import { authenticateRequest, initClient, settings } from '@wacht/backend';
+
+type Env = {
+  WACHT_API_KEY: string;
+  WACHT_PUBLISHABLE_KEY: string;
+  WACHT_BACKEND_API_URL?: string;
+};
+
+export async function handle(request: Request, env: Env): Promise<Response> {
+  initClient({
+    apiKey: env.WACHT_API_KEY,
+    baseUrl: env.WACHT_BACKEND_API_URL,
+  });
+
+  const { auth } = await authenticateRequest(request, {
+    publishableKey: env.WACHT_PUBLISHABLE_KEY,
+  });
+  await auth.protect({ permission: 'deployment:read' });
+
+  const deployment = await settings.getDeploymentSettings();
+  return new Response(JSON.stringify(deployment), {
+    headers: { 'content-type': 'application/json' },
+  });
+}
+```
+
+## API key/OAuth protected machine-auth template
+
+```ts
+import { gateway, settings } from '@wacht/backend';
+
+export async function handleMachine(request: Request, env: Env): Promise<Response> {
+  const incoming = request.headers.get('x-api-key') || '';
+
+  const decision = await gateway.checkPrincipalAuthz(
+    {
+      principalType: 'api_key',
+      principalValue: incoming,
+      resource: '/machine/deployment',
+      method: 'GET',
+      requiredPermissions: ['deployment:read'],
+    },
+  );
+
+  if (!decision.allowed) {
+    return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 });
+  }
+
+  const deployment = await settings.getDeploymentSettings();
+  return new Response(JSON.stringify(deployment), {
+    headers: { 'content-type': 'application/json' },
+  });
+}
+```
+
+`gatewayUrl` is optional; custom host overrides are available on Enterprise plans.
+
+## Why this shape works
+
+- no framework dependency
+- standard `Request` and `Response`
+- explicit auth and permission guard before management calls

@@ -1,0 +1,88 @@
+---
+title: API Auth and OAuth
+description: Backend-aligned API auth and OAuth management methods in Rust SDK.
+---
+
+Validated route domains:
+
+- `/api-auth/apps*`
+- `/api-auth/rate-limit-schemes*`
+- `/api-auth/apps/{app_slug}/keys*`
+- `/api-auth/apps/{app_slug}/audit/*`
+- `/oauth/apps*`
+- `/oauth/apps/{oauth_app_slug}/scopes*`
+- `/oauth/apps/{oauth_app_slug}/clients*`
+- `/oauth/apps/{oauth_app_slug}/clients/{oauth_client_id}/grants*`
+
+Rust API surfaces:
+
+- `client.api_keys().list_api_auth_apps()`
+- `client.api_keys().create_api_auth_app(request)`
+- `client.api_keys().update_api_auth_app(app_slug, request)`
+- `client.api_keys().delete_api_auth_app(app_slug)`
+- `client.api_keys().list_api_keys(app_slug)`
+- `client.api_keys().create_api_key(app_slug, request)`
+- `client.api_keys().revoke_api_key(app_slug, key_id, request)`
+- `client.api_keys().rotate_api_key(app_slug, key_id)`
+- `client.api_keys().list_rate_limit_schemes()`
+- `client.api_keys().get_rate_limit_scheme(slug)`
+- `client.api_keys().create_rate_limit_scheme(request)`
+- `client.api_keys().update_rate_limit_scheme(slug, request)`
+- `client.api_keys().delete_rate_limit_scheme(slug)`
+- `client.api_keys().get_api_audit_logs(app_slug, query)`
+- `client.api_keys().get_api_audit_analytics(app_slug, query)`
+- `client.api_keys().get_api_audit_timeseries(app_slug, query)`
+- `client.oauth().list_oauth_apps()`
+- `client.oauth().create_oauth_app(request)`
+- `client.oauth().update_oauth_app(app_slug, request)`
+- `client.oauth().verify_oauth_app_domain(app_slug)`
+- `client.oauth().update_oauth_scope(app_slug, scope, request)`
+- `client.oauth().set_oauth_scope_mapping(app_slug, scope, request)`
+- `client.oauth().list_oauth_clients(app_slug)`
+- `client.oauth().create_oauth_client(app_slug, request)`
+- `client.oauth().update_oauth_client(app_slug, client_id, request)`
+- `client.oauth().deactivate_oauth_client(app_slug, client_id)`
+- `client.oauth().rotate_oauth_client_secret(app_slug, client_id)`
+- `client.oauth().revoke_oauth_grant(app_slug, client_id, grant_id)`
+
+Rust example:
+
+```rust
+use wacht_rs::{Result, WachtClient};
+
+pub async fn api_auth_and_oauth_example(client: &WachtClient) -> Result<()> {
+    let _scheme = client
+        .api_keys()
+        .create_rate_limit_scheme(wacht_rs::api::api_keys::CreateRateLimitSchemeRequest {
+            slug: "internal-default".to_string(),
+            name: "Internal Default".to_string(),
+            description: Some("Default limits for internal services".to_string()),
+            rules: vec![wacht_rs::api::api_keys::RateLimit {
+                unit: wacht_rs::api::api_keys::RateLimitUnit::Minute,
+                duration: 1,
+                max_requests: 120,
+                mode: Some(wacht_rs::api::api_keys::RateLimitMode::PerKey),
+            }],
+        })
+        .send()
+        .await?;
+
+    let _oauth_app = client
+        .oauth()
+        .update_oauth_app(
+            "acme-oauth",
+            wacht_rs::models::UpdateOAuthAppRequest {
+                name: Some("Acme OAuth v2".to_string()),
+                description: Some("Updated OAuth app config".to_string()),
+                supported_scopes: Some(vec!["openid".to_string(), "profile".to_string(), "email".to_string()]),
+                scope_definitions: None,
+                allow_dynamic_client_registration: Some(false),
+                is_active: Some(true),
+            },
+        )
+        .send()
+        .await?;
+
+    Ok(())
+}
+```

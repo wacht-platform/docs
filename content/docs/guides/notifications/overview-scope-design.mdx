@@ -1,0 +1,67 @@
+---
+title: "Notification System Architecture"
+description: "Design high-signal notification systems with clear scope, severity, and lifecycle contracts."
+---
+
+# Notification System Architecture
+
+Notification quality is mostly policy and information architecture, not UI widgets.
+
+## Scope model
+
+Use scope intentionally:
+
+1. `user`: personal/account/security events.
+2. `organization`: team-level operational updates.
+3. `workspace`: project/workstream updates.
+4. `all` / `current`: reader filters in inbox UIs, not event producer defaults.
+
+## Severity model
+
+1. `info`: non-urgent state updates.
+2. `success`: completed operations.
+3. `warning`: attention needed soon.
+4. `error`: immediate action required.
+
+Do not use severity as category taxonomy.
+
+## Lifecycle model
+
+1. Notification created by backend domain event.
+2. Delivered to scoped inbox surfaces.
+3. User transitions state (`read`, `starred`, `archived`).
+4. Notification expires when stale.
+
+## Producer contract
+
+Every notification template should define:
+
+1. Trigger event and ownership.
+2. Target scope resolution rule.
+3. Severity rule.
+4. CTA behavior (what opens, where it routes).
+5. Expiry rule.
+
+## Consumer contract
+
+Inbox UIs should always support:
+
+1. Scope-aware filtering.
+2. Read/unread transitions.
+3. Archive/star controls.
+4. Realtime updates with reconnect tolerance.
+
+## Anti-patterns to avoid
+
+1. Broadcasting org-wide when workspace scope is enough.
+2. Triggering notifications directly from frontend clicks.
+3. Missing expiry for transient operational alerts.
+4. Unactionable `error` notifications without CTA/context.
+
+## Related docs
+
+1. [Backend Sending Patterns](/docs/guides/notifications/backend-sending-patterns)
+2. [Frontend Inbox with Hooks](/docs/guides/notifications/frontend-inbox-with-hooks)
+3. [Realtime Stream Handling](/docs/guides/notifications/realtime-stream-handling)
+4. [React Router Notifications Hooks](/docs/sdks/react-router/hooks/notifications)
+5. [Backend API Reference](/docs/reference/backend-api)

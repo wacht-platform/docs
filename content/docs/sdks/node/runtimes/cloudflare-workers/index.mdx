@@ -1,0 +1,89 @@
+---
+title: Cloudflare Workers Overview
+description: End-to-end Cloudflare Worker integration for @wacht/backend with bindings and protected routes.
+---
+
+This Cloudflare Workers guide follows the Module Worker pattern with environment bindings.
+
+## 1. Runtime bindings
+
+```toml title="wrangler.toml"
+name = "wacht-admin-api"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+
+[vars]
+WACHT_BACKEND_API_URL = "https://api.wacht.io"
+```
+
+Store secrets with `wrangler secret put`:
+
+- `WACHT_API_KEY`
+- `WACHT_PUBLISHABLE_KEY`
+
+## 2. App structure
+
+<FileTree title="Cloudflare Worker">
+{`src/
+    index.ts
+    auth.ts
+    handlers/
+      users.ts`}
+</FileTree>
+
+## 3. Worker bootstrap
+
+```ts title="src/index.ts"
+import { initClient } from '@wacht/backend';
+import { handleUsersRoute } from './handlers/users';
+import { requireDeploymentRead } from './auth';
+
+type Env = {
+  WACHT_API_KEY: string;
+  WACHT_PUBLISHABLE_KEY: string;
+  WACHT_BACKEND_API_URL?: string;
+};
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    initClient({
+      apiKey: env.WACHT_API_KEY,
+      baseUrl: env.WACHT_BACKEND_API_URL,
+    });
+
+    const url = new URL(request.url);
+    if (url.pathname === '/admin/users' && request.method === 'GET') {
+      await requireDeploymentRead(request, env);
+      return handleUsersRoute();
+    }
+
+    return new Response('Not Found', { status: 404 });
+  },
+};
+```
+
+## 4. Protected handler
+
+```ts title="src/handlers/users.ts"
+import { users } from '@wacht/backend';
+
+export async function handleUsersRoute(): Promise<Response> {
+  const page = await users.listUsers({ limit: 20 });
+  return new Response(JSON.stringify(page), {
+    headers: { 'content-type': 'application/json' },
+  });
+}
+```
+
+## 5. Auth coverage
+
+- JWT/session route protection: `authenticateRequest(request, { publishableKey })` + `auth.protect`.
+- API key/OAuth protected auth: `gateway.checkPrincipalAuthz(...)` before backend API calls.
+
+See [JWT and API Key/OAuth Protected Auth](/docs/sdks/node/runtimes/cloudflare-workers/auth-and-gateway) for full implementations.
+
+## 6. Runtime concerns
+
+- Keep init deterministic; one call per request is acceptable in Workers isolates.
+- Do not put backend API keys in frontend-visible vars.
+- If you need API key/OAuth protected checks, call the `gateway` API group from this runtime.

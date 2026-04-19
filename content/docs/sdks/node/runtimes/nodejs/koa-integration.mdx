@@ -1,0 +1,162 @@
+---
+title: Koa
+description: End-to-end Koa integration with @wacht/backend middleware guards and typed backend calls.
+---
+
+This Koa setup focuses on reusable auth middleware, protected admin routes, and consistent JSON error responses.
+
+## Project structure
+
+<FileTree title="Koa Admin Service">
+{`src/
+    app.ts
+    auth/
+      extract-token.ts
+      require-auth.ts
+    routes/
+      admin-users.ts
+    errors/
+      error-middleware.ts`}
+</FileTree>
+
+## 1. Bootstrap app and backend client
+
+```ts title="src/app.ts"
+import Koa from 'koa';
+import Router from '@koa/router';
+import bodyParser from 'koa-bodyparser';
+import { initClient } from '@wacht/backend';
+import { registerAdminUserRoutes } from './routes/admin-users';
+import { errorMiddleware } from './errors/error-middleware';
+
+initClient({
+  apiKey: process.env.WACHT_API_KEY!,
+  baseUrl: process.env.WACHT_BACKEND_API_URL,
+});
+
+const app = new Koa();
+app.use(bodyParser());
+app.use(errorMiddleware);
+
+const router = new Router();
+registerAdminUserRoutes(router);
+app.use(router.routes());
+app.use(router.allowedMethods());
+
+export { app };
+```
+
+## 2. Auth middleware and token extraction
+
+```ts title="src/auth/extract-token.ts"
+export function extractBearerToken(header?: string): string | null {
+  if (!header || !header.startsWith('Bearer ')) return null;
+  const token = header.slice(7).trim();
+  return token.length > 0 ? token : null;
+}
+```
+
+```ts title="src/auth/require-auth.ts"
+import type Koa from 'koa';
+import { getAuthFromToken } from '@wacht/backend';
+import { extractBearerToken } from './extract-token';
+
+type Permission = string | string[] | undefined;
+
+export function requireAuth(permission?: Permission) {
+  return async (ctx: Koa.Context, next: Koa.Next) => {
+    const token = extractBearerToken(ctx.headers.authorization);
+    const auth = await getAuthFromToken(token);
+    await auth.protect({ permission });
+    ctx.state.wachtAuth = auth;
+    await next();
+  };
+}
+```
+
+In Node.js, `getAuthFromToken(token)` can resolve publishable key from env fallback.
+
+## 3. Protected routes
+
+```ts title="src/routes/admin-users.ts"
+import type Router from '@koa/router';
+import { users } from '@wacht/backend';
+import { requireAuth } from '../auth/require-auth';
+
+export function registerAdminUserRoutes(router: Router) {
+  router.get('/admin/users', requireAuth('user:read'), async (ctx) => {
+    ctx.body = await users.listUsers({ limit: 20, offset: 0 });
+  });
+
+  router.patch('/admin/users/:userId/password', requireAuth('user:update'), async (ctx) => {
+    await users.updatePassword(ctx.params.userId, {
+      new_password: (ctx.request.body as any).new_password,
+    });
+    ctx.status = 204;
+  });
+}
+```
+
+## 4. Error handling middleware
+
+```ts title="src/errors/error-middleware.ts"
+import type Koa from 'koa';
+import { WachtAuthError } from '@wacht/backend';
+
+export const errorMiddleware: Koa.Middleware = async (ctx, next) => {
+  try {
+    await next();
+  } catch (error) {
+    if (error instanceof WachtAuthError) {
+      ctx.status = error.status;
+      ctx.body = {
+        error: error.code,
+        message: error.message,
+        redirect_url: error.redirectUrl ?? null,
+      };
+      return;
+    }
+
+    ctx.status = 500;
+    ctx.body = { error: 'internal_error', message: 'Unexpected error' };
+  }
+};
+```
+
+## 5. API key/OAuth protected auth for machine endpoints
+
+```ts title="src/routes/machine-users.ts"
+import type Router from '@koa/router';
+import { gateway, users } from '@wacht/backend';
+
+export function registerMachineUserRoutes(router: Router) {
+  router.get('/machine/users', async (ctx) => {
+    const apiKey = ctx.headers['x-api-key'];
+
+    const decision = await gateway.checkPrincipalAuthz({
+      principalType: 'api_key',
+      principalValue: typeof apiKey === 'string' ? apiKey : '',
+      resource: '/machine/users',
+      method: 'GET',
+      requiredPermissions: ['user:read'],
+    });
+
+    if (!decision.allowed) {
+      ctx.status = 403;
+      ctx.body = { error: 'forbidden' };
+      return;
+    }
+
+    ctx.body = await users.listUsers({ limit: 20 });
+  });
+}
+```
+
+## Best practices
+
+- Keep auth middleware reusable and route-agnostic.
+- Keep permission constants centralized to avoid policy drift.
+- Use API key/OAuth protected checks for machine-token routes.
+- Custom `gatewayUrl` host override is available on Enterprise plans.
+- Use bounded pagination (`limit`/`offset`) for admin list routes.
+- Return stable JSON error envelopes for auth and permission failures.

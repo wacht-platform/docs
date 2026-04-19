@@ -1,0 +1,93 @@
+---
+title: Authentication
+description: Understand how Wacht models sessions, sign-ins, memberships, sign-out, and session tokens in React Router apps.
+---
+
+Before you wire anything into routes, it helps to understand how Wacht thinks about authentication.
+
+The React Router adapter follows the same core model as the rest of Wacht:
+
+- a session
+- one or more sign-ins inside that session
+- one active sign-in at a time
+- organization and workspace context on the active sign-in
+- short-lived tokens derived from the current session
+
+Once those pieces are clear, the rest of the router API is easier to place.
+
+## Sessions come first
+
+Wacht treats the session as the main unit of client-side auth state.
+
+A session is not just "the current user". It is the full authenticated state for the browser that is using your app.
+
+That session drives:
+
+- signed-in and signed-out UI
+- account switching
+- organization and workspace selection
+- account management screens
+- session tokens for backend calls
+
+## A session can contain more than one sign-in
+
+Wacht separates the session from the sign-in.
+
+The session is the container. Each successful account login becomes a sign-in inside that container. One of those sign-ins is active at a time.
+
+That lets users switch accounts without forcing a full sign-out flow every time they want to change context.
+
+## The active sign-in is the current account context
+
+The active sign-in is the account your app should treat as current.
+
+That usually includes:
+
+- the signed-in user
+- the active organization membership
+- the active workspace membership
+- device and location metadata
+- timing information such as expiry and last activity
+
+## Organization and workspace selection are part of auth state
+
+Organization and workspace selection live on the active sign-in rather than in separate UI-only state.
+
+That keeps the selected organization or workspace tied to the authenticated context instead of letting it drift out of sync.
+
+## In-progress auth lives in the session too
+
+The session can also hold in-progress sign-in and sign-up attempts.
+
+That is how Wacht keeps track of flows that are still underway, such as:
+
+- password verification
+- email verification
+- phone verification
+- second-factor verification
+- authenticator setup
+- profile completion
+
+## Sign-out can happen at two levels
+
+Because Wacht separates the session from the sign-in, sign-out can remove one sign-in or the whole session.
+
+That makes multi-account sessions easier to manage and keeps account switching predictable.
+
+## Session tokens come from the current auth context
+
+Wacht can mint short-lived session tokens from the current auth state.
+
+Those tokens are derived from the current session and active sign-in, so they should be treated as stale after account switching, organization changes, workspace changes, or sign-out.
+
+## `uiOverwrites` is useful for embedded auth flows
+
+If you are building sign-in, sign-up, account, or profile surfaces inside your app, `uiOverwrites` lets you adjust the UI-facing deployment settings for that embedded experience.
+
+That is handy when you want more control over the look and redirects without changing the deployment itself.
+
+## Read next
+
+- [Quick Start](./quickstart)
+- [Client-side Auth](./client-side-auth)
+- [Server Auth](./server-auth)

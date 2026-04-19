@@ -1,0 +1,85 @@
+---
+title: "Webhook Apps End-to-End"
+description: "Use webhook apps as the control plane for customer-managed event delivery in your product."
+---
+
+# Webhook Apps End-to-End
+
+Webhook apps are the customer-facing control plane for outgoing event delivery.
+
+Use webhook apps when customers need to:
+
+1. Register one or more endpoint URLs.
+2. Subscribe to specific event names.
+3. Test endpoints and rotate secrets.
+4. Inspect delivery failures and replay events.
+
+## End-to-end architecture
+
+1. Provision one webhook app per deployment/tenant.
+2. Gate frontend access with backend-issued `webhook_app_access` tickets.
+3. Expose management UX via vanity pages or custom hooks.
+4. Emit domain events from backend systems.
+5. Operate retries, replay, and analytics from support/on-call workflows.
+
+## Control plane vs data plane
+
+1. Control plane: endpoint CRUD, subscriptions, testing, replay initiation, secrets.
+2. Data plane: event emission, delivery attempts, retries, status transitions, metrics.
+3. Keep ownership explicit so product and platform teams can evolve independently.
+
+## Common product use cases
+
+1. Integration events (`invoice.paid`, `subscription.updated`).
+2. Workflow automation callbacks for external systems.
+3. Partner-facing delivery contracts with diagnostics and replay.
+4. Tenant-specific event delivery policies and observability.
+
+## Provision webhook app
+
+```ts
+import { WachtClient } from "@wacht/backend";
+
+const client = new WachtClient({ apiKey: process.env.WACHT_BACKEND_API_KEY! });
+
+await client.webhooks.createWebhookApp({
+  name: "Billing Webhooks",
+  app_slug: "wh_42",
+  description: "Webhook app for deployment 42",
+});
+```
+
+Recommended naming convention: `wh_<deploymentId>`.
+
+## Access model
+
+1. User signs in to your app.
+2. Backend enforces tenant ownership and RBAC.
+3. Backend issues short-lived `webhook_app_access` ticket.
+4. Frontend exchanges ticket and opens webhook management surface.
+
+## Choose your implementation path
+
+### Vanity pages
+
+Best for fastest rollout and lower frontend maintenance.
+
+### Custom hooks
+
+Best when webhook UX must be deeply integrated in existing product IA and workflows.
+
+## Go-live checklist
+
+1. Endpoint create/test/delete/rotate flows verified in staging.
+2. Failed-delivery and replay runbook exists for support/on-call.
+3. Customer receiver docs include signature verification + idempotency.
+4. Alerting exists for sustained endpoint failure.
+5. Ticket issuance has strict RBAC and tenant isolation checks.
+
+## Related docs
+
+1. [Vanity Pages Implementation](/docs/guides/webhook-apps/vanity-pages-implementation)
+2. [Custom Hook Flow Implementation](/docs/guides/webhook-apps/custom-hook-flow-implementation)
+3. [Deliveries, Replay, and Observability](/docs/guides/webhook-apps/deliveries-replay-and-observability)
+4. [Backend JS SDK](/docs/sdks/node)
+5. [Backend API Reference](/docs/reference/backend-api)

@@ -1,0 +1,162 @@
+---
+title: "Custom Hook Flow Implementation"
+description: "Build a production-ready API key management UX with Wacht hooks, backend policy checks, and observability."
+---
+
+# Custom Hook Flow Implementation
+
+Use this model when API key management is a first-class product workflow, not an isolated embedded page.
+
+Typical fit:
+
+1. You want keys under existing `Settings`, `Developer`, or `Integrations` IA.
+2. You need role-aware actions (owner/admin/operator) with product-specific approvals.
+3. You need key lifecycle actions and audit views in one cohesive screen.
+
+## End-to-end architecture
+
+1. Backend validates user + tenancy + RBAC.
+2. Backend issues short-lived `api_auth_access` ticket.
+3. Frontend exchanges ticket through `useApiAuthAppSession(ticket)`.
+4. Frontend renders key lifecycle UI via `useApiAuthKeys(...)`.
+5. Frontend renders logs/analytics/timeseries via audit hooks.
+
+## 1) Backend ticket endpoint (policy boundary)
+
+```ts
+import express from "express";
+import { WachtClient } from "@wacht/backend";
+
+const app = express();
+app.use(express.json());
+
+const wacht = new WachtClient({ apiKey: process.env.WACHT_BACKEND_API_KEY! });
+
+app.post("/api/settings/api-keys/embed-ticket", async (req, res) => {
+  const user = req.user as { canManageApiKeys?: boolean } | undefined;
+  const deploymentId = req.body?.deploymentId as string | undefined;
+
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user.canManageApiKeys) return res.status(403).json({ error: "Forbidden" });
+  if (!deploymentId) return res.status(400).json({ error: "deploymentId is required" });
+
+  const ticket = await wacht.post<{ ticket: string; expires_at: number }>("/session/tickets", {
+    ticket_type: "api_auth_access",
+    api_auth_app_slug: `aa_${deploymentId}`,
+    expires_in: 120,
+  });
+
+  res.json(ticket);
+});
+```
+
+## 2) Frontend session gate + key lifecycle
+
+```tsx
+import { useEffect, useState } from "react";
+import { useApiAuthAppSession, useApiAuthKeys } from "@wacht/nextjs";
+
+export function ApiKeysScreen({ deploymentId }: { deploymentId: string }) {
+  const [ticket, setTicket] = useState<string | null>(null);
+  const [secret, setSecret] = useState<string | null>(null);
+
+  useEffect(() => {
+    void fetch("/api/settings/api-keys/embed-ticket", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deploymentId }),
+    })
+      .then((r) => r.json())
+      .then((payload: { ticket: string }) => setTicket(payload.ticket));
+  }, [deploymentId]);
+
+  const session = useApiAuthAppSession(ticket);
+  const keys = useApiAuthKeys({ status: "active" });
+
+  if (session.sessionLoading) return <div>Loading API key access...</div>;
+  if (!session.hasSession) return <div>Access required</div>;
+  if (session.sessionError) return <div>Failed to establish API auth session</div>;
+
+  return (
+    <section>
+      <h2>{session.apiAuthApp?.name}</h2>
+
+      <button
+        onClick={async () => {
+          const created = await keys.createKey({ name: "CI key" });
+          setSecret(created.data.secret); // one-time secret
+        }}
+      >
+        Create key
+      </button>
+
+      {secret ? <pre>{secret}</pre> : null}
+
+      {keys.keys.map((key) => (
+        <div key={key.id}>
+          <strong>{key.name}</strong> ({key.key_prefix}...{key.key_suffix})
+          <button
+            onClick={async () => {
+              const rotated = await keys.rotateKey({ key_id: key.id });
+              setSecret(rotated.data.secret); // rotate returns new secret once
+            }}
+          >
+            Rotate
+          </button>
+          <button onClick={() => keys.revokeKey({ key_id: key.id, reason: "Compromised" })}>
+            Revoke
+          </button>
+        </div>
+      ))}
+    </section>
+  );
+}
+```
+
+## 3) Add observability beside key actions
+
+```tsx
+import {
+  useApiAuthAuditLogs,
+  useApiAuthAuditAnalytics,
+  useApiAuthAuditTimeseries,
+} from "@wacht/nextjs";
+
+export function ApiAuthObservability() {
+  const logs = useApiAuthAuditLogs({ limit: 25, outcome: "blocked" });
+  const analytics = useApiAuthAuditAnalytics({
+    include_top_keys: true,
+    include_top_paths: true,
+    include_blocked_reasons: true,
+  });
+  const timeseries = useApiAuthAuditTimeseries({ interval: "hour" });
+
+  if (logs.loading || analytics.loading || timeseries.loading) return <div>Loading analytics...</div>;
+
+  return (
+    <section>
+      <div>Blocked: {analytics.analytics?.blocked_requests ?? 0}</div>
+      <div>Success rate: {analytics.analytics?.success_rate ?? 0}%</div>
+      <div>Timeseries points: {timeseries.timeseries.length}</div>
+      <div>Recent blocked logs: {logs.logs.length}</div>
+    </section>
+  );
+}
+```
+
+## Production implementation notes
+
+1. Never issue tickets from frontend code.
+2. Keep tickets short-lived and one-time.
+3. Show secret only once after create/rotate; require explicit acknowledgment.
+4. Confirm revoke/rotate actions and log actor + reason in your app telemetry.
+5. Refetch key list and audit widgets after lifecycle mutations.
+6. Route 401/403 states back to your policy gate, not a generic crash screen.
+
+## Validation checklist
+
+1. Unauthorized user cannot get `api_auth_access` ticket.
+2. Expired ticket fails session exchange cleanly.
+3. Create/rotate returns secret once; secret is not recoverable later.
+4. Revoke immediately removes key from active workflows.
+5. Logs/analytics reflect lifecycle actions in expected windows.

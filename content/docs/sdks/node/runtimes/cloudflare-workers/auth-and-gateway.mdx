@@ -1,0 +1,65 @@
+---
+title: JWT and API Key/OAuth Protected Auth
+description: Implement session-token auth and API key/OAuth protected authorization checks in Cloudflare Workers.
+---
+
+## Session token guard module
+
+```ts title="src/auth.ts"
+import { authenticateRequest } from '@wacht/backend';
+
+type Env = {
+  WACHT_PUBLISHABLE_KEY: string;
+};
+
+export async function requireDeploymentRead(request: Request, env: Env) {
+  const { auth } = await authenticateRequest(request, {
+    publishableKey: env.WACHT_PUBLISHABLE_KEY,
+  });
+
+  await auth.protect({ permission: 'deployment:read' });
+  return auth;
+}
+```
+
+Use this in route handlers before backend API operations.
+
+## API key/OAuth protected check example
+
+Use this when your upstream request carries API keys or OAuth access tokens and you need centralized rate-limit + permission decisioning.
+
+```ts
+import { gateway } from '@wacht/backend';
+
+const result = await gateway.checkPrincipalAuthz(
+  {
+    principalType: 'api_key',
+    principalValue: incomingApiKey,
+    resource: '/admin/users',
+    method: 'GET',
+    requiredPermissions: ['user:read'],
+  },
+);
+
+if (!result.allowed) {
+  return new Response('Forbidden', { status: 403 });
+}
+```
+
+## Combined pattern in one handler
+
+```ts
+// session user route
+await requireDeploymentRead(request, env);
+
+// machine token route
+const machineDecision = await gateway.checkPrincipalAuthz(...);
+if (!machineDecision.allowed) return new Response('Forbidden', { status: 403 });
+```
+
+## Production pattern
+
+- Run `authenticateRequest()` for session-token flows.
+- Run API key/OAuth protected checks for machine-token flows.
+- Log `request_id` from authorization responses for support traceability.
+- `gatewayUrl` is optional; custom host overrides are available on Enterprise plans.

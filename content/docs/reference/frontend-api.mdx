@@ -1,0 +1,164 @@
+---
+title: Frontend API
+description: Runtime HTTP API used by Wacht SDKs and browser clients for session management, auth flows, and user operations.
+---
+
+The Frontend API is the runtime HTTP interface that powers all Wacht SDKs and browser integrations. It is the API your end users interact with — handling sign-in and sign-up, session lifecycle, user profile management, organizations, workspaces, notifications, AI agents, and webhooks.
+
+All requests go to your deployment's own host. There is no shared Wacht endpoint — each deployment has its own isolated frontend host.
+
+## Base URL
+
+```
+https://{your-deployment-host}
+```
+
+The host is configured when you create a deployment in the Wacht console. Your SDK is initialized with it and routes all API calls automatically.
+
+## Authentication
+
+The Frontend API uses session-based authentication. A session token is issued after a successful sign-in and must be present on every authenticated request.
+
+### Production: session cookie
+
+In production, the SDK stores the session as an `__session` cookie on your domain. Browsers send it automatically — no extra configuration needed.
+
+```bash
+curl https://your-app.com/api/me \
+  --cookie "__session=<session_token>"
+```
+
+### Staging and development: query parameter
+
+In non-production environments where cookie handling may be unavailable (server-to-server, local development, testing), pass the session JWT as a query parameter instead:
+
+```bash
+curl "https://your-app.com/api/me?__dev_session__=<session_token>"
+```
+
+This parameter is only accepted on deployments that have development mode enabled.
+
+### Public endpoints
+
+The following endpoints do not require authentication and can be called without a session:
+
+- All sign-in and sign-up routes (`/auth/*`)
+- OpenID Connect discovery (`/.well-known/openid-configuration`)
+- JWKS endpoint (`/.well-known/jwks.json`)
+- SCIM provisioning endpoints (`/scim/*`)
+- Waitlist enrollment
+
+## Making requests
+
+All request bodies must be JSON with `Content-Type: application/json`.
+
+```bash
+curl https://your-app.com/api/me/profile \
+  --request PATCH \
+  --cookie "__session=<session_token>" \
+  --header "Content-Type: application/json" \
+  --data '{ "first_name": "Jane", "last_name": "Doe" }'
+```
+
+## Response format
+
+### Success
+
+All responses wrap the payload in a `data` field:
+
+```json
+{
+  "data": {
+    "id": "usr_01j...",
+    "email": "jane@example.com",
+    "first_name": "Jane",
+    "last_name": "Doe"
+  }
+}
+```
+
+### Paginated lists
+
+List endpoints use cursor-based pagination:
+
+```json
+{
+  "data": [ ... ],
+  "has_more": true,
+  "limit": 20,
+  "offset": "next_cursor_token"
+}
+```
+
+Pass `offset` and `limit` as query parameters to page through results:
+
+```bash
+curl "https://your-app.com/api/organizations?limit=20&offset=next_cursor_token" \
+  --cookie "__session=<session_token>"
+```
+
+## Error handling
+
+The API uses standard HTTP status codes. Error responses include a machine-readable `code` and a human-readable `message`:
+
+```json
+{
+  "error": {
+    "code": "session_expired",
+    "message": "Your session has expired. Please sign in again.",
+    "status": 401
+  }
+}
+```
+
+| Status | Meaning |
+|--------|---------|
+| `400` | Bad request — missing or invalid parameters |
+| `401` | Unauthenticated — no session or session expired |
+| `403` | Forbidden — authenticated but not authorized |
+| `404` | Not found — resource does not exist |
+| `409` | Conflict — e.g. email already in use |
+| `422` | Unprocessable — validation failed |
+| `429` | Rate limited — slow down requests |
+| `500` | Server error — something went wrong on our side |
+
+## Rate limiting
+
+Requests are rate-limited per session and per IP. When a limit is exceeded the API returns `429 Too Many Requests` with a `Retry-After` header indicating how many seconds to wait before retrying.
+
+## Endpoints
+
+### Authentication — 39 operations
+`Auth` · `API Auth` · `Session` · `OAuth` · `Well Known`
+
+Sign-in with password, magic link, passkey, and social providers. Sign-up flows with email verification. Session creation and revocation. API key issuance and management. OAuth authorization code flow for third-party apps. JWKS and OpenID Connect discovery endpoints.
+
+### User — 37 operations
+`Me`
+
+Read and update the authenticated user's profile. Manage email addresses, phone numbers, passkeys, and connected social accounts. Update notification preferences, change password, and delete the account.
+
+### Organizations & Workspaces — 39 operations
+`Organizations` · `Workspaces`
+
+Create and manage organizations. Invite members, assign roles, and manage membership. Create and configure workspaces within an organization. Manage workspace members and settings.
+
+### Notifications & Webhooks — 29 operations
+`Notifications` · `Webhook`
+
+Read inbox notifications, mark as read, and clear history. Register webhook endpoints, view delivery history, replay failed deliveries, and browse the full event catalog.
+
+### Infrastructure — 57 operations
+`AI` · `Deployment` · `SCIM` · `Waitlist`
+
+AI actor sessions, projects, threads, and MCP server connections. Deployment metadata and configuration. SCIM 2.0 provisioning for enterprise directories (users and groups). Waitlist enrollment and status.
+
+## SDKs
+
+The Frontend API is not typically called directly. The Wacht SDKs wrap every endpoint with type safety, automatic session handling, and framework-native patterns:
+
+| SDK | Install |
+|-----|---------|
+| [Next.js SDK](/docs/sdks/nextjs/quickstart) | `npm install @wacht/nextjs` |
+| [React Router SDK](/docs/sdks/react-router/quickstart) | `npm install @wacht/react-router` |
+| [TanStack Router SDK](/docs/sdks/tanstack-router/quickstart) | `npm install @wacht/tanstack-router` |

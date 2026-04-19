@@ -1,0 +1,11 @@
+{
+  "title": "Guides",
+  "pages": [
+    "index",
+    "api-auth",
+    "webhook-apps",
+    "oauth-apps",
+    "notifications",
+    "deployment-events"
+  ]
+}

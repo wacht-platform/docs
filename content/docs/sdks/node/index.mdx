@@ -1,0 +1,54 @@
+---
+title: Backend JS SDK
+description: Universal JavaScript and TypeScript backend access to Wacht APIs, auth helpers, and gateway checks.
+---
+
+The backend package is `@wacht/backend`. It is framework-agnostic and works across server runtimes where `fetch` is available.
+
+Use this SDK when you need:
+
+- server authentication and token verification
+- typed backend API access (users, org/workspace, webhooks, API auth, AI, settings)
+- gateway authorization checks
+- one shared client surface across scripts, workers, services, and framework adapters
+
+## Install
+
+```bash
+pnpm add @wacht/backend
+```
+
+## Quick setup
+
+```ts
+import { initClient, users } from '@wacht/backend';
+
+initClient({
+  apiKey: process.env.WACHT_API_KEY!,
+  baseUrl: process.env.WACHT_BACKEND_API_URL,
+});
+
+const response = await users.listUsers({ limit: 20 });
+console.log(response.data.length);
+```
+
+## How this relates to framework SDKs
+
+Framework server packages (`@wacht/nextjs/server`, `@wacht/react-router/server`, `@wacht/tanstack-router/server`) are adapter layers over the same backend client surface.
+
+- framework adapters: use `wachtClient()` or `createWachtServerClient()`
+- standalone runtime usage: use `initClient()`/`getClient()` or `new WachtClient(...)`
+
+For detailed comparisons, see:
+
+- [Runtime Environments](/docs/sdks/node/runtime-environments)
+- [Runtime Playbook](/docs/sdks/node/framework-interop)
+
+## Runtime guide groups
+
+- [Node.js](/docs/sdks/node/runtimes/nodejs)
+- [Bun](/docs/sdks/node/runtimes/bun)
+- [Hono](/docs/sdks/node/runtimes/hono)
+- [Cloudflare Workers](/docs/sdks/node/runtimes/cloudflare-workers)
+- [Netlify Functions](/docs/sdks/node/runtimes/netlify-functions)
+- [Serverless Workers](/docs/sdks/node/runtimes/serverless-workers)

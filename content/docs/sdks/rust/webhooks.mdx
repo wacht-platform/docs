@@ -1,0 +1,76 @@
+---
+title: Webhooks
+description: Webhook apps, endpoints, deliveries, analytics, and replay APIs.
+---
+
+Validated route domains:
+
+- `/webhooks/apps*`
+- `/webhooks/event-catalogs*`
+- `/webhooks/apps/{app_slug}/endpoints*`
+- `/webhooks/apps/{app_slug}/deliveries*`
+- `/webhooks/apps/{app_slug}/analytics`
+- `/webhooks/apps/{app_slug}/timeseries`
+- `/webhooks/endpoints/{endpoint_id}/reactivate`
+
+Rust API surfaces:
+
+- `client.webhooks().list_webhook_apps()`
+- `client.webhooks().get_webhook_app(app_slug)`
+- `client.webhooks().create_webhook_app(name)`
+- `client.webhooks().update_webhook_app(app_slug)`
+- `client.webhooks().delete_webhook_app(app_slug)`
+- `client.webhooks().rotate_webhook_secret(app_slug)`
+- `client.webhooks().list_webhook_event_catalogs()`
+- `client.webhooks().create_webhook_event_catalog(request)`
+- `client.webhooks().append_webhook_event_catalog_events(slug, request)`
+- `client.webhooks().archive_webhook_event_in_catalog(slug, request)`
+- `client.webhooks().list_webhook_endpoints(app_slug)`
+- `client.webhooks().create_webhook_endpoint(app_slug, url)`
+- `client.webhooks().update_webhook_endpoint(app_slug, endpoint_id)`
+- `client.webhooks().delete_webhook_endpoint(app_slug, endpoint_id)`
+- `client.webhooks().trigger_webhook_event(app_slug, event_name, payload)`
+- `client.webhooks().list_webhook_deliveries(app_slug)`
+- `client.webhooks().replay_webhook_deliveries(app_slug)`
+- `client.webhooks().list_webhook_replay_tasks(app_slug)`
+- `client.webhooks().get_webhook_replay_task_status(app_slug, task_id)`
+- `client.webhooks().cancel_webhook_replay_task(app_slug, task_id)`
+- `client.webhooks().reactivate_webhook_endpoint(endpoint_id)`
+- `client.webhooks().test_webhook_endpoint(app_slug, endpoint_id, event_name)`
+- `client.webhooks().get_webhook_analytics(app_slug)`
+- `client.webhooks().get_webhook_stats(app_slug)`
+- `client.webhooks().get_webhook_timeseries(app_slug, interval)`
+
+Rust example:
+
+```rust
+use wacht_rs::{Result, WachtClient};
+
+pub async fn webhook_example(client: &WachtClient) -> Result<()> {
+    let _catalog = client
+        .webhooks()
+        .append_webhook_event_catalog_events(
+            "core-events",
+            wacht_rs::api::webhooks::AppendWebhookEventCatalogEventsRequest {
+                events: vec![wacht_rs::api::webhooks::WebhookEventDefinition {
+                    name: "user.created".to_string(),
+                    description: "User created event".to_string(),
+                    group: Some("users".to_string()),
+                    schema: Some(serde_json::json!({ "type": "object" })),
+                    example_payload: Some(serde_json::json!({ "user_id": "user_123" })),
+                    is_archived: Some(false),
+                }],
+            },
+        )
+        .send()
+        .await?;
+
+    let _replay_status = client
+        .webhooks()
+        .get_webhook_replay_task_status("app_slug", "task_id")
+        .send()
+        .await?;
+
+    Ok(())
+}
+```

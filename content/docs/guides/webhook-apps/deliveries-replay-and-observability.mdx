@@ -1,0 +1,104 @@
+---
+title: "Deliveries, Replay, and Observability"
+description: "Operate webhook delivery at scale with filtered triage, replay workflows, and analytics."
+---
+
+# Deliveries, Replay, and Observability
+
+After endpoint setup, operational quality determines customer trust.
+
+## Core operator capabilities
+
+1. Filter delivery stream by endpoint/status/event/time.
+2. Inspect individual delivery details.
+3. Replay failed deliveries safely.
+4. Track success rate and latency trends.
+5. Escalate and resolve incidents with clear runbooks.
+
+## Delivery and analytics hooks
+
+```tsx
+import {
+  useWebhookDeliveries,
+  useWebhookAnalytics,
+  useWebhookTimeseries,
+} from "@wacht/nextjs";
+
+export function WebhookOpsSummary() {
+  const deliveries = useWebhookDeliveries({ status: "failed", limit: 25 });
+  const analytics = useWebhookAnalytics({ fields: ["success_rate", "failed", "total_deliveries"] });
+  const timeseries = useWebhookTimeseries({ interval: "hour" });
+
+  if (deliveries.loading || analytics.loading || timeseries.loading) {
+    return <div>Loading webhook operations...</div>;
+  }
+
+  return (
+    <section>
+      <div>Failed deliveries: {deliveries.deliveries.length}</div>
+      <div>Success rate: {analytics.analytics?.success_rate ?? 0}%</div>
+      <div>Timeseries points: {timeseries.timeseries.length}</div>
+    </section>
+  );
+}
+```
+
+## Replay workflow (session hook)
+
+```tsx
+const {
+  replayDelivery,
+  fetchReplayTasks,
+  fetchReplayTaskStatus,
+  cancelReplayTask,
+} = useWebhookAppSession(ticket);
+
+const replay = await replayDelivery({
+  status: "failed",
+  start_date: "2026-04-01T00:00:00Z",
+  end_date: "2026-04-01T23:59:59Z",
+});
+
+const taskId = replay.data.task_id;
+if (taskId) {
+  const taskStatus = await fetchReplayTaskStatus({ taskId });
+  const recentTasks = await fetchReplayTasks({ limit: 20 });
+
+  if (taskStatus.data.status === "running") {
+    // surface progress in UI
+  }
+
+  // optional incident control
+  await cancelReplayTask({ taskId });
+}
+```
+
+## Incident triage pattern
+
+1. Alert fires on failed-delivery threshold.
+2. Operator filters deliveries to impacted endpoint/event.
+3. Operator inspects error class and receiver response.
+4. Operator validates customer receiver fix.
+5. Operator executes bounded replay window.
+6. Operator confirms success-rate recovery in analytics.
+
+## Recommended dashboards
+
+1. Failed deliveries by endpoint (1h, 24h, 7d).
+2. Success-rate trend by event group.
+3. P95/P99 response-time trend.
+4. Replay task volume, duration, and success/failure rate.
+
+## Production guardrails
+
+1. Require idempotent receiver processing in customer docs.
+2. Bound replay windows to avoid receiver overload.
+3. Audit all replay/cancel operations.
+4. Alert on sustained endpoint failure and auto-disable transitions.
+
+## Related docs
+
+1. [Webhook Apps End-to-End](/docs/guides/webhook-apps/overview)
+2. [Custom Hook Flow Implementation](/docs/guides/webhook-apps/custom-hook-flow-implementation)
+3. [Backend JS SDK](/docs/sdks/node)
+4. [Backend API Reference](/docs/reference/backend-api)

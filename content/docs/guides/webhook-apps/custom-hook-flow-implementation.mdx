@@ -1,0 +1,165 @@
+---
+title: "Custom Hook Flow Implementation"
+description: "Build a full webhook management experience in your product using Wacht hooks."
+---
+
+# Custom Hook Flow Implementation
+
+Use custom hooks when webhook UX is part of your core product, not an embedded module.
+
+Best for:
+
+1. Endpoint + delivery management inside your existing settings IA.
+2. Product-specific controls (approval gates, feature tiers, tenant-level restrictions).
+3. Unified operator workflow (endpoint actions + replay + analytics in one screen).
+
+## End-to-end architecture
+
+1. Backend issues short-lived `webhook_app_access` ticket after RBAC checks.
+2. Frontend exchanges ticket with `useWebhookAppSession(ticket)`.
+3. Frontend manages endpoints using session hook mutations.
+4. Frontend reads deliveries/analytics/timeseries with dedicated hooks.
+
+## 1) Backend ticket endpoint
+
+```ts
+import express from "express";
+import { WachtClient } from "@wacht/backend";
+
+const app = express();
+app.use(express.json());
+
+const wacht = new WachtClient({ apiKey: process.env.WACHT_BACKEND_API_KEY! });
+
+app.post("/api/settings/webhooks/embed-ticket", async (req, res) => {
+  const user = req.user as { canManageWebhooks?: boolean } | undefined;
+  const deploymentId = req.body?.deploymentId as string | undefined;
+
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  if (!user.canManageWebhooks) return res.status(403).json({ error: "Forbidden" });
+  if (!deploymentId) return res.status(400).json({ error: "deploymentId is required" });
+
+  const ticket = await wacht.post<{ ticket: string; expires_at: number }>("/session/tickets", {
+    ticket_type: "webhook_app_access",
+    webhook_app_slug: `wh_${deploymentId}`,
+    expires_in: 120,
+  });
+
+  res.json(ticket);
+});
+```
+
+## 2) Frontend session gate + endpoint lifecycle
+
+```tsx
+import { useEffect, useState } from "react";
+import { useWebhookAppSession, useWebhookEndpoints } from "@wacht/nextjs";
+
+export function WebhookSettings({ deploymentId }: { deploymentId: string }) {
+  const [ticket, setTicket] = useState<string | null>(null);
+
+  useEffect(() => {
+    void fetch("/api/settings/webhooks/embed-ticket", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deploymentId }),
+    })
+      .then((r) => r.json())
+      .then((payload: { ticket: string }) => setTicket(payload.ticket));
+  }, [deploymentId]);
+
+  const session = useWebhookAppSession(ticket);
+  const endpoints = useWebhookEndpoints();
+
+  if (session.sessionLoading) return <div>Loading webhook access...</div>;
+  if (!session.hasSession) return <div>Access required</div>;
+  if (session.sessionError) return <div>Could not establish webhook session</div>;
+
+  return (
+    <section>
+      <h2>{session.webhookApp?.name}</h2>
+
+      <button
+        onClick={() =>
+          session.createEndpoint({
+            url: "https://customer.example.com/hooks/wacht",
+            description: "Primary endpoint",
+            subscribed_events: ["invoice.paid", "invoice.failed"],
+          })
+        }
+      >
+        Add endpoint
+      </button>
+
+      {endpoints.endpoints.map((endpoint) => (
+        <div key={endpoint.id}>
+          <span>{endpoint.url}</span>
+          <button
+            onClick={() =>
+              session.testEndpoint(endpoint.id, {
+                event_name: "invoice.paid",
+                payload: { invoice_id: "inv_123" },
+              })
+            }
+          >
+            Test
+          </button>
+          <button onClick={() => session.deleteEndpoint(endpoint.id)}>Delete</button>
+        </div>
+      ))}
+    </section>
+  );
+}
+```
+
+## 3) Deliveries + replay + analytics block
+
+```tsx
+import { useWebhookDeliveries, useWebhookAnalytics, useWebhookTimeseries } from "@wacht/nextjs";
+
+export function WebhookOpsPanel() {
+  const deliveries = useWebhookDeliveries({ status: "failed", limit: 25 });
+  const analytics = useWebhookAnalytics({ fields: ["success_rate", "failed", "total_deliveries"] });
+  const timeseries = useWebhookTimeseries({ interval: "hour" });
+
+  if (deliveries.loading || analytics.loading || timeseries.loading) return <div>Loading webhook operations...</div>;
+
+  return (
+    <section>
+      <div>Failed deliveries: {deliveries.deliveries.length}</div>
+      <div>Success rate: {analytics.analytics?.success_rate ?? 0}%</div>
+      <div>Timeseries points: {timeseries.timeseries.length}</div>
+    </section>
+  );
+}
+```
+
+## 4) Replay workflow
+
+```tsx
+const replay = await session.replayDelivery({
+  status: "failed",
+  start_date: "2026-04-01T00:00:00Z",
+  end_date: "2026-04-01T23:59:59Z",
+});
+
+const taskId = replay.data.task_id;
+if (taskId) {
+  await session.fetchReplayTaskStatus({ taskId });
+}
+```
+
+## Production implementation notes
+
+1. Keep ticket issuance server-only with explicit tenant/RBAC checks.
+2. Validate endpoint URLs and show clear warnings before destructive operations.
+3. Enforce idempotent receiver requirement in customer docs.
+4. Limit replay ranges and add operator audit logs for replay/cancel actions.
+5. Refresh endpoint/delivery/analytics widgets after lifecycle mutations.
+
+## Validation checklist
+
+1. Unauthorized users cannot acquire `webhook_app_access` tickets.
+2. Endpoint create/update/delete/test works with tenant isolation.
+3. Failed delivery replay works and task status updates are visible.
+4. Analytics and timeseries reflect delivery state transitions.

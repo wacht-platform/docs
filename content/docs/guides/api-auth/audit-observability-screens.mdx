@@ -1,0 +1,98 @@
+---
+title: "Building API Auth Observability Screens"
+description: "Build production observability for API key traffic with logs, analytics, timeseries, and response workflows."
+---
+
+# Building API Auth Observability Screens
+
+This page is for operator-facing API key observability, not generic charts.
+
+## Core operator jobs
+
+1. Identify abusive/compromised keys quickly.
+2. Diagnose blocked requests and policy failures.
+3. Monitor key traffic and error trends.
+4. Take immediate action (rotate/revoke) with context.
+
+## Recommended screen layout
+
+1. Logs table with filters and cursor pagination.
+2. Analytics summary cards with top keys/paths/reasons.
+3. Timeseries chart for trend and incident windows.
+4. Action rail for rotate/revoke and follow-up links.
+
+## Logs integration
+
+```tsx
+const logs = useApiAuthAuditLogs({
+  limit: 50,
+  outcome: "blocked",
+  key_id,
+  start_date,
+  end_date,
+  cursor,
+});
+```
+
+Practical filters:
+
+1. `outcome` for rapid blocked/allowed triage.
+2. `key_id` for per-key incident isolation.
+3. `start_date`/`end_date` for incident windows.
+
+## Analytics integration
+
+```tsx
+const analytics = useApiAuthAuditAnalytics({
+  start_date,
+  end_date,
+  include_top_keys: true,
+  include_top_paths: true,
+  include_blocked_reasons: true,
+  include_rate_limits: true,
+  top_limit: 10,
+});
+```
+
+Card suggestions:
+
+1. `total_requests`, `allowed_requests`, `blocked_requests`.
+2. `success_rate` and `keys_used_24h`.
+3. Top blocked reasons and top paths.
+
+## Timeseries integration
+
+```tsx
+const timeseries = useApiAuthAuditTimeseries({
+  start_date,
+  end_date,
+  interval: "hour",
+  key_id,
+});
+```
+
+Interval guidance:
+
+1. `hour` for 24-72 hour incident windows.
+2. `day` for weekly/monthly behavior tracking.
+
+## Action workflow integration
+
+1. Click suspicious key from logs/analytics.
+2. Open key details and recent event context.
+3. Execute rotate/revoke from same operator surface.
+4. Confirm trend recovery in logs + timeseries.
+
+## Production requirements
+
+1. Persist filters in URL query state.
+2. Handle 401/403 with explicit policy boundary UI.
+3. Refresh data on active incidents (manual or timed refetch).
+4. Record operator actions and rationale in internal audit systems.
+
+## Validation checklist
+
+1. Logs/analytics/timeseries date windows stay aligned.
+2. Cursor pagination preserves deterministic ordering.
+3. Rotate/revoke updates are visible in subsequent audit windows.
+4. Unauthorized operators cannot access audit views.
