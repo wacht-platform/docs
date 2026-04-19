@@ -1,5 +1,5 @@
 export const appName = 'Wacht Docs';
-export const docsRoute = '/docs';
+export const docsRoute = '/';
 export const docsImageRoute = '/og/docs';
 export const docsContentRoute = '/llms.mdx/docs';
 export const siteUrl = process.env.NEXT_PUBLIC_DOCS_URL || 'https://docs.wacht.dev';
