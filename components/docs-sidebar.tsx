@@ -502,148 +502,148 @@ const documentationSections: NavSection[] = [
   {
     key: 'nextjs',
     name: 'Next.js',
-    match: '/docs/sdks/nextjs',
+    match: '/sdks/nextjs',
     entries: [
       group('Getting Started', [
-        page('Quick Start', '/docs/sdks/nextjs/quickstart', Rocket),
-        page('Integration model', '/docs/sdks/nextjs/integration-model', FileText),
+        page('Quick Start', '/sdks/nextjs/quickstart', Rocket),
+        page('Integration model', '/sdks/nextjs/integration-model', FileText),
       ], Rocket),
       group('Authentication', [
-        page('Authentication', '/docs/sdks/nextjs/client-side', FileText),
-        page('Client-side Auth', '/docs/sdks/nextjs/client-side-auth', FileText),
-        page('Middleware', '/docs/sdks/nextjs/middleware', ShieldCheck),
-        page('Server-side Auth', '/docs/sdks/nextjs/server-side', KeyRound),
+        page('Authentication', '/sdks/nextjs/client-side', FileText),
+        page('Client-side Auth', '/sdks/nextjs/client-side-auth', FileText),
+        page('Middleware', '/sdks/nextjs/middleware', ShieldCheck),
+        page('Server-side Auth', '/sdks/nextjs/server-side', KeyRound),
       ], ShieldCheck),
       header('Components'),
-      ...sharedComponentGroups('/docs/sdks/nextjs').map((item) => group(item.name, item.pages, Blocks)),
+      ...sharedComponentGroups('/sdks/nextjs').map((item) => group(item.name, item.pages, Blocks)),
       header('Hooks'),
-      ...sharedHookGroups('/docs/sdks/nextjs').map((item) => group(item.name, item.pages, Code2)),
+      ...sharedHookGroups('/sdks/nextjs').map((item) => group(item.name, item.pages, Code2)),
       header('Backend SDK'),
-      ...sharedBackendGroups('/docs/sdks/nextjs').map((item) => group(item.name, item.pages, FileCode2)),
+      ...sharedBackendGroups('/sdks/nextjs').map((item) => group(item.name, item.pages, FileCode2)),
     ],
   },
   {
     key: 'react-router',
     name: 'React Router',
-    match: '/docs/sdks/react-router',
+    match: '/sdks/react-router',
     entries: [
       group('Getting Started', [
-        page('Integration model', '/docs/sdks/react-router/integration-model', FileText),
-        page('Quick Start', '/docs/sdks/react-router/quickstart', Rocket),
+        page('Integration model', '/sdks/react-router/integration-model', FileText),
+        page('Quick Start', '/sdks/react-router/quickstart', Rocket),
       ], Rocket),
       group('Authentication', [
-        page('Authentication', '/docs/sdks/react-router/authentication', ShieldCheck),
-        page('Client-side Auth', '/docs/sdks/react-router/client-side-auth', FileText),
-        page('Server Auth', '/docs/sdks/react-router/server-auth', KeyRound),
+        page('Authentication', '/sdks/react-router/authentication', ShieldCheck),
+        page('Client-side Auth', '/sdks/react-router/client-side-auth', FileText),
+        page('Server Auth', '/sdks/react-router/server-auth', KeyRound),
       ], ShieldCheck),
       header('Components'),
-      ...sharedComponentGroups('/docs/sdks/react-router').map((item) => group(item.name, item.pages, Blocks)),
+      ...sharedComponentGroups('/sdks/react-router').map((item) => group(item.name, item.pages, Blocks)),
       header('Hooks'),
-      ...sharedHookGroups('/docs/sdks/react-router').map((item) => group(item.name, item.pages, Code2)),
+      ...sharedHookGroups('/sdks/react-router').map((item) => group(item.name, item.pages, Code2)),
       header('Backend SDK'),
-      ...sharedBackendGroups('/docs/sdks/react-router').map((item) => group(item.name, item.pages, FileCode2)),
+      ...sharedBackendGroups('/sdks/react-router').map((item) => group(item.name, item.pages, FileCode2)),
     ],
   },
   {
     key: 'tanstack-router',
     name: 'TanStack Router',
-    match: '/docs/sdks/tanstack-router',
+    match: '/sdks/tanstack-router',
     entries: [
       group('Getting Started', [
-        page('Integration model', '/docs/sdks/tanstack-router/integration-model', FileText),
-        page('Quick Start', '/docs/sdks/tanstack-router/quickstart', Rocket),
+        page('Integration model', '/sdks/tanstack-router/integration-model', FileText),
+        page('Quick Start', '/sdks/tanstack-router/quickstart', Rocket),
       ], Rocket),
       group('Authentication', [
-        page('Authentication', '/docs/sdks/tanstack-router/authentication', ShieldCheck),
-        page('Client-side Auth', '/docs/sdks/tanstack-router/client-side-auth', FileText),
-        page('Server Auth', '/docs/sdks/tanstack-router/server-auth', KeyRound),
+        page('Authentication', '/sdks/tanstack-router/authentication', ShieldCheck),
+        page('Client-side Auth', '/sdks/tanstack-router/client-side-auth', FileText),
+        page('Server Auth', '/sdks/tanstack-router/server-auth', KeyRound),
       ], ShieldCheck),
       header('Components'),
-      ...sharedComponentGroups('/docs/sdks/tanstack-router').map((item) => group(item.name, item.pages, Blocks)),
+      ...sharedComponentGroups('/sdks/tanstack-router').map((item) => group(item.name, item.pages, Blocks)),
       header('Hooks'),
-      ...sharedHookGroups('/docs/sdks/tanstack-router').map((item) => group(item.name, item.pages, Code2)),
+      ...sharedHookGroups('/sdks/tanstack-router').map((item) => group(item.name, item.pages, Code2)),
       header('Backend SDK'),
-      ...sharedBackendGroups('/docs/sdks/tanstack-router').map((item) => group(item.name, item.pages, FileCode2)),
+      ...sharedBackendGroups('/sdks/tanstack-router').map((item) => group(item.name, item.pages, FileCode2)),
     ],
   },
   {
     key: 'node',
     name: 'Backend JS',
-    match: '/docs/sdks/node',
+    match: '/sdks/node',
     entries: [
       group('Getting Started', [
-        page('Overview', '/docs/sdks/node', FileText),
-        page('Runtime Environments', '/docs/sdks/node/runtime-environments', Rocket),
-        page('Runtime Playbook', '/docs/sdks/node/framework-interop', Layers3),
-        page('Server Auth', '/docs/sdks/node/server-auth', ShieldCheck),
+        page('Overview', '/sdks/node', FileText),
+        page('Runtime Environments', '/sdks/node/runtime-environments', Rocket),
+        page('Runtime Playbook', '/sdks/node/framework-interop', Layers3),
+        page('Server Auth', '/sdks/node/server-auth', ShieldCheck),
       ], Rocket),
       header('Runtime Guides'),
       group('Node.js', [
-        page('Overview', '/docs/sdks/node/runtimes/nodejs', Layers3),
-        page('Extress', '/docs/sdks/node/runtimes/nodejs/express-integration', ShieldCheck),
-        page('Fartify', '/docs/sdks/node/runtimes/nodejs/fastify-integration', ShieldCheck),
-        page('NestJS', '/docs/sdks/node/runtimes/nodejs/nest-integration', ShieldCheck),
-        page('Koa', '/docs/sdks/node/runtimes/nodejs/koa-integration', ShieldCheck),
-        page('Hapi', '/docs/sdks/node/runtimes/nodejs/hapi-integration', ShieldCheck),
-        page('Restify', '/docs/sdks/node/runtimes/nodejs/restify-integration', ShieldCheck),
+        page('Overview', '/sdks/node/runtimes/nodejs', Layers3),
+        page('Extress', '/sdks/node/runtimes/nodejs/express-integration', ShieldCheck),
+        page('Fartify', '/sdks/node/runtimes/nodejs/fastify-integration', ShieldCheck),
+        page('NestJS', '/sdks/node/runtimes/nodejs/nest-integration', ShieldCheck),
+        page('Koa', '/sdks/node/runtimes/nodejs/koa-integration', ShieldCheck),
+        page('Hapi', '/sdks/node/runtimes/nodejs/hapi-integration', ShieldCheck),
+        page('Restify', '/sdks/node/runtimes/nodejs/restify-integration', ShieldCheck),
       ], Layers3),
       group('Bun', [
-        page('Overview', '/docs/sdks/node/runtimes/bun', Layers3),
-        page('HTTP Handlers', '/docs/sdks/node/runtimes/bun/http-handlers', ShieldCheck),
-        page('Framework Patterns', '/docs/sdks/node/runtimes/bun/framework-patterns', ShieldCheck),
+        page('Overview', '/sdks/node/runtimes/bun', Layers3),
+        page('HTTP Handlers', '/sdks/node/runtimes/bun/http-handlers', ShieldCheck),
+        page('Framework Patterns', '/sdks/node/runtimes/bun/framework-patterns', ShieldCheck),
       ], Layers3),
       group('Deno', [
-        page('Overview', '/docs/sdks/node/runtimes/deno', Layers3),
-        page('Framework Patterns', '/docs/sdks/node/runtimes/deno/framework-patterns', ShieldCheck),
+        page('Overview', '/sdks/node/runtimes/deno', Layers3),
+        page('Framework Patterns', '/sdks/node/runtimes/deno/framework-patterns', ShieldCheck),
       ], Layers3),
       group('Hono', [
-        page('Overview', '/docs/sdks/node/runtimes/hono', Layers3),
-        page('Middleware and Auth', '/docs/sdks/node/runtimes/hono/middleware-auth', ShieldCheck),
+        page('Overview', '/sdks/node/runtimes/hono', Layers3),
+        page('Middleware and Auth', '/sdks/node/runtimes/hono/middleware-auth', ShieldCheck),
       ], Layers3),
       group('Cloudflare Workers', [
-        page('Overview', '/docs/sdks/node/runtimes/cloudflare-workers', Layers3),
-        page('JWT and API key/OAuth auth', '/docs/sdks/node/runtimes/cloudflare-workers/auth-and-gateway', ShieldCheck),
-        page('Framework Patterns', '/docs/sdks/node/runtimes/cloudflare-workers/framework-patterns', ShieldCheck),
+        page('Overview', '/sdks/node/runtimes/cloudflare-workers', Layers3),
+        page('JWT and API key/OAuth auth', '/sdks/node/runtimes/cloudflare-workers/auth-and-gateway', ShieldCheck),
+        page('Framework Patterns', '/sdks/node/runtimes/cloudflare-workers/framework-patterns', ShieldCheck),
       ], Layers3),
       group('Netlify Functions', [
-        page('Overview', '/docs/sdks/node/runtimes/netlify-functions', Layers3),
-        page('JWT and API key/OAuth auth', '/docs/sdks/node/runtimes/netlify-functions/auth-and-headers', ShieldCheck),
-        page('Framework Patterns', '/docs/sdks/node/runtimes/netlify-functions/framework-patterns', ShieldCheck),
+        page('Overview', '/sdks/node/runtimes/netlify-functions', Layers3),
+        page('JWT and API key/OAuth auth', '/sdks/node/runtimes/netlify-functions/auth-and-headers', ShieldCheck),
+        page('Framework Patterns', '/sdks/node/runtimes/netlify-functions/framework-patterns', ShieldCheck),
       ], Layers3),
       group('Serverless Workers', [
-        page('Overview', '/docs/sdks/node/runtimes/serverless-workers', Layers3),
-        page('Production Patterns', '/docs/sdks/node/runtimes/serverless-workers/production-patterns', ShieldCheck),
-        page('Platform Patterns', '/docs/sdks/node/runtimes/serverless-workers/platform-patterns', ShieldCheck),
+        page('Overview', '/sdks/node/runtimes/serverless-workers', Layers3),
+        page('Production Patterns', '/sdks/node/runtimes/serverless-workers/production-patterns', ShieldCheck),
+        page('Platform Patterns', '/sdks/node/runtimes/serverless-workers/platform-patterns', ShieldCheck),
       ], Layers3),
       header('Backend SDK'),
-      ...sharedBackendGroups('/docs/sdks/node').map((item) => group(item.name, item.pages, FileCode2)),
+      ...sharedBackendGroups('/sdks/node').map((item) => group(item.name, item.pages, FileCode2)),
     ],
   },
   {
     key: 'rust',
     name: 'Rust',
-    match: '/docs/sdks/rust',
+    match: '/sdks/rust',
     entries: [
-      topPage('Getting Started', '/docs/sdks/rust/getting-started', Rocket),
+      topPage('Getting Started', '/sdks/rust/getting-started', Rocket),
       header('Framework Guides'),
       group('Axum', [
-        page('Overview', '/docs/sdks/rust/frameworks/axum', FileText),
-        page('Auth Layer Setup', '/docs/sdks/rust/frameworks/axum/auth-layer-setup', ShieldCheck),
-        page('Extractors and Permissions', '/docs/sdks/rust/frameworks/axum/extractors-and-permissions', ShieldCheck),
-        page('Gateway Authorization', '/docs/sdks/rust/frameworks/axum/gateway-authorization', KeyRound),
+        page('Overview', '/sdks/rust/frameworks/axum', FileText),
+        page('Auth Layer Setup', '/sdks/rust/frameworks/axum/auth-layer-setup', ShieldCheck),
+        page('Extractors and Permissions', '/sdks/rust/frameworks/axum/extractors-and-permissions', ShieldCheck),
+        page('Gateway Authorization', '/sdks/rust/frameworks/axum/gateway-authorization', KeyRound),
       ], Layers3),
       header('SDK Methods'),
-      ...sharedBackendGroups('/docs/sdks/rust').map((item) => {
+      ...sharedBackendGroups('/sdks/rust').map((item) => {
         const rustItem = rustifyBackendGroup(item);
         return group(rustItem.name, rustItem.pages, FileCode2);
       }),
       group('Category Guides', [
-        page('Organizations and Workspaces', '/docs/sdks/rust/organizations-workspaces', Building2),
-        page('API Auth and OAuth', '/docs/sdks/rust/api-auth-oauth', KeyRound),
-        page('Webhooks', '/docs/sdks/rust/webhooks', Server),
-        page('AI Runtime and Configuration', '/docs/sdks/rust/ai-runtime', Layers3),
+        page('Organizations and Workspaces', '/sdks/rust/organizations-workspaces', Building2),
+        page('API Auth and OAuth', '/sdks/rust/api-auth-oauth', KeyRound),
+        page('Webhooks', '/sdks/rust/webhooks', Server),
+        page('AI Runtime and Configuration', '/sdks/rust/ai-runtime', Layers3),
       ], Layers3),
-      group('Validation', [page('Contract Validation', '/docs/sdks/rust/contract-validation', FileCode2)], FileCode2),
+      group('Validation', [page('Contract Validation', '/sdks/rust/contract-validation', FileCode2)], FileCode2),
     ],
   },
 ] as const;
@@ -651,36 +651,36 @@ const documentationSections: NavSection[] = [
 const guidesSection: NavSection = {
   key: 'guides',
   name: 'Guides',
-  match: '/docs/guides',
+  match: '/guides',
   entries: [
-    topPage('Overview', '/docs/guides', FileText),
+    topPage('Overview', '/guides', FileText),
     group('API Auth', [
-      page('Overview', '/docs/guides/api-auth/overview'),
-      page('Custom Hook Flow Implementation', '/docs/guides/api-auth/custom-hook-flow-implementation'),
-      page('Audit Observability Screens', '/docs/guides/api-auth/audit-observability-screens'),
-      page('Vanity Pages Implementation', '/docs/guides/api-auth/vanity-pages-implementation'),
+      page('Overview', '/guides/api-auth/overview'),
+      page('Custom Hook Flow Implementation', '/guides/api-auth/custom-hook-flow-implementation'),
+      page('Audit Observability Screens', '/guides/api-auth/audit-observability-screens'),
+      page('Vanity Pages Implementation', '/guides/api-auth/vanity-pages-implementation'),
     ], KeyRound),
     group('Webhook Apps', [
-      page('Overview', '/docs/guides/webhook-apps/overview'),
-      page('Vanity Pages Implementation', '/docs/guides/webhook-apps/vanity-pages-implementation'),
-      page('Custom Hook Flow Implementation', '/docs/guides/webhook-apps/custom-hook-flow-implementation'),
-      page('Deliveries, Replay, and Observability', '/docs/guides/webhook-apps/deliveries-replay-and-observability'),
+      page('Overview', '/guides/webhook-apps/overview'),
+      page('Vanity Pages Implementation', '/guides/webhook-apps/vanity-pages-implementation'),
+      page('Custom Hook Flow Implementation', '/guides/webhook-apps/custom-hook-flow-implementation'),
+      page('Deliveries, Replay, and Observability', '/guides/webhook-apps/deliveries-replay-and-observability'),
     ], Server),
     group('OAuth Apps', [
-      page('Overview', '/docs/guides/oauth-apps/overview'),
-      page('Create OAuth App And Clients', '/docs/guides/oauth-apps/create-oauth-app-and-clients'),
-      page('Implement Consent Flow', '/docs/guides/oauth-apps/implement-consent-flow'),
-      page('Verify Access Tokens And Operate Clients', '/docs/guides/oauth-apps/verify-access-tokens-and-operate-clients'),
+      page('Overview', '/guides/oauth-apps/overview'),
+      page('Create OAuth App And Clients', '/guides/oauth-apps/create-oauth-app-and-clients'),
+      page('Implement Consent Flow', '/guides/oauth-apps/implement-consent-flow'),
+      page('Verify Access Tokens And Operate Clients', '/guides/oauth-apps/verify-access-tokens-and-operate-clients'),
     ], KeyRound),
     group('Notifications', [
-      page('Overview', '/docs/guides/notifications/overview-scope-design'),
-      page('Backend Sending Patterns', '/docs/guides/notifications/backend-sending-patterns'),
-      page('Frontend Inbox With Hooks', '/docs/guides/notifications/frontend-inbox-with-hooks'),
-      page('Realtime Stream Handling', '/docs/guides/notifications/realtime-stream-handling'),
-      page('Actionable Notification UX', '/docs/guides/notifications/actionable-notification-ux'),
+      page('Overview', '/guides/notifications/overview-scope-design'),
+      page('Backend Sending Patterns', '/guides/notifications/backend-sending-patterns'),
+      page('Frontend Inbox With Hooks', '/guides/notifications/frontend-inbox-with-hooks'),
+      page('Realtime Stream Handling', '/guides/notifications/realtime-stream-handling'),
+      page('Actionable Notification UX', '/guides/notifications/actionable-notification-ux'),
     ], FileText),
     group('Deployment Events', [
-      page('Use Webhooks To Keep Backend In Sync', '/docs/guides/deployment-events/use-webhooks-to-keep-backend-in-sync'),
+      page('Use Webhooks To Keep Backend In Sync', '/guides/deployment-events/use-webhooks-to-keep-backend-in-sync'),
     ], Rocket),
   ],
 };
@@ -737,8 +737,8 @@ function apiRefSection(
 }
 
 const referenceSections: NavSection[] = [
-  apiRefSection('frontend-api', 'Frontend API', '/docs/reference/frontend-api', frontendApiManifest, FRONTEND_API_GROUPS),
-  apiRefSection('backend-api', 'Backend API', '/docs/reference/backend-api', platformApiManifest, PLATFORM_API_GROUPS),
+  apiRefSection('frontend-api', 'Frontend API', '/reference/frontend-api', frontendApiManifest, FRONTEND_API_GROUPS),
+  apiRefSection('backend-api', 'Backend API', '/reference/backend-api', platformApiManifest, PLATFORM_API_GROUPS),
 ];
 
 export function DocsSidebar() {
@@ -755,8 +755,8 @@ export function DocsSidebar() {
     return () => media.removeEventListener('change', onChange);
   }, []);
 
-  const isGuides = pathname.startsWith('/docs/guides');
-  const sidebarMode = pathname.startsWith('/docs/reference')
+  const isGuides = pathname.startsWith('/guides');
+  const sidebarMode = pathname.startsWith('/reference')
     ? 'reference'
     : isGuides
       ? 'guides'
@@ -984,7 +984,7 @@ function SdkSwitcher({
         <div className="flex flex-col">
           {sections.map((section) => {
             const selected = section.key === activeSection.key;
-            const href = section.key === 'rust' ? '/docs/sdks/rust/getting-started' : section.match;
+            const href = section.key === 'rust' ? '/sdks/rust/getting-started' : section.match;
 
             return (
               <Link
