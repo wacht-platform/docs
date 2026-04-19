@@ -91,3 +91,13 @@ Documentation lives in `content/docs/` as MDX files. Fumadocs handles routing, t
 ```bash
 pnpm types:check
 ```
+
+## Local Orama MCP Search
+
+The `/mcp` endpoint uses a local in-process Orama index built from docs pages.
+
+Runtime behavior:
+
+- `search_docs` queries the local Orama index from current docs content.
+- `get_doc` returns the full page from local docs source.
+- Index cache TTL is short-lived and rebuilt automatically.
