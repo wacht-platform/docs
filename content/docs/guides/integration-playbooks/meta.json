@@ -1,0 +1,8 @@
+{
+  "title": "Integration Playbooks",
+  "pages": [
+    "fullstack-auth-lifecycle-react-rust",
+    "b2b-org-workspace-lifecycle",
+    "unsupported-stacks"
+  ]
+}

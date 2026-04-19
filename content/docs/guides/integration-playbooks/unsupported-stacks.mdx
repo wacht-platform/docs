@@ -1,0 +1,60 @@
+---
+title: Unsupported Stacks Playbook
+description: How to integrate Wacht when you are not on the first-class framework adapters.
+---
+
+If your stack is not Next.js, React Router, or TanStack Router, use this adaptation pattern.
+
+## Adaptation diagram
+
+```text
+Unsupported frontend stack
+        |
+        +--> @wacht/jsx + custom PlatformAdapter
+        |
+        +--> hosted auth entry + session-aware UI
+        |
+        +--> backend-protected API boundary
+                |
+                +--> @wacht/backend (Node) or wacht (Rust)
+                |
+                +--> auth + tenancy checks per request
+```
+
+## Pattern
+
+- Frontend: `@wacht/jsx` with explicit platform adapter and hosted auth entry.
+- Backend: `@wacht/backend` (Node) or `wacht` (Rust) for protected operations.
+- Contracts: frontend and backend API references for exact request/response shapes.
+
+## Frontend baseline
+
+Start with [React (Router-Agnostic)](/docs/sdks/react):
+
+- mount `DeploymentProvider` with a custom `PlatformAdapter`
+- use `SignedIn`, `SignedOut`, and auth navigation helpers
+- keep privileged operations on backend routes
+
+## Backend baseline
+
+- [Backend JS SDK](/docs/sdks/node)
+- [Rust SDK](/docs/sdks/rust/getting-started)
+
+Protect all sensitive routes server-side and map auth failures into deterministic HTTP errors.
+
+## Adapter checklist
+
+- Navigation semantics are explicit (`replace` vs `push`).
+- Redirect return URLs are preserved after auth.
+- Session headers/cookies are forwarded correctly through your runtime.
+- Tenant context (org/workspace) is resolved server-side before mutations.
+
+## When to migrate to a first-class adapter
+
+If you are reimplementing route guards, auth callbacks, and session plumbing repeatedly, migration cost is usually lower than continued custom maintenance.
+
+Use one of:
+
+- [Next.js](/docs/sdks/nextjs)
+- [React Router](/docs/sdks/react-router)
+- [TanStack Router](/docs/sdks/tanstack-router)

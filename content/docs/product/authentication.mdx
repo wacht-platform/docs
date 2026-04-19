@@ -1,11 +1,60 @@
 ---
 title: Authentication
-description: Wacht authentication concepts across hosted UI, frontend APIs, and server validation.
+description: Authentication model across hosted UI, frontend sessions, and backend request validation.
 ---
 
-Authentication in Wacht spans:
+Wacht authentication spans three layers that should be implemented together.
 
-- hosted sign-in and sign-up flows
-- frontend runtime sessions
-- server-side request authentication
-- token issuance and verification
+## Lifecycle diagram
+
+```text
+User Browser
+   |
+   | 1) hosted sign-in / sign-up
+   v
+Wacht Auth UI
+   |
+   | 2) redirect back with session context
+   v
+Frontend App (SDK provider + SignedIn/SignedOut)
+   |
+   | 3) request protected backend route
+   v
+Backend Service (Node/Rust auth enforcement)
+   |
+   | 4) authorize + scope check (org/workspace)
+   v
+Protected data / mutation
+```
+
+## Layer 1: user-facing auth entry
+
+Users authenticate through hosted sign-in/sign-up pages and land back in your app with deployment-scoped session context.
+
+- [Next.js Quick Start](/docs/sdks/nextjs/quickstart)
+- [React Router Quick Start](/docs/sdks/react-router/quickstart)
+- [TanStack Router Quick Start](/docs/sdks/tanstack-router/quickstart)
+- [React (router-agnostic)](/docs/sdks/react)
+
+## Layer 2: frontend session-aware UX
+
+Use SDK components/hooks (`SignedIn`, `SignedOut`, `UserButton`, session hooks) to keep client UX aligned with session state.
+
+- [Next.js Client-side Auth](/docs/sdks/nextjs/client-side-auth)
+- [React Router Client-side Auth](/docs/sdks/react-router/client-side-auth)
+- [TanStack Router Client-side Auth](/docs/sdks/tanstack-router/client-side-auth)
+
+## Layer 3: backend enforcement
+
+Always enforce auth server-side for protected data and mutations.
+
+- [Next.js Server-side Auth](/docs/sdks/nextjs/server-side)
+- [React Router Server Auth](/docs/sdks/react-router/server-auth)
+- [TanStack Router Server Auth](/docs/sdks/tanstack-router/server-auth)
+- [Rust Axum Auth Layer](/docs/sdks/rust/frameworks/axum/auth-layer-setup)
+
+## End-to-end track
+
+If you want one full walkthrough across frontend and backend together, use:
+
+- [Full-stack auth lifecycle (React + Rust)](/docs/guides/integration-playbooks/fullstack-auth-lifecycle-react-rust)

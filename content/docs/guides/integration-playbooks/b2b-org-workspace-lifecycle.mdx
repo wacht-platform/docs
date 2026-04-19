@@ -1,0 +1,68 @@
+---
+title: B2B Org/Workspace Lifecycle
+description: End-to-end sequence for onboarding organizations, provisioning workspaces, and enforcing scope boundaries.
+---
+
+Use this guide when your app needs organization and workspace scope throughout auth, API access, and admin operations.
+
+## Tenant lifecycle diagram
+
+```text
+Authenticate user
+      |
+      v
+Resolve membership set
+      |
+      +-- none ------------------> onboarding flow
+      |
+      +-- has organizations -----> choose/create org
+                                      |
+                                      v
+                                 choose/create workspace
+                                      |
+                                      v
+                              backend scope enforcement
+                                      |
+                                      v
+                              org/workspace-scoped operations
+```
+
+## Lifecycle sequence
+
+1. User authenticates and lands in your app.
+2. User selects or creates an organization.
+3. User selects or creates a workspace in that organization.
+4. Backend APIs enforce org/workspace scope for all protected operations.
+
+## Frontend implementation
+
+Use SDK tenancy surfaces to manage active organization/workspace and account controls:
+
+- [React Router Organizations/Workspaces hooks](/docs/sdks/react-router/hooks/organizations-workspaces)
+- [TanStack Router Organizations/Workspaces hooks](/docs/sdks/tanstack-router/hooks/organizations-workspaces)
+- [Next.js Organizations/Workspaces hooks](/docs/sdks/nextjs/hooks/organizations-workspaces)
+
+## Backend implementation
+
+Use backend SDK methods and scope-aware checks:
+
+- [Rust Organizations and Workspaces](/docs/sdks/rust/organizations-workspaces)
+- [Backend JS SDK](/docs/sdks/node)
+
+## Scope enforcement rules
+
+- Treat org/workspace IDs as authoritative backend inputs, not frontend hints.
+- Validate current membership/permissions for each protected request.
+- Prefer explicit workspace-scoped resources where available.
+
+## Failure modes to handle
+
+- User has no org membership yet.
+- User has org membership but no workspace membership.
+- Selected workspace is no longer accessible.
+- Role/permission changed after token/session issuance.
+
+## Contract validation checkpoints
+
+- [Frontend API org/workspace surfaces](/docs/reference/frontend-api)
+- [Backend API org/workspace surfaces](/docs/reference/backend-api)

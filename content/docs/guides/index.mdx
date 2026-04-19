@@ -1,20 +1,38 @@
 ---
 title: Guides
-description: Implementation playbooks for API auth, webhook apps, OAuth apps, notifications, and deployment events.
+description: End-to-end implementation playbooks for auth, apps, notifications, and operational workflows.
 ---
 
-Use these guides for end-to-end integration patterns, not raw API reference.
+Use guides when you want an implementation sequence, not just API surface details.
 
-## Guide tracks
+## Guide flow diagram
+
+```text
+Pick track -> Implement baseline -> Validate contracts -> Add ops hardening
+    |                |                     |                    |
+    |                |                     |                    +-- retries
+    |                |                     |                    +-- idempotency
+    |                |                     |                    +-- observability
+    |                |                     +-- frontend-api/backend-api refs
+    |                +-- sandbox deployment
+    +-- API auth / OAuth / webhooks / notifications / integration playbooks
+```
+
+## Core tracks
 
 - [API Auth](./api-auth/overview)
 - [Webhook Apps](./webhook-apps/overview)
 - [OAuth Apps](./oauth-apps/overview)
 - [Notifications](./notifications/overview-scope-design)
-- [Deployment Events](./deployment-events/use-webhooks-to-keep-backend-in-sync)
+
+## Full-stack integration playbooks
+
+- [Frontend + backend auth lifecycle](./integration-playbooks/fullstack-auth-lifecycle-react-rust)
+- [B2B org/workspace lifecycle](./integration-playbooks/b2b-org-workspace-lifecycle)
+- [Unsupported stack adaptation guide](./integration-playbooks/unsupported-stacks)
 
 ## How to use this section
 
-1. Start with the overview page for your domain.
-2. Implement one flow end-to-end in a sandbox environment.
+1. Start from the guide matching your deployment shape.
+2. Implement the baseline happy path in a sandbox deployment.
 3. Add retries, idempotency, and observability before production rollout.

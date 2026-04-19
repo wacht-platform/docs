@@ -1,13 +1,49 @@
 ---
 title: Platform Overview
-description: The shortest useful mental model for the Wacht product surfaces.
+description: A practical map of Wacht surfaces and where each docs section fits in a real implementation.
 ---
 
-Wacht is split across distinct surfaces:
+Wacht is split across clear product surfaces:
 
-- `console` for operators
-- `platform-api` for control-plane and infrastructure services
-- `frontend-api` for customer-facing runtime APIs
-- `react-sdk`, `node`, and `wacht-rs` for integrations
+- `console`: operator workflows and configuration
+- `frontend-api`: runtime auth/session/user operations
+- `platform-api`: control-plane and orchestration APIs
+- SDKs: app-facing integrations over those APIs
 
-This docs layout is organized around that split so readers can quickly tell whether they are looking at product concepts, integration guides, or exact API contracts.
+## Surface diagram
+
+```text
+               +-------------------+
+               |      console      |
+               | operators/config  |
+               +---------+---------+
+                         |
+                         v
+ +-------------------+   +-------------------+
+ |    frontend-api   |   |    platform-api   |
+ | runtime auth/data |   | control/orchestr. |
+ +---------+---------+   +---------+---------+
+           ^                       ^
+           |                       |
+     +-----+-----------------------+-----+
+     |             SDKs                  |
+     | nextjs / react-router / tanstack  |
+     | backend js / rust                 |
+     +-----------------------------------+
+```
+
+## Use this map to choose your starting point
+
+- Product concepts and mental model: [Product docs](/docs/product)
+- Framework-specific app integration: [SDK docs](/docs/sdks)
+- End-to-end implementation tracks: [Guides](/docs/guides)
+- Exact request/response contracts: [API Reference](/docs/reference)
+
+## Common implementation shapes
+
+- Frontend app with hosted auth and session state:
+  Use [Next.js](/docs/sdks/nextjs), [React Router](/docs/sdks/react-router), or [TanStack Router](/docs/sdks/tanstack-router).
+- Backend service enforcing authenticated access:
+  Use [Backend JS SDK](/docs/sdks/node) or [Rust SDK](/docs/sdks/rust/getting-started).
+- B2B org/workspace workflows:
+  Start with [Organizations and Workspaces](/docs/sdks/rust/organizations-workspaces) and [B2B lifecycle guide](/docs/guides/integration-playbooks/b2b-org-workspace-lifecycle).

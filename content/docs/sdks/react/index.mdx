@@ -1,0 +1,108 @@
+---
+title: React (Router-Agnostic)
+description: Use @wacht/jsx directly for plain React or custom routing stacks, with explicit navigation and backend enforcement patterns.
+---
+
+Use this path when you are not using Next.js, React Router, or TanStack Router.
+
+`@wacht/jsx` is the shared React layer under all framework adapters. It exposes auth-aware components and hooks, but you must provide a navigation adapter and explicit backend enforcement.
+
+## Integration diagram
+
+```text
+React App (custom router)
+   |
+   +-- DeploymentProvider(publicKey, adapter)
+   |       |
+   |       +-- auth-aware hooks/components
+   |
+   +-- calls backend API (never direct privileged browser ops)
+           |
+           +-- Node/Rust auth enforcement
+                   |
+                   +-- protected resources
+```
+
+<Steps>
+## Install
+
+```bash
+pnpm add @wacht/jsx @wacht/types
+```
+
+## Set environment keys
+
+```bash
+VITE_WACHT_PUBLISHABLE_KEY=pk_test_xxx
+WACHT_API_KEY=wk_live_xxx
+```
+
+`VITE_WACHT_PUBLISHABLE_KEY` is used by the client provider. `WACHT_API_KEY` stays server-side for backend operations.
+
+## Add `DeploymentProvider` with a browser adapter
+
+`DeploymentProvider` in `@wacht/jsx` requires an adapter with `useNavigate()`.
+
+```tsx
+import { DeploymentProvider, type PlatformAdapter } from '@wacht/jsx';
+
+const browserAdapter: PlatformAdapter = {
+  useNavigate() {
+    return (to, options) => {
+      if (options?.replace) {
+        window.location.replace(to);
+      } else {
+        window.location.assign(to);
+      }
+    };
+  },
+};
+
+export function AppRoot({ children }: { children: React.ReactNode }) {
+  return (
+    <DeploymentProvider
+      publicKey={import.meta.env.VITE_WACHT_PUBLISHABLE_KEY}
+      adapter={browserAdapter}
+    >
+      {children}
+    </DeploymentProvider>
+  );
+}
+```
+
+## Add auth-aware UI
+
+```tsx
+import { SignedIn, SignedOut, UserButton, NavigateToSignIn } from '@wacht/jsx';
+
+export function AuthControls() {
+  return (
+    <>
+      <SignedIn>
+        <UserButton showName={false} />
+      </SignedIn>
+
+      <SignedOut>
+        <NavigateToSignIn />
+      </SignedOut>
+    </>
+  );
+}
+```
+
+## Enforce access on your backend
+
+For non-adapter stacks, enforce auth in your backend handlers (do not rely only on frontend checks).
+
+Use your server runtime with [Backend JS SDK](/docs/sdks/node) or [Rust SDK](/docs/sdks/rust/getting-started), and keep protected APIs behind server-side session/token validation.
+</Steps>
+
+## When to stay on this path
+
+Use this page if your stack is:
+
+- plain React + Vite with custom routing/state
+- micro-frontend shells with custom navigation
+- legacy SPA where adapter migration is not immediate
+
+If you can adopt one supported adapter, prefer [React Router](/docs/sdks/react-router), [TanStack Router](/docs/sdks/tanstack-router), or [Next.js](/docs/sdks/nextjs) for built-in request helpers.

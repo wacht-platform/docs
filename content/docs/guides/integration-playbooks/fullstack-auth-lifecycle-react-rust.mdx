@@ -1,0 +1,72 @@
+---
+title: Full-stack Auth Lifecycle (React + Rust)
+description: One concrete app flow from frontend sign-in through Rust backend enforcement and API access.
+---
+
+This guide connects frontend auth UX and backend authorization checks into one implementation path.
+
+## End-to-end diagram
+
+```text
+[Frontend React]
+  Sign in -> Session-aware UI -> Call protected backend
+                                     |
+                                     v
+                              [Rust + Axum]
+                              AuthLayer + extractors
+                                     |
+                                     v
+                          Scope checks (org/workspace)
+                                     |
+                                     v
+                             Protected data/actions
+```
+
+## Architecture
+
+- Frontend: React app using a Wacht frontend adapter (or `@wacht/jsx`)
+- Backend: Rust service using `wacht` and Axum middleware
+- Contract surface: frontend routes and backend protected handlers
+
+## Step 1: Frontend sign-in and session-aware UI
+
+Implement hosted sign-in and signed-in/signed-out controls in your app:
+
+- [React Router Quick Start](/docs/sdks/react-router/quickstart)
+- or [React (Router-Agnostic)](/docs/sdks/react)
+
+At this point, users can authenticate and return to your app with deployment-scoped session state.
+
+## Step 2: Protect backend handlers in Rust
+
+Apply Axum auth middleware and typed extractors:
+
+- [Rust Getting Started](/docs/sdks/rust/getting-started)
+- [Axum Auth Layer Setup](/docs/sdks/rust/frameworks/axum/auth-layer-setup)
+- [Extractors and Permissions](/docs/sdks/rust/frameworks/axum/extractors-and-permissions)
+
+This is the hard boundary: protected data and mutations are only served through authenticated backend routes.
+
+## Step 3: Bind frontend calls to protected backend routes
+
+Your frontend should call backend endpoints that enforce auth on every protected operation. Avoid direct privileged operations from the browser.
+
+## Step 4: Add tenancy scope checks
+
+If your app is multi-tenant, enforce org/workspace scope server-side:
+
+- [Organizations and Workspaces](/docs/sdks/rust/organizations-workspaces)
+
+## Step 5: Verify with contracts
+
+Use API reference pages to confirm exact fields, request shapes, and response semantics:
+
+- [Frontend API](/docs/reference/frontend-api)
+- [Backend API](/docs/reference/backend-api)
+
+## Production checklist
+
+- Protected routes enforce auth in Rust handlers.
+- Frontend signed-out states never expose protected data.
+- Org/workspace IDs are validated against authenticated context.
+- Error handling maps backend auth failures into explicit UX states.

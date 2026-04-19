@@ -1,20 +1,44 @@
 ---
 title: SDK Overview
-description: Choose the correct package family before drilling into framework-specific details.
+description: Choose the correct Wacht SDK path for your stack, then follow a concrete implementation track.
 ---
 
-Wacht SDKs fall into two groups:
+Wacht SDKs are split into frontend adapters and server integrations.
 
-- frontend adapters for application UIs
-- server-side integrations for authentication, management, and runtime operations
+## Decision diagram
 
-## Frontend adapters
+```text
+Start
+ |
+ +-- Frontend app?
+ |     |
+ |     +-- Next.js ----------> /sdks/nextjs
+ |     +-- React Router -----> /sdks/react-router
+ |     +-- TanStack Router --> /sdks/tanstack-router
+ |     +-- Other React ------> /sdks/react (router-agnostic)
+ |
+ +-- Backend service?
+       |
+       +-- Node/TypeScript --> /sdks/node
+       +-- Rust -------------> /sdks/rust/getting-started
+```
 
-- [React Router](/docs/sdks/react-router)
-- [Next.js](/docs/sdks/nextjs)
-- [TanStack Router](/docs/sdks/tanstack-router)
+## Pick your frontend path
 
-## Server integrations
+- [Next.js](/docs/sdks/nextjs) for App Router and middleware-driven protection.
+- [React Router](/docs/sdks/react-router) for loader/action protection in React Router apps.
+- [TanStack Router](/docs/sdks/tanstack-router) for route-tree and loader integrations.
+- [React (router-agnostic)](/docs/sdks/react) for plain React or custom routing stacks using `@wacht/jsx`.
 
-- [Backend JS SDK](/docs/sdks/node)
-- [Rust](/docs/sdks/rust/getting-started)
+## Pick your backend path
+
+- [Backend JS SDK](/docs/sdks/node) for Node/TypeScript services and server runtimes.
+- [Rust SDK](/docs/sdks/rust/getting-started) for typed async Rust backend integrations.
+
+## Cross-surface tracks
+
+If you need a full implementation story instead of isolated API surfaces:
+
+- [Auth lifecycle (frontend + backend)](/docs/guides/integration-playbooks/fullstack-auth-lifecycle-react-rust)
+- [Organizations and workspaces end-to-end](/docs/guides/integration-playbooks/b2b-org-workspace-lifecycle)
+- [Unsupported stack playbook](/docs/guides/integration-playbooks/unsupported-stacks)

@@ -1,5 +1,5 @@
 {
   "title": "SDKs",
   "root": true,
-  "pages": ["index", "react-router", "nextjs", "tanstack-router", "node", "rust"]
+  "pages": ["index", "react", "react-router", "nextjs", "tanstack-router", "node", "rust"]
 }
