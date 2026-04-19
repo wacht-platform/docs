@@ -1,45 +1,93 @@
 # wacht-docs
 
-This is a Next.js application generated with
-[Create Fumadocs](https://github.com/fuma-nama/fumadocs).
+Documentation site for [Wacht](https://wacht.dev) — built with [Next.js](https://nextjs.org) and [Fumadocs](https://fumadocs.dev).
 
-Run development server:
+## Development
 
 ```bash
-npm run dev
-# or
 pnpm dev
-# or
-yarn dev
 ```
 
-Open http://localhost:3000 with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Explore
+## Stack
 
-In the project, you can see:
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 16 (App Router) |
+| Docs engine | Fumadocs (MDX + UI) |
+| API reference | fumadocs-openapi |
+| Styling | Tailwind CSS v4 |
+| Syntax highlighting | Shiki |
 
-- `lib/source.ts`: Code for content source adapter, [`loader()`](https://fumadocs.dev/docs/headless/source-api) provides the interface to access your content.
-- `lib/layout.shared.tsx`: Shared options for layouts, optional but preferred to keep.
+## Project structure
 
-| Route                     | Description                                            |
-| ------------------------- | ------------------------------------------------------ |
-| `app/(home)`              | The route group for your landing page and other pages. |
-| `app/docs`                | The documentation layout and pages.                    |
-| `app/api/search/route.ts` | The Route Handler for search.                          |
+```
+app/
+  docs/                        Docs layout and all content pages
+    [[...slug]]/page.tsx         MDX content catch-all (SDK docs, guides, product)
+    reference/
+      frontend-api/[tag]/[operation]/page.tsx   Frontend API operation pages
+      backend-api/[tag]/[operation]/page.tsx    Backend API operation pages
+  (home)/                      Marketing / landing pages
 
-### Fumadocs MDX
+content/
+  docs/
+    reference/                 Overview MDX pages for API reference sections
+    sdks/                      SDK documentation (Next.js, React Router, etc.)
+    guides/                    How-to guides
+    product/                   Product concept docs
 
-A `source.config.ts` config file has been included, you can customise different options like frontmatter schema.
+components/
+  docs-sidebar.tsx             Custom sidebar with 3-level API reference navigation
+  docs-header.tsx              Top navigation bar
+  docs-container.tsx           Grid layout container
 
-Read the [Introduction](https://fumadocs.dev/docs/mdx) for further details.
+public/
+  openapi/
+    frontend-api.json          Generated OpenAPI spec (Frontend API)
+    platform-api.json          Generated OpenAPI spec (Platform API)
+    frontend-api-manifest.json Sidebar manifest (tag + operation slugs)
+    platform-api-manifest.json Sidebar manifest (tag + operation slugs)
 
-## Learn More
+scripts/
+  generate-openapi/            OpenAPI spec generation from monorepo source code
+    index.ts                     Entry point
+    config.ts                    Monorepo path configuration
+    go-parser.ts                 Parses Go router + handler files (Frontend API)
+    rust-parser.ts               Parses Rust router + handler + DTO files (Platform API)
+    ts-schema.ts                 Parses TypeScript types from react-sdk
+    openapi-builder.ts           Assembles OpenAPI specs from parsed data
+    HANDOFF.md                   Full documentation for the generation pipeline
 
-To learn more about Next.js and Fumadocs, take a look at the following
-resources:
+lib/
+  openapi.ts                   Shiki + code sample setup for fumadocs-openapi
+  source.ts                    Fumadocs content source adapter
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js
-  features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [Fumadocs](https://fumadocs.dev) - learn about Fumadocs
+## Generating API reference docs
+
+The OpenAPI specs are generated from the Wacht monorepo source code — no manual annotations required. Run:
+
+```bash
+pnpm generate:openapi
+```
+
+This reads Go (Frontend API) and Rust (Platform API) source files from the sibling monorepo directories and writes the specs to `public/openapi/`. Commit the output alongside source changes.
+
+See [`scripts/generate-openapi/HANDOFF.md`](./scripts/generate-openapi/HANDOFF.md) for full documentation on how the generation pipeline works, how to extend it, and how to debug common failures.
+
+## Content
+
+Documentation lives in `content/docs/` as MDX files. Fumadocs handles routing, table of contents, and search automatically.
+
+- **SDK docs** — `content/docs/sdks/` — framework-specific guides for Next.js, React Router, TanStack Router, Node, and Rust
+- **Guides** — `content/docs/guides/` — task-oriented how-to articles
+- **Product** — `content/docs/product/` — concept and architecture docs
+- **API reference** — `content/docs/reference/` — overview pages; individual operation pages are generated dynamically from the OpenAPI specs
+
+## Type checking
+
+```bash
+pnpm types:check
+```
