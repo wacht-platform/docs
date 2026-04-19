@@ -55,7 +55,7 @@ export default async function Page(props: PageProps<'/[...slug]'>) {
   const params = await props.params;
 
   if (params.slug?.length === 1 && params.slug[0] === 'sdks') {
-    permanentRedirect('/docs/sdks/nextjs');
+    permanentRedirect('/sdks/nextjs');
   }
 
   if (
@@ -63,11 +63,11 @@ export default async function Page(props: PageProps<'/[...slug]'>) {
     params.slug[0] === 'sdks' &&
     (params.slug[1] === 'react-router' || params.slug[1] === 'tanstack-router')
   ) {
-    permanentRedirect(`/docs/sdks/${params.slug[1]}/quickstart`);
+    permanentRedirect(`/sdks/${params.slug[1]}/quickstart`);
   }
 
   if (params.slug?.length === 2 && params.slug[0] === 'sdks' && params.slug[1] === 'nextjs') {
-    permanentRedirect('/docs/sdks/nextjs/quickstart');
+    permanentRedirect('/sdks/nextjs/quickstart');
   }
 
   const page = source.getPage(params.slug);
