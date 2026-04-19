@@ -5,7 +5,7 @@ import platformManifest from '@/public/openapi/platform-api-manifest.json';
 import type { Metadata } from 'next';
 import { buildDocsMetadata } from '@/lib/seo';
 
-export default async function Page(props: PageProps<'/docs/reference/backend-api/[tag]/[operation]'>) {
+export default async function Page(props: PageProps<'/reference/backend-api/[tag]/[operation]'>) {
   const { tag, operation } = await props.params;
   const tagEntry = platformManifest.tags.find(t => t.slug === tag);
   const opEntry = tagEntry?.operations.find(op => op.slug === operation);
@@ -32,7 +32,7 @@ export async function generateStaticParams() {
   );
 }
 
-export async function generateMetadata(props: PageProps<'/docs/reference/backend-api/[tag]/[operation]'>): Promise<Metadata> {
+export async function generateMetadata(props: PageProps<'/reference/backend-api/[tag]/[operation]'>): Promise<Metadata> {
   const { tag, operation } = await props.params;
   const tagEntry = platformManifest.tags.find(t => t.slug === tag);
   const opEntry = tagEntry?.operations.find(op => op.slug === operation);

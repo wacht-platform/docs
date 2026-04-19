@@ -51,7 +51,7 @@ function frameworkSeoKeywords(framework: 'nextjs' | 'react-router' | 'tanstack-r
   return ['Rust', 'wacht crate', 'wacht-rs'];
 }
 
-export default async function Page(props: PageProps<'/docs/[...slug]'>) {
+export default async function Page(props: PageProps<'/[...slug]'>) {
   const params = await props.params;
 
   if (params.slug?.length === 1 && params.slug[0] === 'sdks') {
@@ -170,7 +170,7 @@ export async function generateStaticParams() {
   return [...source.generateParams(), ...getSharedSdkDocParams(), ...getSharedBackendDocParams(), ...getRustBackendDocParams()];
 }
 
-export async function generateMetadata(props: PageProps<'/docs/[...slug]'>): Promise<Metadata> {
+export async function generateMetadata(props: PageProps<'/[...slug]'>): Promise<Metadata> {
   const params = await props.params;
   const slugSegments = params.slug;
   const page = source.getPage(slugSegments);

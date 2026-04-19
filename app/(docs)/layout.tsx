@@ -10,7 +10,7 @@ import { DocsContainer } from '@/components/docs-container';
 import { DocsHeader } from '@/components/docs-header';
 import { DocsSidebar } from '@/components/docs-sidebar';
 
-export default function Layout({ children }: LayoutProps<'/docs'>) {
+export default function Layout({ children }: LayoutProps<'/'>) {
   return (
     <DocsLayout
       tree={source.getPageTree()}

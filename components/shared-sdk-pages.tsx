@@ -829,6 +829,78 @@ export function SharedSdkDocPage({
   );
 }
 
+const COMPONENT_PAGE_GROUPS: Record<string, string[]> = {
+  'account-controls': ['Account'],
+  'auth-ui': ['Auth UI'],
+  'bootstrapping': ['Control'],
+  'notifications': ['Notifications'],
+};
+
+const HOOK_PAGE_GROUPS: Record<string, string[]> = {
+  'auth-flows': ['Auth flows'],
+  'core-state': ['State and context'],
+  'organizations-workspaces': ['Multi tenancy'],
+  'notifications': ['Notifications'],
+  'integrations': ['Agents', 'Webhooks', 'API Identity'],
+};
+
+function SharedGroupOverviewPage({
+  framework,
+  kind,
+  groupLabels,
+}: {
+  framework: FrameworkKey;
+  kind: SharedKind;
+  groupLabels: string[];
+}) {
+  const catalog = kind === 'components' ? componentGroups : hookGroups;
+  const meta = frameworkMeta[framework];
+  const refs = buildReferenceIndex(framework);
+  const groups = catalog.filter((g) => groupLabels.includes(g.label));
+
+  return (
+    <div className="space-y-12">
+      {groups.map((group) => (
+        <div key={group.label} className="space-y-8">
+          {groupLabels.length > 1 && (
+            <h2 className="text-xl font-medium text-foreground border-b border-border pb-3">
+              {group.label}
+            </h2>
+          )}
+          {group.docs.map((doc) => (
+            <div key={doc.slug} className="space-y-4 rounded-lg border border-border p-6">
+              <div>
+                <h3 className="text-[1.1rem] font-medium text-foreground mb-1">
+                  {kind === 'components' ? (
+                    <code className="rounded-md border border-border bg-muted/30 px-1.5 py-0.5 text-[1rem] text-foreground">
+                      &lt;{doc.importName} /&gt;
+                    </code>
+                  ) : (
+                    <code className="rounded-md border border-border bg-muted/30 px-1.5 py-0.5 text-[1rem] text-foreground">
+                      {doc.importName}()
+                    </code>
+                  )}
+                </h3>
+                <p className="text-sm leading-7 text-muted-foreground mt-2">
+                  {renderInlineText(doc.intro, refs)}
+                </p>
+              </div>
+              <HighlightedCode code={primaryExample(meta, doc, refs)} />
+              {doc.api?.length ? (
+                <div className="divide-y divide-border border-y border-border">
+                  {doc.api.map((field) => (
+                    <ApiProperty key={field.name} field={field} />
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function SharedComponentsPage({
   framework,
   page,
@@ -836,6 +908,12 @@ export function SharedComponentsPage({
   framework: FrameworkKey;
   page: string;
 }) {
+  const groupLabels = COMPONENT_PAGE_GROUPS[page];
+  if (groupLabels) {
+    return (
+      <SharedGroupOverviewPage framework={framework} kind="components" groupLabels={groupLabels} />
+    );
+  }
   return (
     <SharedSdkDocPage
       framework={framework}
@@ -853,6 +931,12 @@ export function SharedHooksPage({
   framework: FrameworkKey;
   page: string;
 }) {
+  const groupLabels = HOOK_PAGE_GROUPS[page];
+  if (groupLabels) {
+    return (
+      <SharedGroupOverviewPage framework={framework} kind="hooks" groupLabels={groupLabels} />
+    );
+  }
   return (
     <SharedSdkDocPage
       framework={framework}
