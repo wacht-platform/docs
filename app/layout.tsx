@@ -29,11 +29,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/console-favicon.ico' },
-      { url: '/Wacht.png', type: 'image/png' },
+      { url: '/docs/console-favicon.ico' },
+      { url: '/docs/Wacht.png', type: 'image/png' },
     ],
-    apple: [{ url: '/Wacht.png' }],
-    shortcut: ['/console-favicon.ico'],
+    apple: [{ url: '/docs/Wacht.png' }],
+    shortcut: ['/docs/console-favicon.ico'],
   },
   alternates: {
     canonical: '/',
@@ -44,13 +44,13 @@ export const metadata: Metadata = {
     siteName: appName,
     title: appName,
     description: siteDescription,
-    images: [{ url: '/Wacht.png' }],
+    images: [{ url: '/docs/Wacht.png' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: appName,
     description: siteDescription,
-    images: ['/Wacht.png'],
+    images: ['/docs/Wacht.png'],
   },
 };
 

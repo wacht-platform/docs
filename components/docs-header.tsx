@@ -9,9 +9,9 @@ import { Popover, PopoverContent, PopoverTrigger } from 'fumadocs-ui/components/
 import { useEffect, useState, type ReactNode } from 'react';
 
 const topNav = [
-  { label: 'Documentation', href: '/docs/sdks/nextjs' },
-  { label: 'Guides', href: '/docs/guides' },
-  { label: 'API Reference', href: '/docs/reference' },
+  { label: 'Documentation', href: '/sdks/nextjs' },
+  { label: 'Guides', href: '/guides' },
+  { label: 'API Reference', href: '/reference' },
 ];
 
 function isActive(pathname: string, href: string) {
