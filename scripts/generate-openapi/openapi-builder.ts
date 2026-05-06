@@ -55,6 +55,10 @@ function capitalizeTag(tag: string): string {
     .join(' ');
 }
 
+function normalizeRustTypeName(typeName: string): string {
+  return typeName.replace(/\b\w+::/g, '');
+}
+
 export function tagToSlug(tag: string): string {
   return tag.toLowerCase().replace(/\s+/g, '-');
 }
@@ -385,7 +389,7 @@ export function buildPlatformApiSpec(
 
     // Query parameters from typed extractor
     if (info?.queryParamsType) {
-      const queryStruct = structs.get(info.queryParamsType);
+      const queryStruct = structs.get(normalizeRustTypeName(info.queryParamsType));
       if (queryStruct) {
         for (const field of queryStruct.fields) {
           const key = field.serdeRename ?? field.name;
@@ -403,7 +407,7 @@ export function buildPlatformApiSpec(
     let requestBody: RequestBodyObject | undefined;
 
     if (info?.jsonBodyType) {
-      const typeName = info.jsonBodyType;
+      const typeName = normalizeRustTypeName(info.jsonBodyType);
       ensureSchema(typeName, structs, allSchemas);
       requestBody = {
         required: true,
@@ -423,7 +427,7 @@ export function buildPlatformApiSpec(
     if (info?.responseType) {
       // Strip all module path prefixes while preserving generic params
       // e.g. "PaginatedResponse<models::webhook::Foo>" → "PaginatedResponse<Foo>"
-      const typeName = info.responseType.replace(/\b\w+::/g, '');
+      const typeName = normalizeRustTypeName(info.responseType);
 
       if (typeName === '()') {
         // Unit response — no body; keep as empty object

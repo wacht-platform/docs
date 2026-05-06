@@ -107,12 +107,6 @@
           "path": "/ai/projects/{project_id}/board/items/{item_id}"
         },
         {
-          "name": "List Board Item Events",
-          "slug": "list-board-item-events",
-          "method": "GET",
-          "path": "/ai/projects/{project_id}/board/items/{item_id}/events"
-        },
-        {
           "name": "List Board Item Assignments",
           "slug": "list-board-item-assignments",
           "method": "GET",
@@ -143,16 +137,40 @@
           "path": "/ai/projects/{project_id}/board/items/{item_id}/archive"
         },
         {
+          "name": "Cancel Board Item",
+          "slug": "cancel-board-item",
+          "method": "POST",
+          "path": "/ai/projects/{project_id}/board/items/{item_id}/cancel"
+        },
+        {
+          "name": "Answer Board Item Question",
+          "slug": "answer-board-item-question",
+          "method": "POST",
+          "path": "/ai/projects/{project_id}/board/items/{item_id}/answer"
+        },
+        {
+          "name": "Approve Board Item Tool",
+          "slug": "approve-board-item-tool",
+          "method": "POST",
+          "path": "/ai/projects/{project_id}/board/items/{item_id}/approval"
+        },
+        {
           "name": "Unarchive Board Item",
           "slug": "unarchive-board-item",
           "method": "POST",
           "path": "/ai/projects/{project_id}/board/items/{item_id}/unarchive"
         },
         {
-          "name": "Append Board Item Journal",
-          "slug": "append-board-item-journal",
+          "name": "List Board Item Comments",
+          "slug": "list-board-item-comments",
+          "method": "GET",
+          "path": "/ai/projects/{project_id}/board/items/{item_id}/comments"
+        },
+        {
+          "name": "Create Board Item Comment",
+          "slug": "create-board-item-comment",
           "method": "POST",
-          "path": "/ai/projects/{project_id}/board/items/{item_id}/journal"
+          "path": "/ai/projects/{project_id}/board/items/{item_id}/comments"
         },
         {
           "name": "List Project Threads",
@@ -189,12 +207,6 @@
           "slug": "get-thread",
           "method": "GET",
           "path": "/ai/threads/{thread_id}"
-        },
-        {
-          "name": "List Thread Events",
-          "slug": "list-thread-events",
-          "method": "GET",
-          "path": "/ai/threads/{thread_id}/events"
         },
         {
           "name": "List Thread Assignments",
@@ -237,6 +249,30 @@
           "slug": "run-thread",
           "method": "POST",
           "path": "/ai/threads/{thread_id}/run"
+        },
+        {
+          "name": "Answer Thread Question",
+          "slug": "answer-thread-question",
+          "method": "POST",
+          "path": "/ai/threads/{thread_id}/messages/answer"
+        },
+        {
+          "name": "List",
+          "slug": "list",
+          "method": "GET",
+          "path": "/ai/external-connections"
+        },
+        {
+          "name": "Connect",
+          "slug": "connect",
+          "method": "POST",
+          "path": "/ai/external-connections/{provider}/{slug}/connect"
+        },
+        {
+          "name": "Disconnect",
+          "slug": "disconnect",
+          "method": "DELETE",
+          "path": "/ai/external-connections/{provider}/{slug}"
         }
       ]
     },
@@ -1025,12 +1061,6 @@
           "path": "/session"
         },
         {
-          "name": "Get Token",
-          "slug": "get-token",
-          "method": "GET",
-          "path": "/session/token"
-        },
-        {
           "name": "Switch Active Sign In",
           "slug": "switch-active-sign-in",
           "method": "POST",
@@ -1245,6 +1275,12 @@
           "slug": "delete-workspace",
           "method": "POST",
           "path": "/workspaces/{id}/delete"
+        },
+        {
+          "name": "Leave Workspace",
+          "slug": "leave-workspace",
+          "method": "POST",
+          "path": "/workspaces/{id}/leave"
         },
         {
           "name": "Get Workspace Members",

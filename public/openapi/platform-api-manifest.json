@@ -197,6 +197,48 @@
           "path": "/ai/mcp-servers/discover"
         },
         {
+          "name": "Get Composio Config",
+          "slug": "get-composio-config",
+          "method": "GET",
+          "path": "/ai/composio/config"
+        },
+        {
+          "name": "Update Composio Config",
+          "slug": "update-composio-config",
+          "method": "PATCH",
+          "path": "/ai/composio/config"
+        },
+        {
+          "name": "List Composio Toolkits",
+          "slug": "list-composio-toolkits",
+          "method": "GET",
+          "path": "/ai/composio/toolkits"
+        },
+        {
+          "name": "Enable Composio App",
+          "slug": "enable-composio-app",
+          "method": "POST",
+          "path": "/ai/composio/apps"
+        },
+        {
+          "name": "Disable Composio App",
+          "slug": "disable-composio-app",
+          "method": "DELETE",
+          "path": "/ai/composio/apps/{slug}"
+        },
+        {
+          "name": "List Toolkit Auth Configs",
+          "slug": "list-toolkit-auth-configs",
+          "method": "GET",
+          "path": "/ai/composio/toolkits/{slug}/auth-configs"
+        },
+        {
+          "name": "Get Toolkit Auth Details",
+          "slug": "get-toolkit-auth-details",
+          "method": "GET",
+          "path": "/ai/composio/toolkits/{slug}/auth-details"
+        },
+        {
           "name": "Get Mcp Server By Id",
           "slug": "get-mcp-server-by-id",
           "method": "GET",
@@ -329,12 +371,6 @@
           "path": "/ai/actor-projects/{project_id}/board/items/{item_id}"
         },
         {
-          "name": "List Project Task Board Item Events",
-          "slug": "list-project-task-board-item-events",
-          "method": "GET",
-          "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/events"
-        },
-        {
           "name": "List Project Task Board Item Assignments",
           "slug": "list-project-task-board-item-assignments",
           "method": "GET",
@@ -353,12 +389,6 @@
           "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/filesystem/file"
         },
         {
-          "name": "Append Project Task Board Item Journal",
-          "slug": "append-project-task-board-item-journal",
-          "method": "POST",
-          "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/journal"
-        },
-        {
           "name": "Update Project Task Board Item",
           "slug": "update-project-task-board-item",
           "method": "POST",
@@ -375,6 +405,36 @@
           "slug": "unarchive-project-task-board-item",
           "method": "POST",
           "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/unarchive"
+        },
+        {
+          "name": "Cancel Project Task Board Item",
+          "slug": "cancel-project-task-board-item",
+          "method": "POST",
+          "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/cancel"
+        },
+        {
+          "name": "Answer Project Task Board Item Question",
+          "slug": "answer-project-task-board-item-question",
+          "method": "POST",
+          "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/answer"
+        },
+        {
+          "name": "Approve Project Task Board Item Tool",
+          "slug": "approve-project-task-board-item-tool",
+          "method": "POST",
+          "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/approval"
+        },
+        {
+          "name": "List Project Task Board Item Comments",
+          "slug": "list-project-task-board-item-comments",
+          "method": "GET",
+          "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/comments"
+        },
+        {
+          "name": "Create Project Task Board Item Comment",
+          "slug": "create-project-task-board-item-comment",
+          "method": "POST",
+          "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/comments"
         },
         {
           "name": "List Agent Threads",
@@ -417,12 +477,6 @@
           "slug": "unarchive-agent-thread",
           "method": "POST",
           "path": "/ai/actor-project-threads/{thread_id}/unarchive"
-        },
-        {
-          "name": "List Pending Thread Events",
-          "slug": "list-pending-thread-events",
-          "method": "GET",
-          "path": "/ai/actor-project-threads/{thread_id}/events"
         },
         {
           "name": "List Assignments For Thread",
@@ -939,6 +993,18 @@
           "slug": "update-deployment-b2b-settings",
           "method": "PATCH",
           "path": "/settings/b2b"
+        },
+        {
+          "name": "Get Deployment Organization Roles",
+          "slug": "get-deployment-organization-roles",
+          "method": "GET",
+          "path": "/settings/b2b/organization-roles"
+        },
+        {
+          "name": "Get Deployment Workspace Roles",
+          "slug": "get-deployment-workspace-roles",
+          "method": "GET",
+          "path": "/settings/b2b/workspace-roles"
         },
         {
           "name": "Get Deployment Social Connections",

@@ -46,6 +46,7 @@ export interface RustStructField {
   rustType: string;
   required: boolean;  // false if wrapped in Option<>
   serdeRename?: string;
+  serializedAsString?: boolean;
 }
 
 export interface RustStruct {

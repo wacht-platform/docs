@@ -2611,9 +2611,6 @@
                   "status": {
                     "type": "string"
                   },
-                  "priority": {
-                    "type": "string"
-                  },
                   "schedule_kind": {
                     "type": "string"
                   },
@@ -2823,201 +2820,6 @@
                     },
                     "data": {
                       "$ref": "#/components/schemas/ProjectTaskBoardItem"
-                    },
-                    "session": {
-                      "type": "object",
-                      "nullable": true,
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "created_at": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "updated_at": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/ai/projects/{project_id}/board/items/{item_id}/events": {
-      "get": {
-        "operationId": "ListBoardItemEvents",
-        "summary": "List Board Item Events",
-        "tags": [
-          "AI"
-        ],
-        "parameters": [
-          {
-            "name": "project_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "item_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "include_archived",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "cursor",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "integer"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/BoardItemEventsResponse"
                     },
                     "session": {
                       "type": "object",
@@ -3758,9 +3560,6 @@
                   "status": {
                     "type": "string"
                   },
-                  "priority": {
-                    "type": "string"
-                  },
                   "schedule_kind": {
                     "type": "string"
                   },
@@ -4095,6 +3894,534 @@
         }
       }
     },
+    "/ai/projects/{project_id}/board/items/{item_id}/cancel": {
+      "post": {
+        "operationId": "CancelBoardItem",
+        "summary": "Cancel Board Item",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ProjectTaskBoardItem"
+                    },
+                    "session": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updated_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/projects/{project_id}/board/items/{item_id}/answer": {
+      "post": {
+        "operationId": "AnswerBoardItemQuestion",
+        "summary": "Answer Board Item Question",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ProjectTaskBoardItem"
+                    },
+                    "session": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updated_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/projects/{project_id}/board/items/{item_id}/approval": {
+      "post": {
+        "operationId": "ApproveBoardItemTool",
+        "summary": "Approve Board Item Tool",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "request_message_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ProjectTaskBoardItem"
+                    },
+                    "session": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updated_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/ai/projects/{project_id}/board/items/{item_id}/unarchive": {
       "post": {
         "operationId": "UnarchiveBoardItem",
@@ -4266,10 +4593,182 @@
         }
       }
     },
-    "/ai/projects/{project_id}/board/items/{item_id}/journal": {
+    "/ai/projects/{project_id}/board/items/{item_id}/comments": {
+      "get": {
+        "operationId": "ListBoardItemComments",
+        "summary": "List Board Item Comments",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProjectTaskBoardItemComment"
+                      }
+                    },
+                    "session": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updated_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
-        "operationId": "AppendBoardItemJournal",
-        "summary": "Append Board Item Journal",
+        "operationId": "CreateBoardItemComment",
+        "summary": "Create Board Item Comment",
         "tags": [
           "AI"
         ],
@@ -4298,13 +4797,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "summary": {
-                    "type": "string"
-                  },
-                  "body_markdown": {
-                    "type": "string"
-                  },
-                  "details": {
+                  "body": {
                     "type": "string"
                   }
                 }
@@ -4327,7 +4820,7 @@
                       "type": "string"
                     },
                     "data": {
-                      "$ref": "#/components/schemas/ProjectTaskBoardItemEvent"
+                      "$ref": "#/components/schemas/ProjectTaskBoardItemComment"
                     },
                     "session": {
                       "type": "object",
@@ -5364,185 +5857,6 @@
                     },
                     "data": {
                       "$ref": "#/components/schemas/AgentThread"
-                    },
-                    "session": {
-                      "type": "object",
-                      "nullable": true,
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "created_at": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "updated_at": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/ai/threads/{thread_id}/events": {
-      "get": {
-        "operationId": "ListThreadEvents",
-        "summary": "List Thread Events",
-        "tags": [
-          "AI"
-        ],
-        "parameters": [
-          {
-            "name": "thread_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "cursor",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "integer"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/ThreadEventsResponse"
                     },
                     "session": {
                       "type": "object",
@@ -6756,6 +7070,184 @@
                     },
                     "data": {
                       "$ref": "#/components/schemas/ExecuteAgentResponse"
+                    },
+                    "session": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updated_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/threads/{thread_id}/messages/answer": {
+      "post": {
+        "operationId": "AnswerThreadQuestion",
+        "summary": "Answer Thread Question",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "thread_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "ok": {
+                          "type": "boolean"
+                        }
+                      }
                     },
                     "session": {
                       "type": "object",
@@ -11671,6 +12163,511 @@
                     },
                     "data": {
                       "$ref": "#/components/schemas/ValidateInvitationResponse"
+                    },
+                    "session": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updated_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/external-connections": {
+      "get": {
+        "operationId": "List",
+        "summary": "List",
+        "tags": [
+          "AI"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/NotificationListResponse"
+                    },
+                    "session": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updated_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/external-connections/{provider}/{slug}/connect": {
+      "post": {
+        "operationId": "Connect",
+        "summary": "Connect",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "redirect_url": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "session": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updated_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/external-connections/{provider}/{slug}": {
+      "delete": {
+        "operationId": "Disconnect",
+        "summary": "Disconnect",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        }
+                      }
                     },
                     "session": {
                       "type": "object",
@@ -21329,177 +22326,6 @@
                     },
                     "data": {
                       "$ref": "#/components/schemas/Session"
-                    },
-                    "session": {
-                      "type": "object",
-                      "nullable": true,
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "created_at": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "updated_at": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/session/token": {
-      "get": {
-        "operationId": "GetToken",
-        "summary": "Get Token",
-        "tags": [
-          "Session"
-        ],
-        "parameters": [
-          {
-            "name": "template",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "integer"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "token": {
-                          "type": "string"
-                        },
-                        "expires": {
-                          "type": "integer"
-                        }
-                      }
                     },
                     "session": {
                       "type": "object",
@@ -32454,6 +33280,169 @@
         }
       }
     },
+    "/workspaces/{id}/leave": {
+      "post": {
+        "operationId": "LeaveWorkspace",
+        "summary": "Leave Workspace",
+        "tags": [
+          "Workspaces"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    "session": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updated_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{id}/members": {
       "get": {
         "operationId": "GetWorkspaceMembers",
@@ -33843,12 +34832,6 @@
           "title": {
             "type": "string"
           },
-          "thread_kind": {
-            "type": "string"
-          },
-          "thread_visibility": {
-            "type": "string"
-          },
           "thread_purpose": {
             "type": "string"
           },
@@ -33944,7 +34927,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer"
+            "type": "string"
           },
           "name": {
             "type": "string"
@@ -33959,17 +34942,26 @@
             "type": "boolean"
           },
           "connection_status": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "ready\" | \"connected\" | \"not_connected\" | \"expired"
+            ]
           },
           "connected_at": {
-            "type": "string",
-            "format": "date-time"
+            "type": "string"
           },
           "expires_at": {
-            "type": "string",
-            "format": "date-time"
+            "type": "string"
           }
-        }
+        },
+        "required": [
+          "id",
+          "name",
+          "endpoint",
+          "auth_type",
+          "requires_user_connection",
+          "connection_status"
+        ]
       },
       "ActorMcpServerConnectResponse": {
         "type": "object",
@@ -34064,12 +35056,6 @@
           "status": {
             "type": "string"
           },
-          "priority": {
-            "type": "string",
-            "enum": [
-              "urgent\" | \"high\" | \"neutral\" | \"low\" | string"
-            ]
-          },
           "assigned_thread_id": {
             "type": "string"
           },
@@ -34079,6 +35065,24 @@
           },
           "schedule": {
             "$ref": "#/components/schemas/ProjectTaskSchedule"
+          },
+          "mounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleMount"
+            }
+          },
+          "state_version": {
+            "type": "string"
+          },
+          "schedule_id": {
+            "type": "string"
+          },
+          "scheduled_for": {
+            "type": "string"
+          },
+          "fired_at": {
+            "type": "string"
           },
           "completed_at": {
             "type": "string"
@@ -34091,6 +35095,12 @@
           },
           "updated_at": {
             "type": "string"
+          },
+          "pending_question": {
+            "$ref": "#/components/schemas/PendingQuestion"
+          },
+          "pending_approval": {
+            "$ref": "#/components/schemas/ThreadPendingApprovalRequestState"
           }
         },
         "required": [
@@ -34099,30 +35109,10 @@
           "task_key",
           "title",
           "status",
-          "priority",
+          "state_version",
           "created_at",
           "updated_at"
         ]
-      },
-      "BoardItemEventsResponse": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ProjectTaskBoardItemEvent"
-            }
-          },
-          "limit": {
-            "type": "integer"
-          },
-          "has_more": {
-            "type": "boolean"
-          },
-          "next_cursor": {
-            "type": "string"
-          }
-        }
       },
       "BoardItemAssignmentsResponse": {
         "type": "object",
@@ -34154,6 +35144,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/TaskWorkspaceFileEntry"
+            }
+          },
+          "mounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskWorkspaceMount"
             }
           }
         }
@@ -34187,44 +35183,55 @@
           }
         }
       },
-      "ProjectTaskBoardItemEvent": {
+      "ProjectTaskBoardItemComment": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
+          "deployment_id": {
+            "type": "string"
+          },
           "board_item_id": {
             "type": "string"
           },
-          "thread_id": {
+          "actor_id": {
             "type": "string"
           },
-          "execution_run_id": {
+          "body": {
             "type": "string"
           },
-          "event_type": {
-            "type": "string"
-          },
-          "summary": {
-            "type": "string"
-          },
-          "body_markdown": {
-            "type": "string"
-          },
-          "details": {
+          "metadata": {
             "type": "object",
             "additionalProperties": {}
           },
           "created_at": {
             "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "archived_at": {
+            "type": "string"
+          },
+          "resolved_at": {
+            "type": "string"
+          },
+          "resolved_by_thread_id": {
+            "type": "string"
+          },
+          "resolution_summary": {
+            "type": "string"
           }
         },
         "required": [
           "id",
+          "deployment_id",
           "board_item_id",
-          "event_type",
-          "summary",
-          "created_at"
+          "actor_id",
+          "body",
+          "created_at",
+          "updated_at"
         ]
       },
       "UpdateAgentThreadRequest": {
@@ -34237,26 +35244,6 @@
             "type": "string"
           },
           "system_instructions": {
-            "type": "string"
-          }
-        }
-      },
-      "ThreadEventsResponse": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ThreadEvent"
-            }
-          },
-          "limit": {
-            "type": "integer"
-          },
-          "has_more": {
-            "type": "boolean"
-          },
-          "next_cursor": {
             "type": "string"
           }
         }
@@ -34542,7 +35529,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string"
           },
           "active_signin": {
             "$ref": "#/components/schemas/SignIn",
@@ -34660,7 +35647,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string"
           },
           "created_at": {
             "type": "string"
@@ -34705,7 +35692,7 @@
             "$ref": "#/components/schemas/DeploymentUISettings"
           },
           "project_id": {
-            "type": "number"
+            "type": "string"
           },
           "mode": {
             "type": "string",
@@ -34966,7 +35953,7 @@
           "data": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/OrganizationMemberQueryResult"
+              "$ref": "#/components/schemas/OrganizationMembership"
             }
           },
           "meta": {
@@ -35368,7 +36355,7 @@
         "type": "object",
         "properties": {
           "deployment_id": {
-            "type": "number"
+            "type": "string"
           },
           "app_name": {
             "type": "string"
@@ -36816,7 +37803,7 @@
           "data": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/WorkspaceMemberQueryResult"
+              "$ref": "#/components/schemas/WorkspaceMembership"
             }
           },
           "meta": {
@@ -36858,20 +37845,6 @@
         "type": "object",
         "properties": {
           "message": {
-            "type": "string"
-          }
-        }
-      },
-      "WorkspaceMemberQueryResult": {
-        "type": "object",
-        "properties": {
-          "rolesjson": {
-            "type": "string"
-          },
-          "publicuserdatajson": {
-            "type": "string"
-          },
-          "publicmetadatajson": {
             "type": "string"
           }
         }
@@ -37230,7 +38203,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string"
           },
           "provider": {
             "$ref": "#/components/schemas/SocialConnectionProvider"
@@ -38049,20 +39022,6 @@
           }
         }
       },
-      "OrganizationMemberQueryResult": {
-        "type": "object",
-        "properties": {
-          "rolesjson": {
-            "type": "string"
-          },
-          "userjson": {
-            "type": "string"
-          },
-          "publicmetadatajson": {
-            "type": "string"
-          }
-        }
-      },
       "OrganizationInfo": {
         "type": "object",
         "properties": {
@@ -38168,7 +39127,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string"
           },
           "created_at": {
             "type": "string"
@@ -38180,7 +39139,7 @@
             "type": "null"
           },
           "deployment_id": {
-            "type": "number"
+            "type": "string"
           },
           "organizations_enabled": {
             "type": "boolean"
@@ -38228,16 +39187,16 @@
             "type": "boolean"
           },
           "default_workspace_creator_role_id": {
-            "type": "number"
+            "type": "string"
           },
           "default_workspace_member_role_id": {
-            "type": "number"
+            "type": "string"
           },
           "default_org_creator_role_id": {
-            "type": "number"
+            "type": "string"
           },
           "default_org_member_role_id": {
-            "type": "number"
+            "type": "string"
           },
           "workspace_permissions": {
             "type": "array",
@@ -38301,7 +39260,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string"
           },
           "created_at": {
             "type": "string"
@@ -38379,7 +39338,7 @@
             "$ref": "#/components/schemas/MultiSessionSupport"
           },
           "deployment_id": {
-            "type": "number"
+            "type": "string"
           }
         },
         "required": [
@@ -38413,7 +39372,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string"
           },
           "created_at": {
             "type": "string"
@@ -38425,7 +39384,7 @@
             "type": "null"
           },
           "deployment_id": {
-            "type": "number"
+            "type": "string"
           },
           "allowlist_enabled": {
             "type": "boolean"
@@ -38489,7 +39448,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number"
+            "type": "string"
           },
           "created_at": {
             "type": "string"
@@ -38501,7 +39460,7 @@
             "type": "null"
           },
           "deployment_id": {
-            "type": "number"
+            "type": "string"
           },
           "provider": {
             "type": "string"
@@ -38757,7 +39716,7 @@
             "type": "string"
           },
           "session_id": {
-            "type": "number"
+            "type": "string"
           },
           "method": {
             "$ref": "#/components/schemas/SignInMethod"
@@ -38784,10 +39743,8 @@
             }
           },
           "user_id": {
-            "type": "number"
-          },
-          "last_active_org_id": {
-            "type": "number"
+            "type": "string",
+            "nullable": true
           },
           "current_step": {
             "$ref": "#/components/schemas/CurrentSessionStep"
@@ -38825,7 +39782,6 @@
           "second_method_authenticated",
           "second_method_authentication_required",
           "user_id",
-          "last_active_org_id",
           "current_step",
           "completed"
         ]
@@ -38837,7 +39793,7 @@
             "type": "string"
           },
           "session_id": {
-            "type": "number"
+            "type": "string"
           },
           "first_name": {
             "type": "string"
@@ -38909,9 +39865,15 @@
       "SignInMethod": {
         "type": "string",
         "enum": [
-          "plain",
+          "plain_email",
+          "plain_username",
+          "phone_otp",
+          "magic_link",
+          "email_otp",
           "sso",
-          "passkey"
+          "enterprise_sso",
+          "passkey",
+          "impersonation"
         ]
       },
       "SSOProvider": {
@@ -38989,7 +39951,7 @@
         "type": "object",
         "properties": {
           "key_id": {
-            "type": "number"
+            "type": "string"
           },
           "key_name": {
             "type": "string"
@@ -39085,13 +40047,13 @@
             "type": "string"
           },
           "deployment_id": {
-            "type": "number"
+            "type": "string"
           },
           "app_slug": {
             "type": "string"
           },
           "key_id": {
-            "type": "number"
+            "type": "string"
           },
           "key_name": {
             "type": "string"
@@ -39175,6 +40137,12 @@
           },
           {
             "$ref": "#/components/schemas/ExecutionSummaryContent"
+          },
+          {
+            "$ref": "#/components/schemas/ClarificationRequestContent"
+          },
+          {
+            "$ref": "#/components/schemas/ClarificationResponseContent"
           }
         ]
       },
@@ -39370,6 +40338,138 @@
           "user_message",
           "agent_execution",
           "token_count"
+        ]
+      },
+      "ClarificationRequestContent": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "clarification_request"
+            ]
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Question"
+            }
+          },
+          "context": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "questions"
+        ]
+      },
+      "ClarificationResponseContent": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "clarification_response"
+            ]
+          },
+          "request_message_id": {
+            "type": "string"
+          },
+          "answers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuestionAnswer"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "answers"
+        ]
+      },
+      "QuestionAnswer": {
+        "type": "object",
+        "properties": {
+          "question_id": {
+            "type": "string"
+          },
+          "value": {
+            "$ref": "#/components/schemas/AnswerValue"
+          }
+        },
+        "required": [
+          "question_id",
+          "value"
+        ]
+      },
+      "AnswerValue": {
+        "oneOf": [
+          {
+            "type": "object"
+          },
+          {
+            "type": "object"
+          },
+          {
+            "type": "object"
+          },
+          {
+            "type": "object"
+          },
+          {
+            "type": "object"
+          },
+          {
+            "type": "object"
+          },
+          {
+            "type": "object"
+          }
+        ]
+      },
+      "Question": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "answer_kind": {
+            "$ref": "#/components/schemas/AnswerKind"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "answer_kind"
+        ]
+      },
+      "AnswerKind": {
+        "oneOf": [
+          {
+            "type": "object"
+          },
+          {
+            "type": "object"
+          },
+          {
+            "type": "object"
+          },
+          {
+            "type": "object"
+          },
+          {
+            "type": "object"
+          },
+          {
+            "type": "object"
+          },
+          {
+            "type": "object"
+          }
         ]
       },
       "ToolApprovalDecision": {
@@ -39684,9 +40784,6 @@
           "assignment_role": {
             "type": "string"
           },
-          "assignment_order": {
-            "type": "number"
-          },
           "status": {
             "type": "string"
           },
@@ -39734,80 +40831,7 @@
           "board_item_id",
           "thread_id",
           "assignment_role",
-          "assignment_order",
           "status",
-          "created_at",
-          "updated_at"
-        ]
-      },
-      "ThreadEvent": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "deployment_id": {
-            "type": "string"
-          },
-          "project_id": {
-            "type": "string"
-          },
-          "thread_id": {
-            "type": "string"
-          },
-          "board_item_id": {
-            "type": "string"
-          },
-          "event_type": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "priority": {
-            "type": "number"
-          },
-          "payload": {
-            "type": "object",
-            "additionalProperties": {}
-          },
-          "available_at": {
-            "type": "string"
-          },
-          "claimed_at": {
-            "type": "string"
-          },
-          "completed_at": {
-            "type": "string"
-          },
-          "failed_at": {
-            "type": "string"
-          },
-          "caused_by_conversation_id": {
-            "type": "string"
-          },
-          "caused_by_run_id": {
-            "type": "string"
-          },
-          "caused_by_thread_id": {
-            "type": "string"
-          },
-          "created_at": {
-            "type": "string"
-          },
-          "updated_at": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "deployment_id",
-          "project_id",
-          "thread_id",
-          "event_type",
-          "status",
-          "priority",
-          "available_at",
           "created_at",
           "updated_at"
         ]
@@ -39833,14 +40857,40 @@
           }
         }
       },
+      "TaskWorkspaceMount": {
+        "type": "object",
+        "properties": {
+          "mount_path": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
       "ProjectTaskSchedule": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
-          "template_board_item_id": {
+          "board_id": {
             "type": "string"
+          },
+          "task_key": {
+            "type": "string"
+          },
+          "template_payload": {
+            "$ref": "#/components/schemas/ScheduleTemplatePayload"
+          },
+          "mounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleMount"
+            }
           },
           "status": {
             "type": "string"
@@ -39857,8 +40907,14 @@
           "next_run_at": {
             "type": "string"
           },
-          "last_enqueued_at": {
+          "last_fired_at": {
             "type": "string"
+          },
+          "overlap_policy": {
+            "type": "string",
+            "enum": [
+              "skip\" | \"parallel\" | string"
+            ]
           },
           "created_at": {
             "type": "string"
@@ -39869,33 +40925,70 @@
         },
         "required": [
           "id",
-          "template_board_item_id",
+          "board_id",
+          "task_key",
+          "template_payload",
+          "mounts",
           "status",
           "schedule_kind",
           "next_run_at",
+          "overlap_policy",
           "created_at",
           "updated_at"
         ]
       },
-      "ThreadExecutionState": {
+      "ScheduleMount": {
         "type": "object",
         "properties": {
-          "deep_think_mode_active": {
-            "type": "boolean"
+          "mount_path": {
+            "type": "string"
           },
-          "deep_think_used": {
-            "type": "number"
+          "s3_relative_key": {
+            "type": "string"
           },
-          "approved_once_tool_ids": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "rw\" | \"ro\" | string"
+            ]
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "mount_path",
+          "s3_relative_key",
+          "mode"
+        ]
+      },
+      "PendingQuestion": {
+        "type": "object",
+        "properties": {
+          "questions": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/Question"
             }
           },
-          "pending_approval_request": {
-            "$ref": "#/components/schemas/ThreadPendingApprovalRequestState"
+          "context": {
+            "type": "string"
+          },
+          "asked_at": {
+            "type": "string"
+          },
+          "asked_by_thread_id": {
+            "type": "string"
+          },
+          "asked_by_assignment_id": {
+            "type": "string"
           }
-        }
+        },
+        "required": [
+          "questions",
+          "asked_at",
+          "asked_by_thread_id"
+        ]
       },
       "ThreadPendingApprovalRequestState": {
         "type": "object",
@@ -39935,6 +41028,47 @@
           "tool_id",
           "tool_name"
         ]
+      },
+      "ScheduleTemplatePayload": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "ThreadExecutionState": {
+        "type": "object",
+        "properties": {
+          "deep_think_mode_active": {
+            "type": "boolean"
+          },
+          "deep_think_used": {
+            "type": "number"
+          },
+          "approved_once_tool_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "pending_approval_request": {
+            "$ref": "#/components/schemas/ThreadPendingApprovalRequestState"
+          },
+          "pending_question": {
+            "$ref": "#/components/schemas/PendingQuestion"
+          }
+        }
       },
       "bool": {
         "type": "object"

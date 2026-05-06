@@ -343,12 +343,16 @@ function parseRustFile(content: string, structs: Map<string, RustStruct>) {
     structs.set(name, { name, fields });
   }
 
-  // Match enum definitions — capture serde attr to extract rename_all
-  const enumRe = /(?:#\[derive[^\]]*\][\s\n]*)*(#\[serde\(([^)]*)\)\][\s\n]*)?pub\s+enum\s+(\w+)(?:<[^>]*>)?\s*\{([^}]*)\}/g;
+  // Match enum definitions and use brace counting because variants can contain
+  // struct-like payloads with their own braces.
+  const enumRe = /((?:#\[[^\]]*\][\s\n]*)*)pub\s+enum\s+(\w+)(?:<[^>]*>)?\s*\{/g;
   while ((m = enumRe.exec(content)) !== null) {
-    const serdeAttrContent = m[2] ?? '';
-    const name = m[3];
-    const body = m[4];
+    const attrs = m[1] ?? '';
+    const name = m[2];
+    const bodyStart = m.index + m[0].length - 1;
+    const body = extractBraceBlock(content, bodyStart);
+    if (!body) continue;
+    const serdeAttrContent = attrs.match(/#\[serde\(([^)]*)\)\]/)?.[1] ?? '';
     const renameAllMatch = serdeAttrContent.match(/rename_all\s*=\s*"([^"]+)"/);
     const renameAll = renameAllMatch?.[1];
     const variants = parseRustEnumVariants(body, renameAll);
@@ -385,8 +389,9 @@ function parseRustStructFields(body: string): RustStructField[] {
     const required = !rustType.startsWith('Option<');
     const renameMatch = serdeAttr.match(/rename\s*=\s*"([^"]+)"/);
     const serdeRename = renameMatch?.[1];
+    const serializedAsString = /i64_as_string/.test(serdeAttr);
 
-    fields.push({ name: fieldName, rustType, required, serdeRename });
+    fields.push({ name: fieldName, rustType, required, serdeRename, serializedAsString });
   }
   return fields;
 }
@@ -412,16 +417,45 @@ function applyRenameAll(name: string, renameAll: string): string {
 
 function parseRustEnumVariants(body: string, renameAll?: string): string[] {
   const variants: string[] = [];
-  const lines = body.split('\n');
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('//') || trimmed.startsWith('#')) continue;
-    const variantMatch = trimmed.match(/^(\w+)\s*[,{(]?/);
-    if (variantMatch) {
-      const variant = variantMatch[1];
-      variants.push(renameAll ? applyRenameAll(variant, renameAll) : variant);
+  let i = 0;
+
+  while (i < body.length) {
+    while (i < body.length && /[\s,]/.test(body[i])) i++;
+
+    if (body.startsWith('//', i)) {
+      const nl = body.indexOf('\n', i);
+      i = nl === -1 ? body.length : nl + 1;
+      continue;
+    }
+    if (body[i] === '#') {
+      const nl = body.indexOf('\n', i);
+      i = nl === -1 ? body.length : nl + 1;
+      continue;
+    }
+
+    const identMatch = body.slice(i).match(/^(\w+)/);
+    if (!identMatch) {
+      i++;
+      continue;
+    }
+
+    const variant = identMatch[1];
+    variants.push(renameAll ? applyRenameAll(variant, renameAll) : variant);
+    i += variant.length;
+
+    let depth = 0;
+    while (i < body.length) {
+      const ch = body[i];
+      if (ch === '{' || ch === '(' || ch === '[') depth++;
+      else if (ch === '}' || ch === ')' || ch === ']') depth--;
+      else if (ch === ',' && depth === 0) {
+        i++;
+        break;
+      }
+      i++;
     }
   }
+
   return variants;
 }
 
@@ -437,6 +471,85 @@ export function rustStructToJsonSchema(
 
   visited.add(typeName);
 
+  if (typeName === 'AnswerValue') {
+    return {
+      oneOf: [
+        {
+          type: 'object',
+          properties: { kind: { const: 'free_text' }, value: { type: 'string' } },
+          required: ['kind', 'value'],
+        },
+        {
+          type: 'object',
+          properties: { kind: { const: 'single_choice' }, value: { type: 'string' } },
+          required: ['kind', 'value'],
+        },
+        {
+          type: 'object',
+          properties: {
+            kind: { const: 'multi_choice' },
+            values: { type: 'array', items: { type: 'string' } },
+          },
+          required: ['kind', 'values'],
+        },
+        {
+          type: 'object',
+          properties: { kind: { const: 'yes_no' }, value: { type: 'boolean' } },
+          required: ['kind', 'value'],
+        },
+        {
+          type: 'object',
+          properties: { kind: { const: 'number' }, value: { type: 'number' } },
+          required: ['kind', 'value'],
+        },
+        {
+          type: 'object',
+          properties: { kind: { const: 'date' }, value: { type: 'string' } },
+          required: ['kind', 'value'],
+        },
+        {
+          type: 'object',
+          properties: { kind: { const: 'confirm' }, accepted: { type: 'boolean' } },
+          required: ['kind', 'accepted'],
+        },
+      ],
+    };
+  }
+
+  if (typeName === 'ComposioEnableAppAuth') {
+    return {
+      oneOf: [
+        {
+          type: 'object',
+          properties: {
+            type: { const: 'managed' },
+            auth_scheme: { type: 'string', nullable: true },
+            credentials: { type: 'object', additionalProperties: true },
+          },
+          required: ['type'],
+        },
+        {
+          type: 'object',
+          properties: {
+            type: { const: 'custom' },
+            auth_scheme: { type: 'string' },
+            credentials: { type: 'object', additionalProperties: true },
+          },
+          required: ['type', 'auth_scheme'],
+        },
+        {
+          type: 'object',
+          properties: {
+            type: { const: 'use_existing' },
+            auth_config_id: { type: 'string' },
+            auth_scheme: { type: 'string', nullable: true },
+          },
+          required: ['type', 'auth_config_id'],
+        },
+      ],
+    };
+  }
+
   if (struct.isEnum && struct.enumVariants) {
     return { type: 'string', enum: struct.enumVariants };
   }
@@ -446,7 +559,9 @@ export function rustStructToJsonSchema(
 
   for (const field of struct.fields) {
     const key = field.serdeRename ?? field.name;
-    properties[key] = rustTypeToJsonSchema(field.rustType);
+    properties[key] = field.serializedAsString
+      ? { type: 'string', ...(field.required ? {} : { nullable: true }) }
+      : rustTypeToJsonSchema(field.rustType);
     if (field.required) required.push(key);
   }
 
