@@ -16980,6 +16980,131 @@
         }
       }
     },
+    "/ai/internal-tools": {
+      "get": {
+        "operationId": "listInternalTools",
+        "summary": "List Internal Tools",
+        "tags": [
+          "AI"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalToolListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/ai/tools/{tool_id}": {
       "get": {
         "operationId": "getAiToolById",
@@ -17568,6 +17693,157 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateAgentToolApprovalAction",
+        "summary": "Update Agent Tool Approval Action",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "agent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tool_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAgentToolApprovalActionRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
@@ -19721,6 +19997,142 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ComposioToolkitListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/composio/tools": {
+      "get": {
+        "operationId": "listComposioTools",
+        "summary": "List Composio Tools",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "toolkits",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComposioToolListResponse"
                 }
               }
             }
@@ -34053,6 +34465,18 @@
           },
           "hooks": {
             "$ref": "#/components/schemas/AgentHooksConfig"
+          },
+          "require_approval_mcp": {
+            "type": "boolean"
+          },
+          "require_approval_virtual": {
+            "type": "boolean"
+          },
+          "tool_approval_rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentToolApprovalRule"
+            }
           }
         },
         "required": [
@@ -34064,7 +34488,10 @@
           "configuration",
           "tools_count",
           "knowledge_bases_count",
-          "hooks"
+          "hooks",
+          "require_approval_mcp",
+          "require_approval_virtual",
+          "tool_approval_rules"
         ]
       },
       "CreateAgentRequest": {
@@ -34111,6 +34538,21 @@
           },
           "hooks": {
             "$ref": "#/components/schemas/AgentHooksConfig",
+            "nullable": true
+          },
+          "require_approval_mcp": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "require_approval_virtual": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "tool_approval_rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentToolApprovalRule"
+            },
             "nullable": true
           }
         },
@@ -34160,6 +34602,18 @@
           },
           "hooks": {
             "$ref": "#/components/schemas/AgentHooksConfig"
+          },
+          "require_approval_mcp": {
+            "type": "boolean"
+          },
+          "require_approval_virtual": {
+            "type": "boolean"
+          },
+          "tool_approval_rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentToolApprovalRule"
+            }
           }
         },
         "required": [
@@ -34169,7 +34623,10 @@
           "name",
           "deployment_id",
           "configuration",
-          "hooks"
+          "hooks",
+          "require_approval_mcp",
+          "require_approval_virtual",
+          "tool_approval_rules"
         ]
       },
       "UpdateAgentRequest": {
@@ -34227,6 +34684,21 @@
           },
           "hooks": {
             "$ref": "#/components/schemas/AgentHooksConfig",
+            "nullable": true
+          },
+          "require_approval_mcp": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "require_approval_virtual": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "tool_approval_rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentToolApprovalRule"
+            },
             "nullable": true
           }
         },
@@ -34369,11 +34841,11 @@
           "deployment_id": {
             "type": "string"
           },
-          "requires_user_approval": {
-            "type": "boolean"
-          },
           "configuration": {
             "$ref": "#/components/schemas/AiToolConfiguration"
+          },
+          "approval_action": {
+            "$ref": "#/components/schemas/ApprovalAction"
           }
         },
         "required": [
@@ -34383,8 +34855,8 @@
           "name",
           "tool_type",
           "deployment_id",
-          "requires_user_approval",
-          "configuration"
+          "configuration",
+          "approval_action"
         ]
       },
       "CreateToolRequest": {
@@ -34400,9 +34872,6 @@
           "tool_type": {
             "type": "string"
           },
-          "requires_user_approval": {
-            "type": "boolean"
-          },
           "configuration": {
             "$ref": "#/components/schemas/AiToolConfiguration"
           }
@@ -34410,7 +34879,6 @@
         "required": [
           "name",
           "tool_type",
-          "requires_user_approval",
           "configuration"
         ]
       },
@@ -34441,11 +34909,11 @@
           "deployment_id": {
             "type": "string"
           },
-          "requires_user_approval": {
-            "type": "boolean"
-          },
           "configuration": {
             "$ref": "#/components/schemas/AiToolConfiguration"
+          },
+          "approval_action": {
+            "$ref": "#/components/schemas/ApprovalAction"
           }
         },
         "required": [
@@ -34455,8 +34923,22 @@
           "name",
           "tool_type",
           "deployment_id",
-          "requires_user_approval",
-          "configuration"
+          "configuration",
+          "approval_action"
+        ]
+      },
+      "InternalToolListResponse": {
+        "type": "object",
+        "properties": {
+          "tools": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InternalToolSummary"
+            }
+          }
+        },
+        "required": [
+          "tools"
         ]
       },
       "UpdateToolRequest": {
@@ -34474,15 +34956,22 @@
             "type": "string",
             "nullable": true
           },
-          "requires_user_approval": {
-            "type": "boolean",
-            "nullable": true
-          },
           "configuration": {
             "$ref": "#/components/schemas/AiToolConfiguration",
             "nullable": true
           }
         }
+      },
+      "UpdateAgentToolApprovalActionRequest": {
+        "type": "object",
+        "properties": {
+          "approval_action": {
+            "$ref": "#/components/schemas/ApprovalAction"
+          }
+        },
+        "required": [
+          "approval_action"
+        ]
       },
       "KnowledgeBaseResponse": {
         "type": "object",
@@ -34870,6 +35359,20 @@
         },
         "required": [
           "toolkits"
+        ]
+      },
+      "ComposioToolListResponse": {
+        "type": "object",
+        "properties": {
+          "tools": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComposioToolSummary"
+            }
+          }
+        },
+        "required": [
+          "tools"
         ]
       },
       "EnableComposioAppRequest": {
@@ -37388,6 +37891,36 @@
           }
         ]
       },
+      "ComposioToolSummary": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "toolkit_slug": {
+            "type": "string"
+          },
+          "remote_tool_slug": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "input_schema": {
+            "nullable": true
+          }
+        },
+        "required": [
+          "name",
+          "toolkit_slug",
+          "remote_tool_slug",
+          "display_name",
+          "description"
+        ]
+      },
       "ComposioToolkit": {
         "type": "object",
         "properties": {
@@ -37456,6 +37989,14 @@
           "auth_config_id"
         ]
       },
+      "ApprovalAction": {
+        "type": "string",
+        "enum": [
+          "allow",
+          "deny",
+          "review"
+        ]
+      },
       "AiToolConfiguration": {
         "type": "string",
         "enum": [
@@ -37465,6 +38006,23 @@
           "Internal",
           "Mcp",
           "Virtual"
+        ]
+      },
+      "InternalToolSummary": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "input_schema": {}
+        },
+        "required": [
+          "name",
+          "description",
+          "input_schema"
         ]
       },
       "AiToolType": {
@@ -37535,6 +38093,21 @@
         "required": [
           "execution_start",
           "execution_end"
+        ]
+      },
+      "AgentToolApprovalRule": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string"
+          },
+          "action": {
+            "$ref": "#/components/schemas/ApprovalAction"
+          }
+        },
+        "required": [
+          "pattern",
+          "action"
         ]
       },
       "AgentHookStep": {

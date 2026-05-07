@@ -95,6 +95,12 @@
           "path": "/ai/tools"
         },
         {
+          "name": "List Internal Tools",
+          "slug": "list-internal-tools",
+          "method": "GET",
+          "path": "/ai/internal-tools"
+        },
+        {
           "name": "Get Ai Tool By Id",
           "slug": "get-ai-tool-by-id",
           "method": "GET",
@@ -122,6 +128,12 @@
           "name": "Attach Tool To Agent",
           "slug": "attach-tool-to-agent",
           "method": "POST",
+          "path": "/ai/agents/{agent_id}/tools/{tool_id}"
+        },
+        {
+          "name": "Update Agent Tool Approval Action",
+          "slug": "update-agent-tool-approval-action",
+          "method": "PATCH",
           "path": "/ai/agents/{agent_id}/tools/{tool_id}"
         },
         {
@@ -213,6 +225,12 @@
           "slug": "list-composio-toolkits",
           "method": "GET",
           "path": "/ai/composio/toolkits"
+        },
+        {
+          "name": "List Composio Tools",
+          "slug": "list-composio-tools",
+          "method": "GET",
+          "path": "/ai/composio/tools"
         },
         {
           "name": "Enable Composio App",

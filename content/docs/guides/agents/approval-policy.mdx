@@ -1,0 +1,62 @@
+---
+title: "Tool approval policy"
+description: "Per-agent control over which tool calls run unattended, pause for review, or are denied outright."
+---
+
+# Tool approval policy
+
+Each agent owns a small policy that decides, for every tool call the model emits, whether it runs unattended (`allow`), pauses for human review (`review`), or is rejected outright (`deny`). MCP and virtual (Composio etc.) tools are covered too — there's no longer a per-deployment `requires_user_approval` flag.
+
+## Resolution order
+
+For each tool name the model wants to call, the runtime evaluates these in order and stops at the first match:
+
+1. **Regex rules** on the agent (`tool_approval_rules`). First rule whose `pattern` matches the tool name wins. Universal — overrides everything below.
+2. **Per-attachment action** on `ai_agent_tools.approval_action`. Only applies to tools the operator has explicitly attached to the agent (created via `POST /ai/tools` and joined via `/agents/{id}/tools/{tool_id}`).
+3. **MCP toggle** (`require_approval_mcp`). When `true`, every tool whose name starts with `mcp_` resolves to `review`.
+4. **Virtual toggle** (`require_approval_virtual`). When `true`, every tool whose name starts with `v_` resolves to `review`.
+5. Default: `allow`.
+
+## API shape
+
+`AgentToolApprovalRule` is a flat `{ pattern, action }` object. `pattern` is a regex; `action` is one of `allow | deny | review`.
+
+```json
+{
+  "require_approval_mcp": true,
+  "require_approval_virtual": false,
+  "tool_approval_rules": [
+    { "pattern": "^mcp_linear_(create|update)_", "action": "review" },
+    { "pattern": "^v_composio_gmail_send", "action": "deny" },
+    { "pattern": "^read_", "action": "allow" }
+  ]
+}
+```
+
+Send these on `POST /ai/agents` when creating an agent or `PATCH /ai/agents/{agent_id}` when updating.
+
+## Per-tool action
+
+For attached tools, `PATCH /ai/agents/{agent_id}/tools/{tool_id}` with `{ "approval_action": "review" }` sets that attachment's default action. The dropdown on **Console → AI agents → pick agent → Tools** writes through this endpoint.
+
+`POST /ai/agents/{agent_id}/tools/{tool_id}` (the attach call) still attaches with the default `allow`. Replace bulk attachments via `tool_ids` on `PATCH /ai/agents/{agent_id}` resets every attachment's action to `allow` — set per-tool actions afterwards.
+
+## What each action does at runtime
+
+| Action | Behavior |
+| --- | --- |
+| `allow` | Tool runs unattended. |
+| `review` | Runtime pauses, emits `ConversationContent::ApprovalRequest`, waits for the operator to approve via the existing approval-grant flow. Same path that previously triggered for `requires_user_approval=true`. |
+| `deny` | Tool call returns an error tool-result (`Tool '<name>' denied by agent approval policy`); the agent sees the error and continues. No pause, no webhook. |
+
+## Where to configure
+
+Console → AI agents → pick an agent → **Approvals** for the toggles + regex rules. The per-tool dropdown lives on the **Tools** tab next to each attached tool.
+
+## When to use this
+
+- Deny outright: tools you've attached for context (so they show up in the catalog) but never want the model to actually call.
+- Require review: high-risk MCP/Composio actions (sending email, mutating tickets, deploying) without writing per-tool config.
+- Regex override: precise control over a subset of a namespace — e.g. allow `mcp_linear_get_*` while reviewing `mcp_linear_create_*`.
+
+If a regex rule already covers a tool, the per-tool dropdown is purely cosmetic — the rule wins.

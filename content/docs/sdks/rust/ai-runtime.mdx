@@ -28,6 +28,21 @@ Rust API surfaces:
 - `client.ai().actor_project_threads().run_thread(thread_id, request)`
 - `client.ai().actor_mcp_servers().list_actor_mcp_servers()`
 
+Default runtime tools:
+
+Wacht injects a set of internal tools into agent execution. Availability can depend on the execution mode, assignment context, mounted filesystems, and approval policy.
+
+- Files and execution: `read_image`, `read_file`, `write_file`, `append_file`, `edit_file`, `execute_command`, `sleep`.
+- Web and evidence: `web_search`, `url_content`, `search_knowledgebase`.
+- Memory and tool discovery: `load_memory`, `save_memory`, `update_memory`, `search_tools`, `load_tools`.
+- Threads and task orchestration: `list_threads`, `create_thread`, `update_thread`, `create_project_task`, `update_project_task`, `assign_project_task`, `append_task_journal`.
+- Task graph planning: `task_graph_add_node`, `task_graph_add_dependency`, `task_graph_mark_in_progress`, `task_graph_complete_node`, `task_graph_fail_node`, `task_graph_reset`.
+- Human input: `ask_user`.
+
+`web_search` searches the public web and returns URLs, excerpts, source metadata, warnings, and usage information. It accepts either an `objective` or `search_queries`, plus optional `mode`, `max_results`, domain filters, and freshness filtering.
+
+`url_content` fetches focused excerpts or full markdown content for one or more URLs. Use it after `web_search` when the agent needs page-level evidence instead of search-result excerpts.
+
 Rust example:
 
 ```rust
