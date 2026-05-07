@@ -85,9 +85,9 @@ export async function listOrganizations() {
             ],
           },
           {
-            name: 'has_more',
-            type: 'boolean',
-            description: 'Whether another page exists after this one.',
+            name: 'total',
+            type: 'number',
+            description: 'Total number of organizations matching the current query.',
           },
           {
             name: 'limit',
@@ -527,7 +527,7 @@ export async function listOrganizationMembers(organizationId: string) {
         ],
         api: [
           { name: 'data', type: 'OrganizationMember[]', description: 'Member rows in the page.' },
-          { name: 'has_more', type: 'boolean', description: 'Whether a next page exists.' },
+          { name: 'total', type: 'number', description: 'Total number of organization members matching the current query.' },
           { name: 'limit', type: 'number | undefined', description: 'Effective page size from backend response.' },
           { name: 'offset', type: 'number | undefined', description: 'Effective page offset from backend response.' },
         ],
@@ -610,7 +610,7 @@ export async function listOrganizationRoles(organizationId: string) {
         ],
         api: [
           { name: 'data', type: 'OrganizationRole[]', description: 'Organization roles in this organization.' },
-          { name: 'has_more', type: 'boolean', description: 'Whether another page exists.' },
+          { name: 'total', type: 'number', description: 'Total number of organization roles matching the current query.' },
           { name: 'limit', type: 'number | undefined', description: 'Effective page size from backend response.' },
           { name: 'offset', type: 'number | undefined', description: 'Effective page offset from backend response.' },
         ],

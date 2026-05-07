@@ -7,7 +7,7 @@ export const usersBackendDocs: BackendDoc[] = [
         title: 'listUsers()',
         description: 'List users through the backend client.',
         intro:
-          'Retrieves a list of users. Returns a `PaginatedResponse<User>` object with a `data` property that contains an array of `User` objects, and a `has_more` property that indicates whether another page of users is available.',
+          'Retrieves a list of users. Returns a `PaginatedResponse<User>` object with `data`, `total`, `limit`, and `offset` fields for offset-based pagination.',
         usage: `import { wachtClient } from '@wacht/nextjs/server';
 
 export async function listRecentUsers() {
@@ -63,9 +63,9 @@ export async function listRecentUsers() {
             ],
           },
           {
-            name: 'has_more',
-            type: 'boolean',
-            description: 'Whether another page of users exists after this one.',
+            name: 'total',
+            type: 'number',
+            description: 'Total number of users matching the current query.',
           },
           {
             name: 'limit',
@@ -97,12 +97,12 @@ export async function listUsers() {
 
 export async function listFirstTenUsers() {
   const client = await wachtClient();
-  const { data, has_more, limit, offset } = await client.users.listUsers({
+  const { data, total, limit, offset } = await client.users.listUsers({
     limit: 10,
     offset: 0,
   });
 
-  return { data, has_more, limit, offset };
+  return { data, total, limit, offset };
 }`,
             lang: 'ts',
           },
@@ -152,11 +152,11 @@ export async function exportUsers() {
 
     allUsers.push(...page.data);
 
-    if (!page.has_more) {
+    offset += page.data.length;
+
+    if (offset >= page.total || page.data.length === 0) {
       break;
     }
-
-    offset += page.data.length;
   }
 
   return allUsers;

@@ -34042,6 +34042,17 @@
               "type": "integer"
             },
             "nullable": true
+          },
+          "strong_model": {
+            "$ref": "#/components/schemas/AgentModelOverride",
+            "nullable": true
+          },
+          "weak_model": {
+            "$ref": "#/components/schemas/AgentModelOverride",
+            "nullable": true
+          },
+          "hooks": {
+            "$ref": "#/components/schemas/AgentHooksConfig"
           }
         },
         "required": [
@@ -34052,7 +34063,8 @@
           "deployment_id",
           "configuration",
           "tools_count",
-          "knowledge_bases_count"
+          "knowledge_bases_count",
+          "hooks"
         ]
       },
       "CreateAgentRequest": {
@@ -34087,6 +34099,18 @@
             "items": {
               "type": "integer"
             },
+            "nullable": true
+          },
+          "strong_model": {
+            "$ref": "#/components/schemas/AgentModelOverride",
+            "nullable": true
+          },
+          "weak_model": {
+            "$ref": "#/components/schemas/AgentModelOverride",
+            "nullable": true
+          },
+          "hooks": {
+            "$ref": "#/components/schemas/AgentHooksConfig",
             "nullable": true
           }
         },
@@ -34125,6 +34149,17 @@
               "type": "integer"
             },
             "nullable": true
+          },
+          "strong_model": {
+            "$ref": "#/components/schemas/AgentModelOverride",
+            "nullable": true
+          },
+          "weak_model": {
+            "$ref": "#/components/schemas/AgentModelOverride",
+            "nullable": true
+          },
+          "hooks": {
+            "$ref": "#/components/schemas/AgentHooksConfig"
           }
         },
         "required": [
@@ -34133,7 +34168,8 @@
           "updated_at",
           "name",
           "deployment_id",
-          "configuration"
+          "configuration",
+          "hooks"
         ]
       },
       "UpdateAgentRequest": {
@@ -34174,8 +34210,30 @@
               "type": "integer"
             },
             "nullable": true
+          },
+          "strong_model": {
+            "$ref": "#/components/schemas/AgentModelOverride",
+            "nullable": true
+          },
+          "clear_strong_model": {
+            "type": "boolean"
+          },
+          "weak_model": {
+            "$ref": "#/components/schemas/AgentModelOverride",
+            "nullable": true
+          },
+          "clear_weak_model": {
+            "type": "boolean"
+          },
+          "hooks": {
+            "$ref": "#/components/schemas/AgentHooksConfig",
+            "nullable": true
           }
-        }
+        },
+        "required": [
+          "clear_strong_model",
+          "clear_weak_model"
+        ]
       },
       "AgentDetailsResponse": {
         "type": "object",
@@ -37441,6 +37499,55 @@
           "name",
           "path",
           "kind"
+        ]
+      },
+      "AgentModelOverride": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "model"
+        ]
+      },
+      "AgentHooksConfig": {
+        "type": "object",
+        "properties": {
+          "execution_start": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentHookStep"
+            }
+          },
+          "execution_end": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentHookStep"
+            }
+          }
+        },
+        "required": [
+          "execution_start",
+          "execution_end"
+        ]
+      },
+      "AgentHookStep": {
+        "type": "object",
+        "properties": {
+          "tool_name": {
+            "type": "string"
+          },
+          "args": {}
+        },
+        "required": [
+          "tool_name",
+          "args"
         ]
       },
       "OAuthScopeDefinition": {

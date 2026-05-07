@@ -63,6 +63,7 @@ export type JsonSchema = {
   items?: JsonSchema;
   required?: string[];
   enum?: unknown[];
+  const?: unknown;
   $ref?: string;
   description?: string;
   additionalProperties?: JsonSchema | boolean;

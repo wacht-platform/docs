@@ -1,0 +1,52 @@
+---
+title: "Model overrides"
+description: "Override the strong or weak model on a single agent without changing deployment defaults."
+---
+
+# Model overrides
+
+Each agent has two model roles:
+
+- **Strong** — the main reasoning loop. Default: deployment `strong_model`.
+- **Weak** — cheap/fast calls (terminal review, summarisation, classification). Default: deployment `weak_model`.
+
+Both roles fall back to the deployment defaults unless overridden on the agent. The override only sets the **provider** and **model identifier** — keys, base URLs, temperature, and other knobs always come from the deployment.
+
+## Where to configure
+
+Console → AI agents → pick an agent → **Models**.
+
+Toggle "Override" on a role to set it; toggle off to revert to the deployment default.
+
+## API shape
+
+`AgentModelOverride` is a flat `{ provider, model }` object. Both fields are required when set; the migration enforces that they're either both present or both null.
+
+```json
+{
+  "strong_model": { "provider": "openai", "model": "provider-model-id" },
+  "weak_model":   { "provider": "gemini", "model": "provider-model-id" }
+}
+```
+
+On `PATCH /ai/agents/{agent_id}`:
+
+| Field | Effect |
+| --- | --- |
+| `strong_model` set | Replace the override |
+| `clear_strong_model: true` | Remove the override; fall back to deployment default |
+| Both omitted | Leave unchanged |
+
+`clear_*_model` cannot be combined with a new value for the same role; the API returns `400` if both are sent.
+
+## Supported providers
+
+`openai`, `openrouter`, `gemini`. The model field is whatever identifier the provider's API accepts. Wacht does not validate every provider model name ahead of time; an invalid identifier surfaces as a provider error at call time.
+
+## When to use this
+
+- Running an experiment with a stronger or cheaper model on a single agent.
+- An agent whose workload genuinely benefits from a different provider than the rest of the deployment (e.g. a vision-heavy agent on a multimodal model).
+- Rolling out a new model agent-by-agent before flipping the deployment default.
+
+If most of your agents need the same model, change the deployment default instead — that's still the cheapest place to set it.

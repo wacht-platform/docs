@@ -1,0 +1,88 @@
+---
+title: "Execution hooks"
+description: "Run configured tool steps when an agent execution starts or ends."
+---
+
+# Execution hooks
+
+Agent hooks let one agent run a small sequence of tool calls around every execution. Use them for repeatable setup, durable notes, cleanup, or handoff work that should happen outside the main reasoning loop.
+
+## API shape
+
+`hooks` accepts two arrays:
+
+- `execution_start` runs before the assignment starts.
+- `execution_end` runs after the assignment finishes.
+
+Each item names a tool and passes a JSON object as `args`.
+
+```json
+{
+  "hooks": {
+    "execution_start": [
+      {
+        "tool_name": "read_file",
+        "args": { "path": "/shared/context.md" }
+      }
+    ],
+    "execution_end": [
+      {
+        "tool_name": "append_file",
+        "args": {
+          "path": "/shared/run-log.md",
+          "content": "Execution finished."
+        }
+      }
+    ]
+  }
+}
+```
+
+Send the object on `POST /ai/agents` when creating an agent, or `PATCH /ai/agents/{agent_id}` when updating an existing agent.
+
+## Tool name format
+
+`tool_name` must match a tool the agent has access to at runtime. Names live in a single flat namespace per agent, so the prefix tells you what kind of tool you're calling:
+
+| Tool type | Format | Example |
+| --- | --- | --- |
+| Internal | hardcoded snake_case, no prefix | `read_file`, `web_search`, `update_project_task` |
+| MCP | `mcp_{server_slug}_{tool}` | `mcp_linear_create_issue` |
+| Virtual (Composio etc.) | `v_{provider}_{remote_tool_slug}` | `v_composio_gmail_send_email` |
+| API / Code-runner / Platform-event | operator-set name | whatever the operator typed in the console |
+
+Tool names are not validated when you save a hook. A reference to a missing tool fails at runtime (see below).
+
+**Virtual tool caveat.** Virtual tools load lazily through `search_tools` / `load_tools`, so they typically aren't in the catalog at `execution_start`. Stick to internal or MCP tools for the start hook.
+
+## Runtime context
+
+Before each step runs, Wacht merges a reserved `_runtime` key into `args` with the active execution's `agent_id`, `deployment_id`, `thread_id`, `execution_run_id`, and `board_item_id`. Tools that need to attribute work to a specific run can read these without you wiring them by hand.
+
+## Timeouts and outcomes
+
+Each step has up to **60 seconds**. Every step emits a webhook regardless of outcome — subscribe to whichever statuses you care about.
+
+| Outcome | Event name | When |
+| --- | --- | --- |
+| Succeeded | `agent.execution_{start,end}_hook.succeeded` | Tool ran and returned. `(input, output)` is also appended to the conversation as a tool-result entry. |
+| Failed | `agent.execution_{start,end}_hook.failed` | Tool errored, timed out, or was missing for a non-virtual reference. |
+| Skipped | `agent.execution_{start,end}_hook.skipped` | A virtual (`v_…`) tool wasn't connected for the current actor — treated as inapplicable, not an error. |
+
+Common payload fields: `agent_id`, `deployment_id`, `thread_id`, `execution_run_id`, `hook_kind`, `status`, `tool_name`, `step_index`, `timestamp`. Plus per-status: `output` (succeeded), `error_message` (failed), `reason` (skipped). Every payload includes `input`.
+
+Remaining steps always continue, and the main agent execution is unaffected by any single step's outcome.
+
+`execution_end` runs on every exit path: success, error, abort, budget cap. Design accordingly.
+
+## Validation
+
+`tool_name` must be a non-empty string. `args` must be a JSON object; omit it or pass `{}` when the tool does not need arguments.
+
+## When to use this
+
+- Load shared context before a recurring agent starts work.
+- Append a durable run note after execution.
+- Trigger a small cleanup or reporting step that should happen consistently.
+
+Keep hooks short and deterministic. If the work needs judgement or branching, make it part of the agent instructions instead.

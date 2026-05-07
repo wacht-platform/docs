@@ -32,7 +32,7 @@ export async function listWorkspaces() {
         ],
         api: [
           { name: 'data', type: 'WorkspaceListItem[]', description: 'Workspace list rows.' },
-          { name: 'has_more', type: 'boolean', description: 'Whether another page exists.' },
+          { name: 'total', type: 'number', description: 'Total number of workspaces matching the current query.' },
           { name: 'limit', type: 'number | undefined', description: 'Effective page size from backend response.' },
           { name: 'offset', type: 'number | undefined', description: 'Effective page offset from backend response.' },
         ],
@@ -281,7 +281,7 @@ export async function listWorkspaceRoles(workspaceId: string) {
         ],
         api: [
           { name: 'data', type: 'WorkspaceRole[]', description: 'Workspace role rows.' },
-          { name: 'has_more', type: 'boolean', description: 'Whether another page exists.' },
+          { name: 'total', type: 'number', description: 'Total number of workspace roles matching the current query.' },
           { name: 'limit', type: 'number | undefined', description: 'Effective page size from backend response.' },
           { name: 'offset', type: 'number | undefined', description: 'Effective page offset from backend response.' },
         ],
