@@ -6,12 +6,12 @@ description: HTTP API reference for the Wacht Frontend and Platform APIs.
 Wacht exposes two distinct HTTP APIs with different purposes, audiences, and authentication models. Understanding which one to use is the first step.
 
 <Cards className="grid-cols-1">
-  <Card title="Frontend API" href="/docs/reference/frontend-api">
+  <Card title="Frontend API" href="/reference/frontend-api">
     **Runtime API · Per-deployment host · Session authentication**
 
     The customer-facing API used by all Wacht SDKs and browser clients. Handles the full lifecycle of a user session: sign-in and sign-up flows, profile management, organizations, workspaces, notifications, AI agents, webhooks, and OAuth. This is the API your end users interact with, proxied through your deployment host.
   </Card>
-  <Card title="Backend API" href="/docs/reference/backend-api">
+  <Card title="Backend API" href="/reference/backend-api">
     **Management API · `https://api.wacht.dev` · API key authentication**
 
     The server-to-server control plane for administering your Wacht deployment. Use it to provision and manage users, configure OAuth applications, manage API keys, inspect sessions, run analytics, and control webhooks. Never expose this API or its keys to the browser.
