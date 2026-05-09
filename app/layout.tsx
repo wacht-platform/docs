@@ -1,18 +1,8 @@
 import { RootProvider } from 'fumadocs-ui/provider/next';
 import './global.css';
-import { Geist_Mono, Inter } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import { appName, siteDescription, siteUrl } from '@/lib/shared';
-
-const sans = Inter({
-  subsets: ['latin'],
-  variable: '--font-sans',
-});
-
-const mono = Geist_Mono({
-  subsets: ['latin'],
-  variable: '--font-mono',
-});
+import { DocsAnalyticsProvider } from '@/components/docs-analytics-provider';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -66,14 +56,15 @@ export default function Layout({ children }: LayoutProps<'/'>) {
   return (
     <html
       lang="en"
-      className={`${sans.variable} ${mono.variable}`}
       suppressHydrationWarning
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="flex min-h-screen flex-col bg-background font-sans text-foreground antialiased">
-        <RootProvider theme={{ enabled: false }}>{children}</RootProvider>
+        <DocsAnalyticsProvider>
+          <RootProvider theme={{ enabled: false }}>{children}</RootProvider>
+        </DocsAnalyticsProvider>
       </body>
     </html>
   );
