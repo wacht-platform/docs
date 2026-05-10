@@ -4,14 +4,19 @@
 @import "fumadocs-openapi/css/preset.css";
 
 :root {
+    /* Wacht brand violet — matches website --color-acc / --color-acc-2 */
+    --color-fd-primary: #6d28d9;
+    --color-fd-primary-foreground: #ffffff;
+    --color-fd-ring: #8b5cf6;
+
     --background: oklch(1 0 0);
     --foreground: oklch(0.147 0.004 49.25);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.147 0.004 49.25);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.147 0.004 49.25);
-    --primary: oklch(0.216 0.006 56.043);
-    --primary-foreground: oklch(0.985 0.001 106.423);
+    --primary: #6d28d9;
+    --primary-foreground: #ffffff;
     --secondary: oklch(0.97 0.001 106.424);
     --secondary-foreground: oklch(0.216 0.006 56.043);
     --muted: oklch(0.97 0.001 106.424);
@@ -39,14 +44,19 @@
 }
 
 .dark {
+    /* Wacht brand violet — lifted slightly for dark contrast */
+    --color-fd-primary: #c4a6ff;
+    --color-fd-primary-foreground: #1a0b3d;
+    --color-fd-ring: #8b5cf6;
+
     --background: hsl(0 0% 0%);
     --foreground: oklch(0.985 0.001 106.423);
     --card: oklch(0.147 0.004 49.25);
     --card-foreground: oklch(0.985 0.001 106.423);
     --popover: oklch(0.147 0.004 49.25);
     --popover-foreground: oklch(0.985 0.001 106.423);
-    --primary: oklch(0.985 0.001 106.423);
-    --primary-foreground: oklch(0.216 0.006 56.043);
+    --primary: #c4a6ff;
+    --primary-foreground: #1a0b3d;
     --secondary: oklch(0.268 0.007 34.298);
     --secondary-foreground: oklch(0.985 0.001 106.423);
     --muted: oklch(0.268 0.007 34.298);

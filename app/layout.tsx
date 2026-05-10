@@ -1,4 +1,3 @@
-import { Banner } from 'fumadocs-ui/components/banner';
 import { RootProvider } from 'fumadocs-ui/provider/next';
 import Link from 'next/link';
 import './global.css';
@@ -64,26 +63,25 @@ export default function Layout({ children }: LayoutProps<'/'>) {
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="flex min-h-screen flex-col bg-background font-sans text-foreground antialiased">
+        <style>{`:root { --fd-banner-height: 2.25rem; }`}</style>
         <DocsAnalyticsProvider>
           <RootProvider theme={{ enabled: false }}>
-            <Banner
+            <div
               id="wacht-bench-launch"
-              variant="normal"
-              height="2.25rem"
-              className="text-white"
+              className="sticky top-0 z-40 flex h-9 items-center justify-center px-4 text-center"
               style={{
-                backgroundColor: 'transparent',
-                backgroundImage: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
+                background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
               }}
             >
               <Link
                 href="/guides/wacht-bench"
                 className="inline-flex items-center gap-2 text-[12px] font-medium text-white hover:text-white/90"
+                style={{ color: '#ffffff' }}
               >
                 <span>Wacht Bench is live — AI-assisted development for Wacht</span>
                 <span aria-hidden>→</span>
               </Link>
-            </Banner>
+            </div>
             {children}
           </RootProvider>
         </DocsAnalyticsProvider>
