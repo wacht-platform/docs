@@ -71,8 +71,7 @@ export default function Layout({ children }: LayoutProps<'/'>) {
               variant="normal"
               className="text-white"
               style={{
-                background:
-                  'linear-gradient(90deg, #1a0b3d 0%, #6d28d9 35%, #8b5cf6 65%, #1a0b3d 100%)',
+                background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
               }}
             >
               <Link
