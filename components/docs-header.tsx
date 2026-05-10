@@ -15,7 +15,6 @@ const topNav = [
 ];
 
 function isActive(pathname: string, item: (typeof topNav)[number]) {
-  if (item.exact) return pathname === item.href;
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
