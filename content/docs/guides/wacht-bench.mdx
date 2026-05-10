@@ -20,13 +20,13 @@ The CLI is opinionated about being agent-first: it scaffolds context, never patc
 Install the full skill pack:
 
 ```bash
-npx skills add wacht-platform/bench
+wacht skills add
 ```
 
 Install one skill:
 
 ```bash
-npx skills add wacht-platform/bench --skill wacht-nextjs-patterns
+wacht skills add --skill wacht-nextjs-patterns
 ```
 
 ## Use the Bench CLI
@@ -43,9 +43,10 @@ After `npm i -g @wacht/bench` (or `pnpm add -g @wacht/bench`), the binary is `wa
 wacht init
 wacht login
 wacht deployments select
+wacht --version
 ```
 
-`wacht init` detects Next.js, React Router, and TanStack Router projects, then writes AI-ready Wacht context. It does not wire framework code, patch app files, or edit package dependencies. Bench prepares the project/deployment context and starter templates so an AI assistant can use the installed skills, Docs MCP, and OpenAPI discovery to make the correct app-specific edits.
+`wacht init` detects Next.js, React Router, and TanStack Router projects, then writes a short, agent-readable context: `.env.wacht.example` (the SDK env vars your app actually reads) and a `## Wacht Bench` block in your `AGENTS.md` that tells your assistant which skill to load, where to find the Docs MCP, and which CLI commands to use. It does not wire framework code, patch app files, or edit package dependencies.
 
 ## Bootstrap a new project
 
@@ -61,21 +62,31 @@ Pass `--target <dir>` to choose the destination.
 
 ## Connect Wacht Docs MCP
 
+`wacht mcp install` detects every supported AI client on the machine and lets you bulk-apply the Wacht Docs MCP server to the ones you pick.
+
 ```bash
-wacht mcp config --client cursor
-wacht mcp config --client claude
-wacht mcp config --client codex
+wacht mcp install              # interactive: detect + multi-select + apply
+wacht mcp list                 # show known clients + detection + install status
+wacht mcp uninstall            # remove from selected clients
 ```
 
-The output is JSON you paste into your editor's MCP config:
+Non-interactive form for CI or scripts:
 
-```json
-{
-  "mcpServers": {
-    "wacht-docs": { "url": "https://wacht.dev/docs/mcp" }
-  }
-}
+```bash
+wacht mcp install --client cursor-user,vscode-user,codex --yes
+wacht mcp install --all --yes
 ```
+
+Supported clients (user and project scope where applicable):
+
+- Claude Desktop
+- Claude Code (`~/.claude.json` or `.mcp.json`)
+- Cursor (`~/.cursor/mcp.json` or `.cursor/mcp.json`)
+- VS Code (`mcp.json`)
+- Windsurf
+- Codex CLI (TOML)
+
+Bench merges the `wacht-docs` server into the existing config — other servers are preserved. Use `wacht mcp config --client <name>` to print raw JSON for a client without writing to disk.
 
 See [Docs MCP](./docs-mcp) for more setup options.
 
@@ -144,7 +155,7 @@ Before coding, use Wacht Docs MCP at https://wacht.dev/docs/mcp for current Wach
 Run the validation commands named by the active skill before finishing.
 ```
 
-`wacht init` writes most of this for you, including a project-scoped `AGENTS.md` block and a `.wacht/BOOTSTRAP.md` guide.
+`wacht init` writes a project-scoped `AGENTS.md` block that includes this guidance, plus a routing table that points agents at the right skill, MCP, and CLI commands for each task.
 
 ## What the skill pack covers
 
