@@ -1,0 +1,166 @@
+---
+title: "Wacht Bench"
+description: "AI-assisted development for Wacht. Install skills, wire Docs MCP, scaffold starters, and drive the Wacht Machine API from your terminal."
+---
+
+# Wacht Bench
+
+Wacht Bench is the AI-assisted development surface for Wacht.
+
+It bundles the things AI coding assistants need to build Wacht apps without guessing:
+
+- **Skills** — task-shaped playbooks installed under `./skills`, scoped per framework and per platform surface.
+- **Docs MCP** — the Wacht Docs MCP server at `https://wacht.dev/docs/mcp`, so assistants always read the current SDK, API, and guide content instead of hallucinating.
+- **Bench CLI** (`@wacht/bench`) — `init`, `login`, `projects`, `deployments`, `users`, `orgs`, `workspaces`, `config`, `api`, and `completion` commands for everything else.
+
+The CLI is opinionated about being agent-first: it scaffolds context, never patches your app code. Your editor agent does the wiring.
+
+## Install Wacht skills
+
+Install the full skill pack:
+
+```bash
+npx skills add wacht-platform/bench
+```
+
+Install one skill:
+
+```bash
+npx skills add wacht-platform/bench --skill wacht-nextjs-patterns
+```
+
+## Use the Bench CLI
+
+Run without installing:
+
+```bash
+npx @wacht/bench init
+```
+
+After `npm i -g @wacht/bench` (or `pnpm add -g @wacht/bench`), the binary is `wacht`:
+
+```bash
+wacht init
+wacht login
+wacht deployments select
+```
+
+`wacht init` detects Next.js, React Router, and TanStack Router projects, then writes AI-ready Wacht context. It does not wire framework code, patch app files, or edit package dependencies. Bench prepares the project/deployment context and starter templates so an AI assistant can use the installed skills, Docs MCP, and OpenAPI discovery to make the correct app-specific edits.
+
+## Bootstrap a new project
+
+`init --starter` clones a ready-to-run starter and bootstraps it.
+
+```bash
+wacht init --starter nextjs           # → ./wacht-nextjs-starter
+wacht init --starter react-router
+wacht init --starter tanstack
+```
+
+Pass `--target <dir>` to choose the destination.
+
+## Connect Wacht Docs MCP
+
+```bash
+wacht mcp config --client cursor
+wacht mcp config --client claude
+wacht mcp config --client codex
+```
+
+The output is JSON you paste into your editor's MCP config:
+
+```json
+{
+  "mcpServers": {
+    "wacht-docs": { "url": "https://wacht.dev/docs/mcp" }
+  }
+}
+```
+
+See [Docs MCP](./docs-mcp) for more setup options.
+
+## Drive the platform from the terminal
+
+Once you are signed in (`wacht login`) and have an active deployment (`wacht deployments select`), Bench can drive the Wacht Machine API directly:
+
+```bash
+wacht projects list
+wacht deployments current
+
+wacht users list
+wacht users get <user_id>
+wacht users create --field email_address=person@example.com
+
+wacht orgs list
+wacht orgs get <organization_id>
+wacht orgs create --field name="Acme"
+
+wacht workspaces list --org <organization_id>
+wacht workspaces create --org <organization_id> --field name="Production"
+```
+
+For everything not yet wrapped as a first-class command, Bench exposes the full Wacht Platform OpenAPI surface:
+
+```bash
+wacht api ls --search users
+wacht api describe createUser
+wacht api call createUser --field email_address=person@example.com
+```
+
+The schema is cached at `~/.wacht/platform-api.openapi.json`; pass `--refresh` to refetch.
+
+## Manage deployment settings as code
+
+```bash
+wacht config pull --file wacht.config.json
+wacht config diff --file wacht.config.json
+wacht config apply --file wacht.config.json --dry-run
+wacht config apply --file wacht.config.json --yes
+```
+
+Production applies require an explicit deployment confirmation:
+
+```bash
+wacht config apply --file wacht.config.json --production --confirm <deployment_id> --yes
+```
+
+Secrets and provider credentials are never written to config files.
+
+## Shell completion
+
+```bash
+wacht completion bash > /etc/bash_completion.d/wacht
+wacht completion zsh  > "${fpath[1]}/_wacht"
+wacht completion fish > ~/.config/fish/completions/wacht.fish
+```
+
+## Recommended assistant instruction
+
+Drop this into your `AGENTS.md` or assistant rules so every Wacht task starts in the right place:
+
+```text
+Use Wacht skills for Wacht implementation work.
+Before coding, use Wacht Docs MCP at https://wacht.dev/docs/mcp for current Wacht SDK, API, and guide details.
+Run the validation commands named by the active skill before finishing.
+```
+
+`wacht init` writes most of this for you, including a project-scoped `AGENTS.md` block and a `.wacht/BOOTSTRAP.md` guide.
+
+## What the skill pack covers
+
+- New Wacht setup and framework detection
+- Next.js, React Router, and TanStack Router patterns
+- Backend JS integrations
+- Organizations and workspaces
+- API Auth and OAuth clients
+- Webhooks and replay
+- Notifications and realtime streams
+- Agents, MCP servers, approvals, hooks, and skill bundles
+- Testing Wacht auth and integration flows
+
+## Read next
+
+- [Bench Skills](./bench-skills)
+- [Docs MCP](./docs-mcp)
+- [Next.js Quick Start](/docs/sdks/nextjs/quickstart)
+- [Backend JS SDK](/docs/sdks/node)

@@ -9,13 +9,15 @@ import { Popover, PopoverContent, PopoverTrigger } from 'fumadocs-ui/components/
 import { useEffect, useState, type ReactNode } from 'react';
 
 const topNav = [
+  { label: 'Bench', href: '/guides/wacht-bench', exact: true },
   { label: 'Documentation', href: '/sdks/nextjs' },
   { label: 'Guides', href: '/guides' },
   { label: 'API Reference', href: '/reference' },
 ];
 
-function isActive(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
+function isActive(pathname: string, item: (typeof topNav)[number]) {
+  if (item.exact) return pathname === item.href;
+  return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
 export function DocsHeader() {
@@ -42,7 +44,7 @@ export function DocsHeader() {
               key={`mobile-${item.href}`}
               href={item.href}
               className="relative flex-1 items-center justify-center border-r border-fd-border px-4 text-center text-xs font-medium text-fd-muted-foreground transition-colors hover:text-fd-foreground data-[active=true]:text-fd-foreground after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-fd-foreground after:opacity-0 data-[active=true]:after:opacity-100 last:border-r-0 inline-flex"
-              data-active={isActive(pathname, item.href)}
+              data-active={isActive(pathname, item)}
             >
               {item.label}
             </Link>
@@ -66,7 +68,7 @@ export function DocsHeader() {
                 key={item.href}
                 href={item.href}
                 className="relative flex min-w-48 items-center justify-center border-r border-fd-border px-6 text-sm font-medium text-fd-muted-foreground transition-colors hover:text-fd-foreground data-[active=true]:text-fd-foreground after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-fd-foreground after:opacity-0 data-[active=true]:after:opacity-100"
-                data-active={isActive(pathname, item.href)}
+                data-active={isActive(pathname, item)}
               >
                 {item.label}
               </Link>

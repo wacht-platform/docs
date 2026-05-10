@@ -1,0 +1,121 @@
+---
+title: "Docs MCP"
+description: "Connect AI coding tools to the Wacht documentation through the Wacht Docs MCP server."
+---
+
+# Docs MCP
+
+Wacht Docs includes an MCP server so AI coding tools can search and read the current Wacht documentation directly.
+
+Use it when an assistant needs exact Wacht SDK behavior, API contracts, setup steps, or implementation guidance.
+
+## Endpoint
+
+```text
+https://wacht.dev/docs/mcp
+```
+
+The local development endpoint is:
+
+```text
+http://localhost:3000/docs/mcp
+```
+
+## Cursor-style configuration
+
+```json
+{
+  "mcpServers": {
+    "wacht-docs": {
+      "url": "https://wacht.dev/docs/mcp"
+    }
+  }
+}
+```
+
+## Claude Desktop style configuration
+
+```json
+{
+  "mcpServers": {
+    "wacht-docs": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://wacht.dev/docs/mcp"]
+    }
+  }
+}
+```
+
+## Available tools
+
+| Tool | Use it for |
+| --- | --- |
+| `search_docs` | Find relevant Wacht docs pages by topic. |
+| `get_doc` | Fetch the full processed content of a docs page. |
+| `docs_graph_view` | Map related docs pages before choosing what to read. |
+
+## Available prompts
+
+| Prompt | Use it for |
+| --- | --- |
+| `mcp_setup_guide` | Generate client setup snippets for the Docs MCP server. |
+| `docs_graph_navigation_guide` | Teach an assistant how to search, map, and cite Wacht docs. |
+
+## Verify the server
+
+Send a JSON-RPC initialize request:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2025-03-26",
+    "capabilities": {},
+    "clientInfo": {
+      "name": "your-client",
+      "version": "1.0.0"
+    }
+  }
+}
+```
+
+Then list tools:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/list",
+  "params": {}
+}
+```
+
+## Recommended assistant instruction
+
+Add this to your project instructions or skill:
+
+```text
+For Wacht-related implementation work, use the wacht-docs MCP server before coding.
+Prefer docs_graph_view for broad topics, search_docs for targeted lookup, and get_doc for exact page content.
+Cite the Wacht docs pages used when explaining implementation decisions.
+```
+
+## Example development request
+
+```text
+Use wacht-docs MCP to find the current Wacht Next.js auth and backend auth docs.
+Then update this app to protect /account routes and verify the implementation with the repo's typecheck.
+```
+
+## Where MCP fits with Skills
+
+MCP gives the assistant current Wacht documentation. Skills give the assistant local project workflow.
+
+Use both:
+
+- MCP for Wacht facts, SDK usage, API reference, and guide content.
+- Skills for repo-specific rules, file locations, conventions, and validation commands.
+
+Start with [Wacht Bench](./wacht-bench) if you are setting up an AI-assisted Wacht workflow from scratch. Use [Wacht Skills](./bench-skills) when you are ready to make that workflow repeatable across coding sessions.

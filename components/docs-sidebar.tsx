@@ -654,6 +654,11 @@ const guidesSection: NavSection = {
   match: '/guides',
   entries: [
     topPage('Overview', '/guides', FileText),
+    group('AI Development', [
+      page('Wacht Bench', '/guides/wacht-bench', Rocket),
+      page('Docs MCP', '/guides/docs-mcp', Blocks),
+      page('Wacht Skills', '/guides/bench-skills', FileCode2),
+    ], Blocks),
     group('API Auth', [
       page('Overview', '/guides/api-auth/overview'),
       page('Custom Hook Flow Implementation', '/guides/api-auth/custom-hook-flow-implementation'),

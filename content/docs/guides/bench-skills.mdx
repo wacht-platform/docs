@@ -1,0 +1,56 @@
+---
+title: "Wacht Skills"
+description: "Understand the Wacht skills package and how each skill accelerates Wacht development."
+---
+
+# Wacht Skills
+
+Wacht skills are portable agent instructions that teach AI coding tools how to build with Wacht.
+
+They are installed with:
+
+```bash
+npx skills add wacht-platform/bench
+```
+
+## Core pattern
+
+Every Wacht skill follows the same rule:
+
+```text
+Use Wacht Docs MCP for current Wacht facts.
+Use the skill for workflow, file placement, implementation checks, and validation.
+```
+
+MCP answers what Wacht says now. Skills answer how an AI assistant should do the work.
+
+## V1 skills
+
+| Skill | Use it for |
+| --- | --- |
+| `wacht` | Router skill that selects the right Wacht skill. |
+| `wacht-setup` | Framework detection and first Wacht install. |
+| `wacht-nextjs-patterns` | Next.js provider, proxy, server auth, route protection. |
+| `wacht-react-router-patterns` | React Router loaders, actions, providers, auth guards. |
+| `wacht-tanstack-router-patterns` | TanStack Router route guards and server integration. |
+| `wacht-react-spa-patterns` | React SPA and Vite client-side auth patterns. |
+| `wacht-backend-js` | `@wacht/backend`, token verification, gateway checks. |
+| `wacht-orgs-workspaces` | Organizations, workspaces, roles, and tenant isolation. |
+| `wacht-api-auth` | API keys, OAuth clients, gateway auth, audit flows. |
+| `wacht-webhooks` | Webhook endpoints, verification, replay, idempotency. |
+| `wacht-notifications` | Notification hooks, inbox UI, realtime streams. |
+| `wacht-agents` | Agents, tools, MCP servers, approvals, hooks, skill bundles. |
+| `wacht-testing` | Tests for Wacht auth, tenancy, API auth, webhooks, and agents. |
+| `wacht-skill-authoring` | Creating, reviewing, validating, and publishing Wacht skills. |
+
+## Prompt to use Bench
+
+```text
+Use Wacht skills.
+Select the right Wacht skill for this task, use Wacht Docs MCP before coding, make the requested changes, and run the validation commands from the active skill.
+```
+
+## Read next
+
+- [Wacht Bench](./wacht-bench)
+- [Docs MCP](./docs-mcp)
