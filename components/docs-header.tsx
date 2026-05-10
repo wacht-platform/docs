@@ -9,7 +9,6 @@ import { Popover, PopoverContent, PopoverTrigger } from 'fumadocs-ui/components/
 import { useEffect, useState, type ReactNode } from 'react';
 
 const topNav = [
-  { label: 'Bench', href: '/guides/wacht-bench', exact: true },
   { label: 'Documentation', href: '/sdks/nextjs' },
   { label: 'Guides', href: '/guides' },
   { label: 'API Reference', href: '/reference' },

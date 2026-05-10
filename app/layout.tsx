@@ -66,10 +66,18 @@ export default function Layout({ children }: LayoutProps<'/'>) {
       <body className="flex min-h-screen flex-col bg-background font-sans text-foreground antialiased">
         <DocsAnalyticsProvider>
           <RootProvider theme={{ enabled: false }}>
-            <Banner id="wacht-bench-launch" variant="rainbow">
+            <Banner
+              id="wacht-bench-launch"
+              variant="normal"
+              className="text-white"
+              style={{
+                background:
+                  'linear-gradient(90deg, #1a0b3d 0%, #6d28d9 35%, #8b5cf6 65%, #1a0b3d 100%)',
+              }}
+            >
               <Link
-                href="/docs/guides/wacht-bench"
-                className="inline-flex items-center gap-2 text-sm font-medium"
+                href="/guides/wacht-bench"
+                className="inline-flex items-center gap-2 text-sm font-medium text-white hover:text-white/90"
               >
                 <span>Wacht Bench is live — AI-assisted development for Wacht</span>
                 <span aria-hidden>→</span>
