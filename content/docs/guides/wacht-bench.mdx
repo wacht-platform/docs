@@ -128,7 +128,30 @@ wacht api describe createUser
 wacht api call createUser --field email_address=person@example.com
 ```
 
+`describe` resolves `$ref` schemas inline, so you see nested object fields and discriminated-union variants without grepping the raw JSON. `call` validates JSON request bodies against the operation's schema before sending — typos and missing required fields fail locally with a JSON-pointer pointing at the bad path. Pass `--no-validate` to bypass.
+
+For larger payloads, read the body from disk:
+
+```bash
+wacht api call createAiAgent --body @./agent.json
+```
+
 The schema is cached at `~/.wacht/platform-api.openapi.json`; pass `--refresh` to refetch.
+
+Bench is a **spec-level** tool — it gives you direct access to the API verbs. Higher-level workflows (creating an agent, scheduling a task, sharing a chat URL) usually compose several verbs; the [Agents guide](/docs/guides/agents) describes those as product actions, the [agent runtime reference](/docs/reference/agent-objects) lists the verbs in order.
+
+## Pull deployment credentials into `.env.local`
+
+`wacht env pull` mints a fresh backend API key for the active deployment and writes it — plus the publishable key — into your project's local env file. Default file is `.env.local` for Next.js, `.env` for Vite-based stacks (React Router, TanStack).
+
+```bash
+cd my-app
+wacht env pull
+```
+
+Each call issues a new key under the deployment's reserved `aa_<deployment_id>` system app. Existing keys keep working — re-pulling on a teammate's machine doesn't invalidate yours. Pass `--file <path>` to override the destination or `--print` to dump credentials to stdout without writing.
+
+The endpoint behind this command is `POST /deployments/{id}/credentials` ([createDeploymentCredentials](https://wacht.dev/docs/openapi/platform-api.json)). The minted `WACHT_API_KEY` is `sk_test_…` on staging deployments and `sk_live_…` on production.
 
 ## Manage deployment settings as code
 

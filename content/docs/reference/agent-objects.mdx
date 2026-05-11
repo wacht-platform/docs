@@ -1,0 +1,67 @@
+---
+title: "Agent runtime objects"
+description: "Object hierarchy and API verbs for driving the Wacht agent runtime from code."
+---
+
+# Agent runtime objects
+
+This reference is for engineers wiring the agent runtime through the platform API, `@wacht/backend`, or the bench CLI. If you're using the console UI, see the [Agents guide](/docs/guides/agents) instead.
+
+## Hierarchy
+
+```
+actor
+└── actor project              (binds an actor + an agent)
+    ├── board item (task)      (description + schedule)
+    └── thread                 (runtime conversation + tool calls)
+```
+
+| Object | Identity | API verbs |
+| --- | --- | --- |
+| Actor | `subject_type` + `external_key` | `createActor`, `listActors` |
+| Agent | `id` (per deployment) | `createAiAgent`, `getAiAgentById`, `updateAiAgent`, `deleteAiAgent` |
+| Actor project | `id` (per deployment); binds one actor + one agent | `createActorProjectFlat` (query: `actor_id`; body: `agent_id`, `name`) |
+| Board item | `id` (per project) | `createProjectTaskBoardItem`, `updateProjectTaskBoardItem`, `archiveProjectTaskBoardItem`, `cancelProjectTaskBoardItem` |
+| Thread | `id` (per project) | `createAgentThread`, `executeAgentThreadAsync`, `getAgentThreadById`, `getAgentThreadMessages` |
+| Session ticket | one-time `ticket` string | `createBackendSessionTicket`, `createSessionTicket` |
+
+The agent record has no `instructions` or schedule field. Task content lives on the board item; that's why a single agent can run many different tasks.
+
+## Schedule kinds
+
+`board_item.schedule_kind` (from `models::project_task_schedule::schedule_kind`):
+
+- `ONCE` — runs at `next_run_at`, then stops.
+- `INTERVAL` — runs at `next_run_at`, then repeats every `interval_seconds`.
+
+## Tool types
+
+`AiTool.configuration` is a discriminated union — the `type` field selects the variant:
+
+| `type` | Use for |
+| --- | --- |
+| `Api` | An HTTP endpoint you own. Stores endpoint, method, auth, request/URL schemas. |
+| `CodeRunner` | Sandboxed code execution. |
+| `Internal` | Built-in platform tools the runtime ships. |
+| `Mcp` | A self-hosted MCP server you control. |
+| `PlatformEvent` | Tools that react to platform events. |
+| `Virtual` | Third-party SaaS via Composio. |
+
+`wacht api describe createAiTool` shows the full per-variant payload schema.
+
+## Sharing a session
+
+`createBackendSessionTicket` returns a `ticket` string. URL pattern:
+
+```
+https://{deployment.backend_host}/vanity/agents?ticket={ticket}
+```
+
+See the [Agent sessions guide](/docs/guides/agents/sessions) for ticket scoping fields.
+
+## Related
+
+- [Agents](/docs/guides/agents) — user-facing overview.
+- [Scheduling](/docs/guides/agents/scheduling)
+- [Composio](/docs/guides/agents/composio)
+- [Agent sessions](/docs/guides/agents/sessions)

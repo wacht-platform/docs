@@ -1,0 +1,51 @@
+---
+title: "Composio integrations"
+description: "Give an agent access to third-party SaaS apps through Composio."
+---
+
+# Composio integrations
+
+Composio is a managed catalog of third-party SaaS tools (Reddit, Gmail, Slack, GitHub, …). Wacht wraps each Composio tool as a **Virtual** AI tool that an agent can call.
+
+Use a Virtual tool when the action lives in someone else's product. For an HTTP endpoint you own, use an **Api** tool; for code execution, **CodeRunner**; for your own MCP server, **Mcp**.
+
+## API flow
+
+Configure the Composio API key on the deployment first (one-time, via deployment settings). Then:
+
+```bash
+# Enable the toolkit
+wacht api call enableComposioApp --body '{"slug":"<toolkit_slug>"}'
+
+# Discover available tools
+wacht api call listComposioTools --param toolkit_slug=<toolkit_slug>
+
+# Wrap each tool you want as an AI tool
+wacht api call createAiTool --body @tool.json
+
+# Attach to the agent
+wacht api call attachToolToAgent --param agent_id=<id> --param tool_id=<id>
+```
+
+`tool.json`:
+
+```json
+{
+  "name": "<your-local-name>",
+  "tool_type": "Virtual",
+  "configuration": {
+    "type": "Virtual",
+    "provider": "composio",
+    "toolkit_slug": "<toolkit_slug>",
+    "remote_tool_slug": "<slug-from-listComposioTools>"
+  }
+}
+```
+
+Run `wacht api describe createAiTool` for the full payload schema.
+
+## Authorization
+
+Each actor (end user or service identity) that the agent acts on behalf of needs an authorized connection for the toolkit. Connection state and OAuth handshake live under `/ai/composio/toolkits/{slug}/auth-configs` and the per-actor MCP-server connection endpoints. See the [API reference](https://wacht.dev/docs/openapi/platform-api.json) for the operations.
+
+If a user hasn't authorized the toolkit, the agent's tool call returns an error pointing at the auth flow.

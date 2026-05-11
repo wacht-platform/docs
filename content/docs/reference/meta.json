@@ -1,5 +1,5 @@
 {
   "title": "API Reference",
   "root": true,
-  "pages": ["index", "backend-api", "frontend-api"]
+  "pages": ["index", "backend-api", "frontend-api", "agent-objects"]
 }

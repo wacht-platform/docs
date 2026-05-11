@@ -1,0 +1,48 @@
+---
+title: "Scheduling"
+description: "Run an agent task once at a specific time or on a recurring interval."
+---
+
+# Scheduling
+
+Scheduling runs an agent without a human kicking it off — overnight reports, periodic scans, follow-ups that should fire hours after a customer signs up.
+
+Two kinds, set on the board item:
+
+- **`ONCE`** — runs at `next_run_at`, then stops.
+- **`INTERVAL`** — runs at `next_run_at`, then repeats every `interval_seconds`.
+
+## API flow
+
+Each scheduled task is a board item under an actor project. If you don't already have a project for the agent, create one first — see the [agent runtime reference](/docs/reference/agent-objects).
+
+```bash
+wacht api call createProjectTaskBoardItem \
+  --param project_id=<project_id> \
+  --body @task.json
+```
+
+`task.json`:
+
+```json
+{
+  "title": "<short label>",
+  "description": "<the prompt the agent runs on each fire>",
+  "schedule_kind": "INTERVAL",
+  "interval_seconds": 86400,
+  "next_run_at": "<first fire time>"
+}
+```
+
+`description` is the prompt the agent reads on every run. `next_run_at` is the first fire time; subsequent `INTERVAL` runs are queued at `last_run + interval_seconds`.
+
+Run `wacht api describe createProjectTaskBoardItem` for the full payload — including the optional `mounts` array for attaching sandbox-storage files into the thread filesystem on each run.
+
+## Stopping a schedule
+
+```bash
+wacht api call archiveProjectTaskBoardItem \
+  --param project_id=<project_id> --param item_id=<item_id>
+```
+
+In-flight runs complete; no further runs are queued.
