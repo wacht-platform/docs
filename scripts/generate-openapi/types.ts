@@ -39,6 +39,19 @@ export interface RustHandlerInfo {
   pathParamsType?: string;
   hasMultipart?: boolean;
   responseType?: string;
+  /**
+   * Multipart form fields declared via the `/// Multipart form fields:` doc-comment
+   * block above the handler. Empty array when none are declared.
+   */
+  formFields?: RustFormField[];
+}
+
+export interface RustFormField {
+  name: string;
+  /** Annotation type. `string_list` is a repeated form field. Defaults to `string`. */
+  kind: 'string' | 'string_list' | 'file' | 'json' | 'flag';
+  required: boolean;
+  description?: string;
 }
 
 export interface RustStructField {
@@ -49,10 +62,28 @@ export interface RustStructField {
   serializedAsString?: boolean;
 }
 
+export interface RustEnumVariant {
+  /** Variant name, post-rename_all. */
+  name: string;
+  /** Original (pre-rename) variant identifier — needed to look up payload schemas. */
+  rawName: string;
+  /** Type inside the tuple variant `Variant(Payload)`. Undefined for unit variants. */
+  payloadType?: string;
+}
+
+export interface RustEnumDef {
+  variants: RustEnumVariant[];
+  /** Internally-tagged enums set `#[serde(tag = "type")]`. When set, the discriminator field is embedded inside the payload. */
+  serdeTag?: string;
+  /** Variant-level `rename_all` applied to the *variant names*. */
+  renameAll?: string;
+}
+
 export interface RustStruct {
   name: string;
   fields: RustStructField[];
-  enumVariants?: string[];
+  /** Enum definition. Present iff `isEnum`. */
+  enumDef?: RustEnumDef;
   isEnum?: boolean;
 }
 
@@ -69,6 +100,8 @@ export type JsonSchema = {
   additionalProperties?: JsonSchema | boolean;
   oneOf?: JsonSchema[];
   anyOf?: JsonSchema[];
+  allOf?: JsonSchema[];
+  discriminator?: { propertyName: string; mapping?: Record<string, string> };
   nullable?: boolean;
 };
 

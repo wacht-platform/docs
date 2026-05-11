@@ -53,6 +53,12 @@
           "path": "/ai/agents/{agent_id}/skills/{skill_slug}"
         },
         {
+          "name": "List Agent Skills Summary",
+          "slug": "list-agent-skills-summary",
+          "method": "GET",
+          "path": "/ai/agents/{agent_id}/skills/list"
+        },
+        {
           "name": "List Skill Tree",
           "slug": "list-skill-tree",
           "method": "GET",
@@ -657,6 +663,18 @@
           "slug": "get-analytics-stats",
           "method": "GET",
           "path": "/analytics"
+        }
+      ]
+    },
+    {
+      "name": "Credentials",
+      "slug": "credentials",
+      "operations": [
+        {
+          "name": "Create Deployment Credentials",
+          "slug": "create-deployment-credentials",
+          "method": "POST",
+          "path": "/credentials"
         }
       ]
     },

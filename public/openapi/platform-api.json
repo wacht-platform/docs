@@ -27,6 +27,9 @@
       "name": "Analytics"
     },
     {
+      "name": "Credentials"
+    },
+    {
       "name": "Default"
     },
     {
@@ -266,7 +269,38 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "first_name": {
+                    "type": "string"
+                  },
+                  "last_name": {
+                    "type": "string"
+                  },
+                  "email_address": {
+                    "type": "string"
+                  },
+                  "phone_number": {
+                    "type": "string"
+                  },
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "skip_password_check": {
+                    "type": "boolean"
+                  },
+                  "profile_image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "first_name",
+                  "last_name"
+                ]
               }
             }
           }
@@ -546,7 +580,36 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "first_name": {
+                    "type": "string"
+                  },
+                  "last_name": {
+                    "type": "string"
+                  },
+                  "username": {
+                    "type": "string"
+                  },
+                  "public_metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "private_metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "disabled": {
+                    "type": "boolean"
+                  },
+                  "remove_profile_image": {
+                    "type": "boolean"
+                  },
+                  "profile_image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
               }
             }
           }
@@ -3093,7 +3156,30 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "public_metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "private_metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "remove_image": {
+                    "type": "boolean"
+                  },
+                  "workspace_image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
               }
             }
           }
@@ -4771,7 +4857,27 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "public_metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "private_metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "organization_image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
               }
             }
           }
@@ -5049,7 +5155,30 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "public_metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "private_metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "remove_image": {
+                    "type": "boolean"
+                  },
+                  "organization_image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
               }
             }
           }
@@ -5327,7 +5456,27 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "public_metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "private_metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "workspace_image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
               }
             }
           }
@@ -9143,7 +9292,17 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "first file field in the request, any name accepted"
+                  }
+                },
+                "required": [
+                  "image"
+                ]
               }
             }
           }
@@ -10400,6 +10559,131 @@
         }
       }
     },
+    "/credentials": {
+      "post": {
+        "operationId": "createDeploymentCredentials",
+        "summary": "Create Deployment Credentials",
+        "tags": [
+          "Credentials"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeploymentCredentialsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api-auth/apps": {
       "get": {
         "operationId": "listApiAuthApps",
@@ -10692,7 +10976,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ApiAuthApp"
                 }
               }
             }
@@ -10819,13 +11103,23 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateApiAuthAppRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ApiAuthApp"
                 }
               }
             }
@@ -11362,7 +11656,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/RateLimitSchemeData"
                 }
               }
             }
@@ -11489,13 +11783,23 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRateLimitSchemeRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/RateLimitSchemeData"
                 }
               }
             }
@@ -11755,6 +12059,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "include_inactive",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "nullable": true
+            }
           }
         ],
         "responses": {
@@ -11763,7 +12076,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ListApiKeysResponse"
                 }
               }
             }
@@ -11890,13 +12203,23 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApiKeyRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ApiKeyWithSecret"
                 }
               }
             }
@@ -12319,6 +12642,90 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
+          },
+          {
+            "name": "outcome",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "key_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "cursor_ts",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            }
+          },
+          {
+            "name": "cursor_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
           }
         ],
         "responses": {
@@ -12327,7 +12734,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ApiAuditLogsResponse"
                 }
               }
             }
@@ -12454,6 +12861,91 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "deployment_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "app_slug",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            }
+          },
+          {
+            "name": "key_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
+          },
+          {
+            "name": "include_top_keys",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "include_top_paths",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "include_blocked_reasons",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "include_rate_limits",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "top_limit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -12462,7 +12954,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ApiAuditAnalyticsResponse"
                 }
               }
             }
@@ -12589,6 +13081,59 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "deployment_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "app_slug",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "key_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
           }
         ],
         "responses": {
@@ -12597,7 +13142,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ApiAuditTimeseriesResponse"
                 }
               }
             }
@@ -12844,7 +13389,42 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "slug": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "fqdn": {
+                    "type": "string",
+                    "description": "alias `domain` accepted"
+                  },
+                  "supported_scopes": {
+                    "type": "string",
+                    "description": "comma-separated list"
+                  },
+                  "scope_definitions": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "description": "JSON array of scope definitions"
+                  },
+                  "allow_dynamic_client_registration": {
+                    "type": "boolean"
+                  },
+                  "logo": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "slug",
+                  "name"
+                ]
               }
             }
           }
@@ -15670,7 +16250,20 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "replace": {
+                    "type": "boolean",
+                    "description": "accepts `replace_existing` as an alias"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
               }
             }
           }
@@ -15825,6 +16418,141 @@
               "application/json": {
                 "schema": {
                   "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/agents/{agent_id}/skills/list": {
+      "get": {
+        "operationId": "listAgentSkillsSummary",
+        "summary": "List Agent Skills Summary",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "agent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentSkillsSummary"
                 }
               }
             }
@@ -18991,7 +19719,22 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
               }
             }
           }
@@ -28383,7 +29126,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/WebhookEventCatalog"
                 }
               }
             }
@@ -28510,13 +29253,23 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEventCatalogRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/WebhookEventCatalog"
                 }
               }
             }
@@ -28645,13 +29398,23 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppendEventsToCatalogRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/WebhookEventCatalog"
                 }
               }
             }
@@ -28780,13 +29543,23 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchiveEventInCatalogRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/WebhookEventCatalog"
                 }
               }
             }
@@ -28915,13 +29688,23 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWebhookAppRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/WebhookApp"
                 }
               }
             }
@@ -29054,7 +29837,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/WebhookApp"
                 }
               }
             }
@@ -29322,7 +30105,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/WebhookApp"
                 }
               }
             }
@@ -29457,7 +30240,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/GetAvailableEventsResponse"
                 }
               }
             }
@@ -29592,7 +30375,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/WebhookEventCatalog"
                 }
               }
             }
@@ -29719,6 +30502,33 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "include_inactive",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "nullable": true
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
           }
         ],
         "responses": {
@@ -29727,7 +30537,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WebhookEndpoint"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    }
+                  }
                 }
               }
             }
@@ -29854,13 +30681,23 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWebhookEndpointRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/WebhookEndpoint"
                 }
               }
             }
@@ -30289,7 +31126,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/WebhookStats"
                 }
               }
             }
@@ -30416,6 +31253,71 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "endpoint_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
+          },
+          {
+            "name": "event_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            }
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            }
           }
         ],
         "responses": {
@@ -30424,7 +31326,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WebhookDeliveryListResponse"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    }
+                  }
                 }
               }
             }
@@ -30706,13 +31625,23 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TriggerWebhookEventRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/TriggerWebhookEventResponse"
                 }
               }
             }
@@ -30982,6 +31911,24 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
           }
         ],
         "responses": {
@@ -30990,7 +31937,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ReplayTaskListResponse"
                 }
               }
             }
@@ -31117,13 +32064,23 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplayWebhookDeliveryRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ReplayWebhookDeliveryResponse"
                 }
               }
             }
@@ -31544,7 +32501,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ReactivateEndpointResponse"
                 }
               }
             }
@@ -31671,6 +32628,44 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "app_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
+          },
+          {
+            "name": "endpoint_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            }
           }
         ],
         "responses": {
@@ -31679,7 +32674,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/WebhookAnalyticsResult"
                 }
               }
             }
@@ -31806,6 +32801,52 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "app_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
+          },
+          {
+            "name": "endpoint_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/TimeseriesInterval"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            }
           }
         ],
         "responses": {
@@ -31814,7 +32855,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/WebhookTimeseriesResult"
                 }
               }
             }
@@ -32262,8 +33303,7 @@
           }
         },
         "required": [
-          "new_password",
-          "skip_password_check"
+          "new_password"
         ]
       },
       "AddEmailRequest": {
@@ -33192,8 +34232,7 @@
           "frontend_host",
           "mail_from_host",
           "publishable_key",
-          "mode",
-          "email_provider"
+          "mode"
         ]
       },
       "DeploymentJwtTemplate": {
@@ -33829,8 +34868,7 @@
           "port",
           "username",
           "password",
-          "from_email",
-          "use_tls"
+          "from_email"
         ]
       },
       "SmtpConfigResponse": {
@@ -33921,7 +34959,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "created_at": {
             "type": "string",
@@ -33949,7 +34988,6 @@
           }
         },
         "required": [
-          "id",
           "deployment_id",
           "name",
           "type"
@@ -34086,6 +35124,29 @@
           "daily_metrics",
           "recent_signups",
           "recent_signins"
+        ]
+      },
+      "DeploymentCredentialsResponse": {
+        "type": "object",
+        "properties": {
+          "publishable_key": {
+            "type": "string"
+          },
+          "frontend_host": {
+            "type": "string"
+          },
+          "backend_host": {
+            "type": "string"
+          },
+          "api_key": {
+            "$ref": "#/components/schemas/DeploymentCredentialsApiKey"
+          }
+        },
+        "required": [
+          "publishable_key",
+          "frontend_host",
+          "backend_host",
+          "api_key"
         ]
       },
       "ListApiAuthAppsResponse": {
@@ -34242,6 +35303,53 @@
           "updated_at"
         ]
       },
+      "UpdateApiAuthAppRequest": {
+        "type": "object",
+        "properties": {
+          "organization_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "workspace_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "key_prefix": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "is_active": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "rate_limit_scheme_slug": {
+            "type": "string",
+            "nullable": true
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        }
+      },
       "RateLimitSchemeData": {
         "type": "object",
         "properties": {
@@ -34312,18 +35420,65 @@
           "rules"
         ]
       },
-      "RevokeApiKeyRequest": {
+      "UpdateRateLimitSchemeRequest": {
         "type": "object",
         "properties": {
-          "key_id": {
-            "type": "integer",
+          "name": {
+            "type": "string",
             "nullable": true
           },
-          "reason": {
+          "description": {
             "type": "string",
+            "nullable": true
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RateLimit"
+            },
             "nullable": true
           }
         }
+      },
+      "ListApiKeysResponse": {
+        "type": "object",
+        "properties": {
+          "keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiKey"
+            }
+          }
+        },
+        "required": [
+          "keys"
+        ]
+      },
+      "CreateApiKeyRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "metadata": {
+            "nullable": true
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "name"
+        ]
       },
       "ApiKeyWithSecret": {
         "type": "object",
@@ -34338,6 +35493,115 @@
         "required": [
           "key",
           "secret"
+        ]
+      },
+      "RevokeApiKeyRequest": {
+        "type": "object",
+        "properties": {
+          "key_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ApiAuditLogsResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiAuditLog"
+            }
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "data",
+          "limit",
+          "has_more"
+        ]
+      },
+      "ApiAuditAnalyticsResponse": {
+        "type": "object",
+        "properties": {
+          "total_requests": {
+            "type": "integer"
+          },
+          "allowed_requests": {
+            "type": "integer"
+          },
+          "blocked_requests": {
+            "type": "integer"
+          },
+          "success_rate": {
+            "type": "number"
+          },
+          "keys_used_24h": {
+            "type": "integer"
+          },
+          "top_keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiAuditTopKey"
+            },
+            "nullable": true
+          },
+          "top_paths": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiAuditTopPath"
+            },
+            "nullable": true
+          },
+          "blocked_reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiAuditBlockedReason"
+            },
+            "nullable": true
+          },
+          "rate_limit_stats": {
+            "$ref": "#/components/schemas/ApiAuditRateLimitBreakdown",
+            "nullable": true
+          }
+        },
+        "required": [
+          "total_requests",
+          "allowed_requests",
+          "blocked_requests",
+          "success_rate",
+          "keys_used_24h"
+        ]
+      },
+      "ApiAuditTimeseriesResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiAuditTimeseriesPoint"
+            }
+          },
+          "interval": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "interval"
         ]
       },
       "ListOAuthAppsResponse": {
@@ -34441,7 +35705,6 @@
           "deployment_id": {
             "type": "string"
           },
-          "configuration": {},
           "tools_count": {
             "type": "integer"
           },
@@ -34485,13 +35748,8 @@
           "updated_at",
           "name",
           "deployment_id",
-          "configuration",
           "tools_count",
-          "knowledge_bases_count",
-          "hooks",
-          "require_approval_mcp",
-          "require_approval_virtual",
-          "tool_approval_rules"
+          "knowledge_bases_count"
         ]
       },
       "CreateAgentRequest": {
@@ -34502,9 +35760,6 @@
           },
           "description": {
             "type": "string",
-            "nullable": true
-          },
-          "configuration": {
             "nullable": true
           },
           "tool_ids": {
@@ -34584,7 +35839,6 @@
           "deployment_id": {
             "type": "string"
           },
-          "configuration": {},
           "sub_agents": {
             "type": "array",
             "items": {
@@ -34621,12 +35875,7 @@
           "created_at",
           "updated_at",
           "name",
-          "deployment_id",
-          "configuration",
-          "hooks",
-          "require_approval_mcp",
-          "require_approval_virtual",
-          "tool_approval_rules"
+          "deployment_id"
         ]
       },
       "UpdateAgentRequest": {
@@ -34642,9 +35891,6 @@
           },
           "status": {
             "type": "string",
-            "nullable": true
-          },
-          "configuration": {
             "nullable": true
           },
           "tool_ids": {
@@ -34701,11 +35947,7 @@
             },
             "nullable": true
           }
-        },
-        "required": [
-          "clear_strong_model",
-          "clear_weak_model"
-        ]
+        }
       },
       "AgentDetailsResponse": {
         "type": "object",
@@ -34725,7 +35967,6 @@
             "type": "string",
             "nullable": true
           },
-          "configuration": {},
           "tools_count": {
             "type": "integer"
           },
@@ -34754,7 +35995,6 @@
           "updated_at",
           "deployment_id",
           "name",
-          "configuration",
           "tools_count",
           "knowledge_bases_count",
           "tools",
@@ -34781,6 +36021,27 @@
           "scope",
           "path",
           "entries"
+        ]
+      },
+      "AgentSkillsSummary": {
+        "type": "object",
+        "properties": {
+          "system": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkillSummaryEntry"
+            }
+          },
+          "agent": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkillSummaryEntry"
+            }
+          }
+        },
+        "required": [
+          "system",
+          "agent"
         ]
       },
       "SkillFileResponse": {
@@ -34855,8 +36116,7 @@
           "name",
           "tool_type",
           "deployment_id",
-          "configuration",
-          "approval_action"
+          "configuration"
         ]
       },
       "CreateToolRequest": {
@@ -34923,8 +36183,7 @@
           "name",
           "tool_type",
           "deployment_id",
-          "configuration",
-          "approval_action"
+          "configuration"
         ]
       },
       "InternalToolListResponse": {
@@ -35188,7 +36447,6 @@
           "updated_at",
           "deployment_id",
           "name",
-          "slug",
           "config"
         ]
       },
@@ -35441,7 +36699,6 @@
         "required": [
           "slug",
           "name",
-          "composio_managed_auth_schemes",
           "auth_modes"
         ]
       },
@@ -36684,10 +37941,52 @@
           "events"
         ]
       },
-      "UpdateWebhookEndpointRequest": {
+      "UpdateEventCatalogRequest": {
         "type": "object",
         "properties": {
-          "url": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "AppendEventsToCatalogRequest": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookEventDefinition"
+            }
+          }
+        },
+        "required": [
+          "events"
+        ]
+      },
+      "ArchiveEventInCatalogRequest": {
+        "type": "object",
+        "properties": {
+          "event_name": {
+            "type": "string"
+          },
+          "is_archived": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "event_name",
+          "is_archived"
+        ]
+      },
+      "UpdateWebhookAppRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
             "type": "string",
             "nullable": true
           },
@@ -36695,33 +37994,36 @@
             "type": "string",
             "nullable": true
           },
-          "headers": {
-            "nullable": true
-          },
-          "max_retries": {
-            "type": "integer",
-            "nullable": true
-          },
-          "timeout_seconds": {
-            "type": "integer",
-            "nullable": true
-          },
           "is_active": {
             "type": "boolean",
             "nullable": true
           },
-          "subscriptions": {
+          "failure_notification_emails": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/EventSubscription"
+              "type": "string"
             },
             "nullable": true
           },
-          "rate_limit_config": {
-            "$ref": "#/components/schemas/RateLimitConfigDto",
+          "event_catalog_slug": {
+            "type": "string",
             "nullable": true
           }
         }
+      },
+      "GetAvailableEventsResponse": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookAppEvent"
+            }
+          }
+        },
+        "required": [
+          "events"
+        ]
       },
       "WebhookEndpoint": {
         "type": "object",
@@ -36796,6 +38098,161 @@
           "updated_at"
         ]
       },
+      "CreateWebhookEndpointRequest": {
+        "type": "object",
+        "properties": {
+          "app_slug": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "subscriptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventSubscription"
+            }
+          },
+          "headers": {
+            "nullable": true
+          },
+          "max_retries": {
+            "type": "integer",
+            "nullable": true
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "nullable": true
+          },
+          "rate_limit_config": {
+            "$ref": "#/components/schemas/RateLimitConfigDto",
+            "nullable": true
+          }
+        },
+        "required": [
+          "app_slug",
+          "url",
+          "subscriptions"
+        ]
+      },
+      "UpdateWebhookEndpointRequest": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "headers": {
+            "nullable": true
+          },
+          "max_retries": {
+            "type": "integer",
+            "nullable": true
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "nullable": true
+          },
+          "is_active": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "subscriptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventSubscription"
+            },
+            "nullable": true
+          },
+          "rate_limit_config": {
+            "$ref": "#/components/schemas/RateLimitConfigDto",
+            "nullable": true
+          }
+        }
+      },
+      "WebhookStats": {
+        "type": "object",
+        "properties": {
+          "total_deliveries": {
+            "type": "integer"
+          },
+          "success_rate": {
+            "type": "number"
+          },
+          "active_endpoints": {
+            "type": "integer"
+          },
+          "failed_deliveries_24h": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_deliveries",
+          "success_rate",
+          "active_endpoints",
+          "failed_deliveries_24h"
+        ]
+      },
+      "WebhookDeliveryListResponse": {
+        "type": "object",
+        "properties": {
+          "delivery_id": {
+            "type": "string"
+          },
+          "deployment_id": {
+            "type": "string"
+          },
+          "app_slug": {
+            "type": "string"
+          },
+          "endpoint_id": {
+            "type": "string"
+          },
+          "event_name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "http_status_code": {
+            "type": "integer",
+            "nullable": true
+          },
+          "response_time_ms": {
+            "type": "integer",
+            "nullable": true
+          },
+          "attempt_number": {
+            "type": "integer"
+          },
+          "max_attempts": {
+            "type": "integer"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "delivery_id",
+          "deployment_id",
+          "app_slug",
+          "endpoint_id",
+          "event_name",
+          "status",
+          "attempt_number",
+          "max_attempts",
+          "timestamp"
+        ]
+      },
       "TestWebhookEndpointRequest": {
         "type": "object",
         "properties": {
@@ -36835,6 +38292,48 @@
           "success",
           "status_code",
           "response_time_ms"
+        ]
+      },
+      "TriggerWebhookEventRequest": {
+        "type": "object",
+        "properties": {
+          "app_slug": {
+            "type": "string"
+          },
+          "event_name": {
+            "type": "string"
+          },
+          "payload": {},
+          "filter_context": {
+            "nullable": true
+          }
+        },
+        "required": [
+          "app_slug",
+          "event_name",
+          "payload"
+        ]
+      },
+      "TriggerWebhookEventResponse": {
+        "type": "object",
+        "properties": {
+          "delivery_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "filtered_count": {
+            "type": "integer"
+          },
+          "delivered_count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "delivery_ids",
+          "filtered_count",
+          "delivered_count"
         ]
       },
       "WebhookDeliveryDetails": {
@@ -36897,6 +38396,58 @@
           "attempt_number",
           "max_attempts",
           "timestamp"
+        ]
+      },
+      "ReplayTaskListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReplayTaskStatusResponse"
+            }
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          },
+          "has_more": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "data",
+          "limit",
+          "offset",
+          "has_more"
+        ]
+      },
+      "ReplayWebhookDeliveryRequest": {
+        "type": "string",
+        "enum": [
+          "ByIds",
+          "ByDateRange"
+        ]
+      },
+      "ReplayWebhookDeliveryResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "task_id": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "status",
+          "message"
         ]
       },
       "ReplayTaskStatusResponse": {
@@ -36963,6 +38514,117 @@
         "required": [
           "status",
           "message"
+        ]
+      },
+      "ReactivateEndpointResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ]
+      },
+      "WebhookAnalyticsResult": {
+        "type": "object",
+        "properties": {
+          "total_events": {
+            "type": "integer"
+          },
+          "total_deliveries": {
+            "type": "integer"
+          },
+          "successful_deliveries": {
+            "type": "integer"
+          },
+          "failed_deliveries": {
+            "type": "integer"
+          },
+          "filtered_deliveries": {
+            "type": "integer"
+          },
+          "avg_response_time_ms": {
+            "type": "number",
+            "nullable": true
+          },
+          "p50_response_time_ms": {
+            "type": "number",
+            "nullable": true
+          },
+          "p95_response_time_ms": {
+            "type": "number",
+            "nullable": true
+          },
+          "p99_response_time_ms": {
+            "type": "number",
+            "nullable": true
+          },
+          "success_rate": {
+            "type": "number"
+          },
+          "top_events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventCount"
+            }
+          },
+          "endpoint_performance": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EndpointPerformance"
+            }
+          },
+          "failure_reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FailureReason"
+            }
+          }
+        },
+        "required": [
+          "total_events",
+          "total_deliveries",
+          "successful_deliveries",
+          "failed_deliveries",
+          "filtered_deliveries",
+          "success_rate",
+          "top_events",
+          "endpoint_performance",
+          "failure_reasons"
+        ]
+      },
+      "TimeseriesInterval": {
+        "type": "string",
+        "enum": [
+          "minute",
+          "hour",
+          "day",
+          "week",
+          "month"
+        ]
+      },
+      "WebhookTimeseriesResult": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeseriesPoint"
+            }
+          },
+          "interval": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "interval"
         ]
       },
       "CreateNotificationRequest": {
@@ -37143,6 +38805,111 @@
           "Error"
         ]
       },
+      "TimeseriesPoint": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "total_events": {
+            "type": "integer"
+          },
+          "total_deliveries": {
+            "type": "integer"
+          },
+          "successful_deliveries": {
+            "type": "integer"
+          },
+          "failed_deliveries": {
+            "type": "integer"
+          },
+          "filtered_deliveries": {
+            "type": "integer"
+          },
+          "avg_response_time_ms": {
+            "type": "number",
+            "nullable": true
+          },
+          "success_rate": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "timestamp",
+          "total_events",
+          "total_deliveries",
+          "successful_deliveries",
+          "failed_deliveries",
+          "filtered_deliveries",
+          "success_rate"
+        ]
+      },
+      "EventCount": {
+        "type": "object",
+        "properties": {
+          "event_name": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "event_name",
+          "count"
+        ]
+      },
+      "EndpointPerformance": {
+        "type": "object",
+        "properties": {
+          "endpoint_id": {
+            "type": "integer"
+          },
+          "endpoint_url": {
+            "type": "string"
+          },
+          "total_attempts": {
+            "type": "integer"
+          },
+          "successful_attempts": {
+            "type": "integer"
+          },
+          "failed_attempts": {
+            "type": "integer"
+          },
+          "avg_response_time_ms": {
+            "type": "number",
+            "nullable": true
+          },
+          "success_rate": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "endpoint_id",
+          "endpoint_url",
+          "total_attempts",
+          "successful_attempts",
+          "failed_attempts",
+          "success_rate"
+        ]
+      },
+      "FailureReason": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "reason",
+          "count"
+        ]
+      },
       "EventSubscription": {
         "type": "object",
         "properties": {
@@ -37172,6 +38939,9 @@
           "max_requests"
         ]
       },
+      "WebhookAppEvent": {
+        "type": "object"
+      },
       "WebhookEventDefinition": {
         "type": "object",
         "properties": {
@@ -37197,8 +38967,7 @@
         },
         "required": [
           "name",
-          "description",
-          "is_archived"
+          "description"
         ]
       },
       "AgentSessionIdentifierDto": {
@@ -37257,8 +39026,7 @@
           }
         },
         "required": [
-          "request_message_id",
-          "approvals"
+          "request_message_id"
         ]
       },
       "CancelRequest": {
@@ -37370,7 +39138,9 @@
           "approval_response",
           "execution_summary",
           "clarification_request",
-          "clarification_response"
+          "clarification_response",
+          "task_subscription_notification",
+          "task_subscription_delivery"
         ]
       },
       "ConversationMessageType": {
@@ -37384,7 +39154,8 @@
           "approval_response",
           "execution_summary",
           "clarification_request",
-          "clarification_response"
+          "clarification_response",
+          "task_subscription_notification"
         ]
       },
       "ApprovalSubmissionItem": {
@@ -37766,11 +39537,7 @@
               "$ref": "#/components/schemas/ComposioToolkitAuthField"
             }
           }
-        },
-        "required": [
-          "required",
-          "optional"
-        ]
+        }
       },
       "ComposioToolkitAuthField": {
         "type": "object",
@@ -37916,9 +39683,7 @@
         "required": [
           "name",
           "toolkit_slug",
-          "remote_tool_slug",
-          "display_name",
-          "description"
+          "remote_tool_slug"
         ]
       },
       "ComposioToolkit": {
@@ -37956,10 +39721,7 @@
         },
         "required": [
           "slug",
-          "name",
-          "categories",
-          "auth_schemes",
-          "tool_count"
+          "name"
         ]
       },
       "ComposioEnabledApp": {
@@ -37998,14 +39760,425 @@
         ]
       },
       "AiToolConfiguration": {
+        "oneOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ApiToolConfiguration"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "Api"
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlatformEventToolConfiguration"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "PlatformEvent"
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CodeRunnerToolConfiguration"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "CodeRunner"
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InternalToolConfiguration"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "Internal"
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/McpToolConfiguration"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "Mcp"
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VirtualToolConfiguration"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "Virtual"
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              }
+            ]
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type"
+        }
+      },
+      "ApiToolConfiguration": {
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "type": "string"
+          },
+          "method": {
+            "$ref": "#/components/schemas/HttpMethod"
+          },
+          "authorization": {
+            "$ref": "#/components/schemas/AuthorizationConfiguration",
+            "nullable": true
+          },
+          "request_body_schema": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchemaField"
+            },
+            "nullable": true
+          },
+          "url_params_schema": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchemaField"
+            },
+            "nullable": true
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "nullable": true
+          }
+        },
+        "required": [
+          "endpoint"
+        ]
+      },
+      "PlatformEventToolConfiguration": {
+        "type": "object",
+        "properties": {
+          "event_label": {
+            "type": "string"
+          },
+          "event_data": {
+            "nullable": true
+          }
+        },
+        "required": [
+          "event_label"
+        ]
+      },
+      "CodeRunnerToolConfiguration": {
+        "type": "object",
+        "properties": {
+          "runtime": {
+            "$ref": "#/components/schemas/CodeRunnerRuntime"
+          },
+          "code": {
+            "type": "string"
+          },
+          "input_schema": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchemaField"
+            },
+            "nullable": true
+          },
+          "output_schema": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchemaField"
+            },
+            "nullable": true
+          },
+          "env_variables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CodeRunnerEnvVariable"
+            },
+            "nullable": true
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "nullable": true
+          },
+          "allow_network": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "InternalToolConfiguration": {
+        "type": "object",
+        "properties": {
+          "tool_type": {
+            "$ref": "#/components/schemas/InternalToolType"
+          },
+          "input_schema": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchemaField"
+            },
+            "nullable": true
+          }
+        },
+        "required": [
+          "tool_type"
+        ]
+      },
+      "McpToolConfiguration": {
+        "type": "object",
+        "properties": {
+          "mcp_server_id": {
+            "type": "integer"
+          },
+          "remote_tool_name": {
+            "type": "string"
+          },
+          "input_schema": {
+            "nullable": true
+          }
+        },
+        "required": [
+          "mcp_server_id",
+          "remote_tool_name"
+        ]
+      },
+      "VirtualToolConfiguration": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string"
+          },
+          "toolkit_slug": {
+            "type": "string"
+          },
+          "remote_tool_slug": {
+            "type": "string"
+          },
+          "input_schema": {
+            "nullable": true
+          }
+        },
+        "required": [
+          "provider",
+          "toolkit_slug",
+          "remote_tool_slug"
+        ]
+      },
+      "InternalToolType": {
         "type": "string",
         "enum": [
-          "Api",
-          "PlatformEvent",
-          "CodeRunner",
-          "Internal",
-          "Mcp",
-          "Virtual"
+          "read_image",
+          "read_file",
+          "write_file",
+          "append_file",
+          "edit_file",
+          "execute_command",
+          "sleep",
+          "web_search",
+          "url_content",
+          "search_knowledgebase",
+          "load_memory",
+          "search_tools",
+          "load_tools",
+          "create_project_task",
+          "update_project_task",
+          "assign_project_task",
+          "append_task_journal",
+          "list_threads",
+          "create_thread",
+          "update_thread",
+          "save_memory",
+          "update_memory",
+          "task_graph_add_node",
+          "task_graph_add_dependency",
+          "task_graph_mark_in_progress",
+          "task_graph_complete_node",
+          "task_graph_fail_node",
+          "task_graph_reset",
+          "ask_user",
+          "subscribe_to_task",
+          "unsubscribe_from_task"
+        ]
+      },
+      "SchemaField": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "field_type": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "enum_values": {
+            "type": "array",
+            "items": {},
+            "nullable": true
+          },
+          "format": {
+            "type": "string",
+            "nullable": true
+          },
+          "minimum": {
+            "type": "number",
+            "nullable": true
+          },
+          "maximum": {
+            "type": "number",
+            "nullable": true
+          },
+          "items_type": {
+            "type": "string",
+            "nullable": true
+          },
+          "items_schema": {
+            "$ref": "#/components/schemas/SchemaField",
+            "nullable": true
+          },
+          "min_items": {
+            "type": "integer",
+            "nullable": true
+          },
+          "max_items": {
+            "type": "integer",
+            "nullable": true
+          },
+          "properties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchemaField"
+            },
+            "nullable": true
+          }
+        }
+      },
+      "CodeRunnerRuntime": {
+        "type": "string",
+        "enum": [
+          "python"
+        ]
+      },
+      "CodeRunnerEnvVariable": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ]
+      },
+      "HttpMethod": {
+        "type": "string",
+        "enum": [
+          "GET",
+          "POST",
+          "PUT",
+          "DELETE",
+          "PATCH"
+        ]
+      },
+      "AuthorizationConfiguration": {
+        "type": "object",
+        "properties": {
+          "authorize_as_user": {
+            "type": "boolean"
+          },
+          "jwt_template_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "custom_headers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchemaField"
+            },
+            "nullable": true
+          }
+        },
+        "required": [
+          "authorize_as_user"
         ]
       },
       "InternalToolSummary": {
@@ -38034,6 +40207,33 @@
           "internal",
           "mcp",
           "virtual"
+        ]
+      },
+      "SkillSummaryEntry": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "mount_path": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "mount_path",
+          "source"
         ]
       },
       "SkillTreeEntry": {
@@ -38083,17 +40283,43 @@
               "$ref": "#/components/schemas/AgentHookStep"
             }
           },
+          "before_llm": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentHookStep"
+            }
+          },
+          "after_llm": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentHookStep"
+            }
+          },
+          "before_tool": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentHookStep"
+            }
+          },
+          "after_tool": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentHookStep"
+            }
+          },
+          "on_budget_exhausted": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentHookStep"
+            }
+          },
           "execution_end": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AgentHookStep"
             }
           }
-        },
-        "required": [
-          "execution_start",
-          "execution_end"
-        ]
+        }
       },
       "AgentToolApprovalRule": {
         "type": "object",
@@ -38119,8 +40345,7 @@
           "args": {}
         },
         "required": [
-          "tool_name",
-          "args"
+          "tool_name"
         ]
       },
       "OAuthScopeDefinition": {
@@ -38153,9 +40378,184 @@
         "required": [
           "scope",
           "display_name",
-          "description",
-          "archived",
-          "category"
+          "description"
+        ]
+      },
+      "ApiAuditTimeseriesPoint": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "total_requests": {
+            "type": "integer"
+          },
+          "allowed_requests": {
+            "type": "integer"
+          },
+          "blocked_requests": {
+            "type": "integer"
+          },
+          "success_rate": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "timestamp",
+          "total_requests",
+          "allowed_requests",
+          "blocked_requests",
+          "success_rate"
+        ]
+      },
+      "ApiAuditTopKey": {
+        "type": "object",
+        "properties": {
+          "key_id": {
+            "type": "string"
+          },
+          "key_name": {
+            "type": "string"
+          },
+          "total_requests": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key_id",
+          "key_name",
+          "total_requests"
+        ]
+      },
+      "ApiAuditTopPath": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "total_requests": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "total_requests"
+        ]
+      },
+      "ApiAuditBlockedReason": {
+        "type": "object",
+        "properties": {
+          "blocked_by_rule": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer"
+          },
+          "percentage": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "blocked_by_rule",
+          "count",
+          "percentage"
+        ]
+      },
+      "ApiAuditRateLimitBreakdown": {
+        "type": "object",
+        "properties": {
+          "total_hits": {
+            "type": "integer"
+          },
+          "percentage_of_blocked": {
+            "type": "number"
+          },
+          "top_rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiAuditRateLimitRule"
+            }
+          }
+        },
+        "required": [
+          "total_hits",
+          "percentage_of_blocked",
+          "top_rules"
+        ]
+      },
+      "ApiAuditRateLimitRule": {
+        "type": "object",
+        "properties": {
+          "rule": {
+            "type": "string"
+          },
+          "hit_count": {
+            "type": "integer"
+          },
+          "percentage": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "rule",
+          "hit_count",
+          "percentage"
+        ]
+      },
+      "ApiAuditLog": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string"
+          },
+          "deployment_id": {
+            "type": "string"
+          },
+          "app_slug": {
+            "type": "string"
+          },
+          "key_id": {
+            "type": "string"
+          },
+          "key_name": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "blocked_by_rule": {
+            "type": "string",
+            "nullable": true
+          },
+          "client_ip": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "user_agent": {
+            "type": "string",
+            "nullable": true
+          },
+          "rate_limits": {
+            "nullable": true
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "request_id",
+          "deployment_id",
+          "app_slug",
+          "key_id",
+          "key_name",
+          "outcome",
+          "client_ip",
+          "path",
+          "timestamp"
         ]
       },
       "ApiKey": {
@@ -38310,8 +40710,7 @@
         "required": [
           "unit",
           "duration",
-          "max_requests",
-          "priority"
+          "max_requests"
         ]
       },
       "RateLimitUnit": {
@@ -38334,6 +40733,33 @@
           "per_key",
           "per_key_and_ip",
           "per_app_and_ip"
+        ]
+      },
+      "DeploymentCredentialsApiKey": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "secret": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string"
+          },
+          "suffix": {
+            "type": "string"
+          },
+          "app_slug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "secret",
+          "prefix",
+          "suffix",
+          "app_slug"
         ]
       },
       "DailyAuthMetric": {
@@ -38486,8 +40912,7 @@
           }
         },
         "required": [
-          "key",
-          "archived"
+          "key"
         ]
       },
       "CountryRestrictions": {
@@ -39969,7 +42394,6 @@
         },
         "required": [
           "enabled",
-          "prompt_registration_on_auth",
           "allow_autofill"
         ]
       },

@@ -416,9 +416,26 @@ export function buildPlatformApiSpec(
         },
       };
     } else if (info?.hasMultipart) {
+      let schema: JsonSchema = { type: 'object' };
+      if (info.formFields && info.formFields.length > 0) {
+        const properties: Record<string, JsonSchema> = {};
+        const required: string[] = [];
+        for (const f of info.formFields) {
+          const fieldSchema: JsonSchema =
+            f.kind === 'file' ? { type: 'string', format: 'binary' }
+            : f.kind === 'json' ? { type: 'object', additionalProperties: true }
+            : f.kind === 'flag' ? { type: 'boolean' }
+            : f.kind === 'string_list' ? { type: 'array', items: { type: 'string' } }
+            : { type: 'string' };
+          if (f.description) fieldSchema.description = f.description;
+          properties[f.name] = fieldSchema;
+          if (f.required) required.push(f.name);
+        }
+        schema = { type: 'object', properties, ...(required.length ? { required } : {}) };
+      }
       requestBody = {
         required: true,
-        content: { 'multipart/form-data': { schema: { type: 'object' } } },
+        content: { 'multipart/form-data': { schema } },
       };
     }
 
@@ -535,6 +552,7 @@ function ensureSchema(
     allSchemas[typeName] = rustStructToJsonSchema(typeName, structs);
   }
 }
+
 
 // Walk a JSON value and collect all $ref schema names
 function collectRefs(value: unknown, out: Set<string>) {

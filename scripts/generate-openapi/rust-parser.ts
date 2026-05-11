@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import type { Route, RustHandlerInfo, RustStruct, RustStructField, JsonSchema } from './types.js';
+import type { Route, RustEnumVariant, RustFormField, RustHandlerInfo, RustStruct, RustStructField, JsonSchema } from './types.js';
 
 function tagFromPath(p: string): string {
   const segments = p.split('/').filter(s => s && !s.startsWith('{'));
@@ -271,15 +271,44 @@ export function parseRustHandlers(platformApiDir: string, apiSubpath = 'platform
 }
 
 function parseRustHandlerFile(content: string, handlers: Map<string, RustHandlerInfo>) {
-  // Match async fn handler_name(...) -> ApiResult<T>
-  // Handles nested generics like PaginatedResponse<Foo> by allowing one level of <> inside
-  const fnRe = /pub\s+async\s+fn\s+(\w+)\s*\(([^{]*?)\)\s*->\s*ApiResult<((?:[^<>]|<[^<>]*>)*)>/gs;
+  // Find each `pub async fn NAME(`, then walk forward with paren-depth balancing
+  // so destructuring patterns like `Path(AppSlugParams { app_slug, .. })` don't
+  // truncate the params block at the first `{`.
+  const fnStartRe = /pub\s+async\s+fn\s+(\w+)\s*\(/g;
   let m: RegExpExecArray | null;
 
-  while ((m = fnRe.exec(content)) !== null) {
+  while ((m = fnStartRe.exec(content)) !== null) {
     const fnName = m[1];
-    const params = m[2];
-    const responseType = m[3].trim();
+    const handlerStart = m.index;
+    const paramsStart = m.index + m[0].length;
+    // Walk forward to the matching `)` with full paren/brace/bracket balancing.
+    let depth = 1;
+    let i = paramsStart;
+    while (i < content.length && depth > 0) {
+      const ch = content[i];
+      if (ch === '(' || ch === '{' || ch === '[') depth++;
+      else if (ch === ')' || ch === '}' || ch === ']') depth--;
+      i++;
+    }
+    if (depth !== 0) continue;
+    const params = content.slice(paramsStart, i - 1);
+
+    // After the params close-paren, expect `-> ApiResult<...>`. Walk angle
+    // brackets to capture nested generics like `PaginatedResponse<Foo<Bar>>`.
+    const tail = content.slice(i);
+    const arrowMatch = tail.match(/^\s*->\s*ApiResult\s*</);
+    if (!arrowMatch) continue;
+    let j = arrowMatch[0].length;
+    let adepth = 1;
+    const respStart = j;
+    while (j < tail.length && adepth > 0) {
+      const ch = tail[j];
+      if (ch === '<') adepth++;
+      else if (ch === '>') adepth--;
+      if (adepth > 0) j++;
+    }
+    if (adepth !== 0) continue;
+    const responseType = tail.slice(respStart, j).trim();
 
     const info: RustHandlerInfo = { responseType };
 
@@ -298,10 +327,71 @@ function parseRustHandlerFile(content: string, handlers: Map<string, RustHandler
     // Multipart
     if (params.includes('Multipart') || params.includes('multipart')) {
       info.hasMultipart = true;
+      const formFields = parseFormFieldDocBlock(content, m.index);
+      if (formFields.length) info.formFields = formFields;
     }
 
     handlers.set(fnName, info);
   }
+}
+
+/**
+ * Walk backwards from a handler declaration to collect the immediately-preceding
+ * `///` doc-comment block, then extract `Multipart form fields:` entries from it.
+ *
+ * Annotation shape (case-insensitive header):
+ *   /// Multipart form fields:
+ *   /// - first_name: string required
+ *   /// - profile_image: file optional
+ *   /// - metadata: json optional       (anything not matched falls back to string)
+ *   /// - skip_check: flag optional     (boolean from "true" literal)
+ */
+function parseFormFieldDocBlock(content: string, fnStart: number): RustFormField[] {
+  // Walk back over blank lines and `///` lines to find the contiguous doc block.
+  const lines: string[] = [];
+  let cursor = content.lastIndexOf('\n', fnStart - 1);
+  while (cursor > 0) {
+    const lineStart = content.lastIndexOf('\n', cursor - 1) + 1;
+    const rawLine = content.slice(lineStart, cursor);
+    const trimmed = rawLine.trim();
+    if (trimmed.startsWith('///')) {
+      lines.unshift(trimmed.replace(/^\/\/\/\s?/, ''));
+    } else if (trimmed === '') {
+      // allow a single blank line between non-doc code and the block
+      if (lines.length === 0) {
+        cursor = lineStart - 1;
+        continue;
+      }
+      break;
+    } else {
+      break;
+    }
+    cursor = lineStart - 1;
+  }
+  if (!lines.length) return [];
+
+  const headerIdx = lines.findIndex((line) => /^multipart form fields:\s*$/i.test(line));
+  if (headerIdx === -1) return [];
+
+  const fields: RustFormField[] = [];
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line.startsWith('-')) break;
+    const match = line.match(/^-\s*(\w+)\s*:\s*(\w+)(?:\s+(required|optional))?(?:\s*[—-]\s*(.*))?$/i);
+    if (!match) continue;
+    const name = match[1];
+    const kindRaw = match[2].toLowerCase();
+    const kind: RustFormField['kind'] =
+      kindRaw === 'file' ? 'file'
+      : kindRaw === 'json' ? 'json'
+      : kindRaw === 'flag' || kindRaw === 'bool' ? 'flag'
+      : kindRaw === 'string_list' || kindRaw === 'list' ? 'string_list'
+      : 'string';
+    const required = (match[3] ?? 'optional').toLowerCase() === 'required';
+    const description = match[4]?.trim() || undefined;
+    fields.push({ name, kind, required, description });
+  }
+  return fields;
 }
 
 export function parseRustDTOs(
@@ -355,8 +445,15 @@ function parseRustFile(content: string, structs: Map<string, RustStruct>) {
     const serdeAttrContent = attrs.match(/#\[serde\(([^)]*)\)\]/)?.[1] ?? '';
     const renameAllMatch = serdeAttrContent.match(/rename_all\s*=\s*"([^"]+)"/);
     const renameAll = renameAllMatch?.[1];
+    const tagMatch = serdeAttrContent.match(/tag\s*=\s*"([^"]+)"/);
+    const serdeTag = tagMatch?.[1];
     const variants = parseRustEnumVariants(body, renameAll);
-    structs.set(name, { name, fields: [], enumVariants: variants, isEnum: true });
+    structs.set(name, {
+      name,
+      fields: [],
+      enumDef: { variants, serdeTag, renameAll },
+      isEnum: true,
+    });
   }
 }
 
@@ -386,7 +483,12 @@ function parseRustStructFields(body: string): RustStructField[] {
     const rustType = body.slice(typeStart, i).trim().replace(/,$/, '');
     if (!rustType) continue;
 
-    const required = !rustType.startsWith('Option<');
+    // A field is API-required only when it has no `Option<>` wrapper AND no
+    // serde escape hatch (`default` or `default = "..."`) that lets clients
+    // omit it. `skip_serializing_if` only affects response serialization, not
+    // deserialization, so we don't treat it as making the field optional.
+    const hasSerdeDefault = /\bdefault\b/.test(serdeAttr);
+    const required = !rustType.startsWith('Option<') && !hasSerdeDefault;
     const renameMatch = serdeAttr.match(/rename\s*=\s*"([^"]+)"/);
     const serdeRename = renameMatch?.[1];
     const serializedAsString = /i64_as_string/.test(serdeAttr);
@@ -415,8 +517,8 @@ function applyRenameAll(name: string, renameAll: string): string {
   }
 }
 
-function parseRustEnumVariants(body: string, renameAll?: string): string[] {
-  const variants: string[] = [];
+function parseRustEnumVariants(body: string, renameAll?: string): RustEnumVariant[] {
+  const variants: RustEnumVariant[] = [];
   let i = 0;
 
   while (i < body.length) {
@@ -439,21 +541,52 @@ function parseRustEnumVariants(body: string, renameAll?: string): string[] {
       continue;
     }
 
-    const variant = identMatch[1];
-    variants.push(renameAll ? applyRenameAll(variant, renameAll) : variant);
-    i += variant.length;
+    const rawName = identMatch[1];
+    i += rawName.length;
 
-    let depth = 0;
-    while (i < body.length) {
-      const ch = body[i];
-      if (ch === '{' || ch === '(' || ch === '[') depth++;
-      else if (ch === '}' || ch === ')' || ch === ']') depth--;
-      else if (ch === ',' && depth === 0) {
-        i++;
-        break;
+    // Skip whitespace between the variant name and its payload (if any).
+    while (i < body.length && /\s/.test(body[i])) i++;
+
+    let payloadType: string | undefined;
+    // Tuple-style payload: `Variant(Type)` or `Variant(A, B)`.
+    if (body[i] === '(') {
+      const start = i + 1;
+      let depth = 1;
+      let j = start;
+      while (j < body.length && depth > 0) {
+        const ch = body[j];
+        if (ch === '(' || ch === '<' || ch === '[') depth++;
+        else if (ch === ')' || ch === '>' || ch === ']') depth--;
+        if (depth > 0) j++;
       }
+      const inside = body.slice(start, j).trim();
+      // Take the first type — multi-payload tuple variants are rare and we'd
+      // need to invent a struct to represent them; treat the first as canonical.
+      payloadType = inside.split(',')[0]?.trim() || undefined;
+      i = j + 1;
+    } else if (body[i] === '{') {
+      // Struct-style payload `Variant { field: Type, ... }` — not modeled today.
+      // Walk to the matching brace and continue without a payloadType so the
+      // emitter falls back to a discriminator-only variant.
+      let depth = 1;
       i++;
+      while (i < body.length && depth > 0) {
+        const ch = body[i];
+        if (ch === '{') depth++;
+        else if (ch === '}') depth--;
+        i++;
+      }
     }
+
+    variants.push({
+      name: renameAll ? applyRenameAll(rawName, renameAll) : rawName,
+      rawName,
+      payloadType,
+    });
+
+    // Skip trailing `,` so the outer loop resumes at the next variant.
+    while (i < body.length && body[i] !== ',' && /[^\n]/.test(body[i])) i++;
+    if (body[i] === ',') i++;
   }
 
   return variants;
@@ -550,8 +683,8 @@ export function rustStructToJsonSchema(
     };
   }
 
-  if (struct.isEnum && struct.enumVariants) {
-    return { type: 'string', enum: struct.enumVariants };
+  if (struct.isEnum && struct.enumDef) {
+    return enumToJsonSchema(struct.enumDef);
   }
 
   const properties: Record<string, JsonSchema> = {};
@@ -570,4 +703,42 @@ export function rustStructToJsonSchema(
     properties,
     ...(required.length > 0 ? { required } : {}),
   };
+}
+
+function enumToJsonSchema(def: { variants: RustEnumVariant[]; serdeTag?: string; renameAll?: string }): JsonSchema {
+  // Unit-only enum: simple string enum (current behavior, preserved).
+  if (def.variants.every((v) => !v.payloadType)) {
+    return { type: 'string', enum: def.variants.map((v) => v.name) };
+  }
+
+  const tag = def.serdeTag;
+  const oneOf: JsonSchema[] = def.variants.map((variant) => {
+    if (tag) {
+      // Internally-tagged: `{ <tag>: "<Variant>", ...payload fields }`.
+      const discriminator: JsonSchema = {
+        type: 'object',
+        properties: { [tag]: { type: 'string', const: variant.name } },
+        required: [tag],
+      };
+      if (!variant.payloadType) return discriminator;
+      return {
+        allOf: [
+          { $ref: `#/components/schemas/${variant.payloadType}` },
+          discriminator,
+        ],
+      };
+    }
+    // Externally-tagged (serde default): `{ "<Variant>": { ...payload } }`.
+    if (!variant.payloadType) {
+      // Unit variant in a mixed enum serialises as the bare string.
+      return { type: 'string', const: variant.name };
+    }
+    return {
+      type: 'object',
+      properties: { [variant.name]: { $ref: `#/components/schemas/${variant.payloadType}` } },
+      required: [variant.name],
+    };
+  });
+
+  return tag ? { oneOf, discriminator: { propertyName: tag } } as JsonSchema : { oneOf };
 }

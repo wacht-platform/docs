@@ -31,13 +31,23 @@ wacht skills add --skill wacht-nextjs-patterns
 
 ## Use the Bench CLI
 
+Bench is currently on the `beta` dist-tag while we stabilise. Pin to `@wacht/bench@beta` (or pass `--tag beta` when installing globally) until we promote to `latest`.
+
 Run without installing:
 
 ```bash
-npx @wacht/bench init
+npx @wacht/bench@beta init
 ```
 
-After `npm i -g @wacht/bench` (or `pnpm add -g @wacht/bench`), the binary is `wacht`:
+To install globally (binary is `wacht`):
+
+```bash
+npm i -g @wacht/bench@beta
+# or
+pnpm add -g @wacht/bench@beta
+```
+
+Then:
 
 ```bash
 wacht init
