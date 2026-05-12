@@ -5,7 +5,9 @@ description: "Share an agent chat URL with a teammate, customer, or background s
 
 # Agent sessions
 
-A session is one user's conversation with an agent. To let someone chat with an agent you don't own (and don't want to give credentials to), mint a **session ticket** and hand them a URL. The ticket is single-use and time-bound.
+A session is one user's conversation with an agent. To let someone chat with an agent you don't own — and don't want to hand credentials to — mint a **session ticket** and hand them a URL. The ticket is single-use and time-bound.
+
+Agent sessions are one of Wacht's four vanity-page flows; the same `/session/tickets` endpoint also issues tickets for user impersonation, API-auth management, and webhook management. See [Vanity tickets](#vanity-tickets) below for the full table.
 
 ## API flow
 
@@ -13,19 +15,20 @@ A session is one user's conversation with an agent. To let someone chat with an 
 wacht api call createBackendSessionTicket --body @ticket.json
 ```
 
-`ticket.json`:
+`ticket.json` (minimum for an agent session):
 
 ```json
 {
-  "ticket_type": "<see describe>",
-  "agent_ids": ["<agent_id>"]
+  "ticket_type": "agent_access",
+  "agent_ids": ["<agent_id>"],
+  "actor_id": "<actor_id>"
 }
 ```
 
 Response:
 
 ```json
-{ "ticket": "tkt_…", "expires_at": <epoch> }
+{ "ticket": "<ticket>", "expires_at": <epoch> }
 ```
 
 URL:
@@ -34,23 +37,35 @@ URL:
 https://<deployment.backend_host>/vanity/agents?ticket=<ticket>
 ```
 
-`backend_host` comes from `wacht deployments current` or `getDeploymentWithSettings`.
+`backend_host` comes from `wacht deployments current` or `getDeploymentWithSettings`. Run `wacht api describe createBackendSessionTicket` for the full request schema.
 
-Run `wacht api describe createBackendSessionTicket` for the full request schema. The optional fields are:
+Useful optional fields:
 
 | Field | Effect |
 | --- | --- |
-| `user_id` | Bind the session to a specific Wacht user; the chat authenticates as them. |
+| `user_id` | Bind the chat to a specific Wacht user; the session authenticates as them. |
 | `actor_id` | Bind to a service / non-user actor. |
 | `agent_session_identifier` | Resume a specific named session instead of opening a new one. |
 | `expires_in` | Seconds until the ticket can no longer be redeemed. |
-| `webhook_app_slug` / `api_auth_app_slug` | For non-agent ticket types (webhook or API-auth management vanity flows). |
 
-Pick the narrowest scope your use case allows. A ticket with neither `user_id` nor `actor_id` is anonymous.
+Pick the narrowest scope your use case allows. A ticket bound to neither a `user_id` nor an `actor_id` is anonymous.
 
-## Backend vs console
+## Vanity tickets
 
-Two endpoints with the same shape:
+`POST /session/tickets` issues four kinds of tickets. Each redirects to a different vanity host route:
+
+| `ticket_type` | URL host + path | Required body | Flow guide |
+| --- | --- | --- | --- |
+| `agent_access` | `https://{backend_host}/vanity/agents?ticket=…` | `agent_ids`, `actor_id` | (this page) |
+| `impersonation` | `https://{frontend_host}/sign-in?ticket=…` | `user_id` | Console "impersonate user" action |
+| `api_auth_access` | `https://{backend_host}/vanity/api-auth?ticket=…` | `api_auth_app_slug` | [API-auth vanity pages](/docs/guides/api-auth/vanity-pages-implementation) |
+| `webhook_app_access` | `https://{backend_host}/vanity/webhook?ticket=…` | `webhook_app_slug` | [Webhook vanity pages](/docs/guides/webhook-apps/vanity-pages-implementation) |
+
+Tickets are one-time-redeemable and expire per `expires_at`. There's no explicit revocation — set a short `expires_in` (seconds) when you need tight bounds.
+
+## Backend vs console issuance
+
+Two endpoints with the same body shape:
 
 - `POST /session/tickets` on the **backend** host — `createBackendSessionTicket`. Authenticated with `WACHT_API_KEY`. Use from server code.
 - `POST /session/tickets` on the **console** host — `createSessionTicket`. Authenticated with an admin OAuth session. Used by the console UI.

@@ -38,26 +38,29 @@ The agent record has no `instructions` or schedule field. Task content lives on 
 
 `AiTool.configuration` is a discriminated union — the `type` field selects the variant:
 
-| `type` | Use for |
-| --- | --- |
-| `Api` | An HTTP endpoint you own. Stores endpoint, method, auth, request/URL schemas. |
-| `CodeRunner` | Sandboxed code execution. |
-| `Internal` | Built-in platform tools the runtime ships. |
-| `Mcp` | A self-hosted MCP server you control. |
-| `PlatformEvent` | Tools that react to platform events. |
-| `Virtual` | Third-party SaaS via Composio. |
+| `type` | Use for | Persisted via |
+| --- | --- | --- |
+| `Api` | An HTTP endpoint you own. Stores endpoint, method, auth, request/URL schemas. | `createAiTool` |
+| `CodeRunner` | Sandboxed code execution. | `createAiTool` |
+| `Internal` | Built-in platform tools the runtime ships. | (read-only catalog) |
+| `Mcp` | A self-hosted MCP server you control. | `createAiTool` |
+| `PlatformEvent` | Tools that react to platform events. | `createAiTool` |
+| `Virtual` | Third-party SaaS via Composio. | Not created directly — surfaces at runtime once `enableComposioApp` is called and the actor authorizes the toolkit. |
 
-`wacht api describe createAiTool` shows the full per-variant payload schema.
+`wacht api describe createAiTool` shows the full per-variant payload schema for the persisted variants. See [Composio](/docs/guides/agents/composio) for the Virtual flow.
 
 ## Sharing a session
 
-`createBackendSessionTicket` returns a `ticket` string. URL pattern:
+`POST /session/tickets` (`createBackendSessionTicket` server-side, `createSessionTicket` console-side) issues four ticket types — each redirects to a different vanity surface:
 
-```
-https://{deployment.backend_host}/vanity/agents?ticket={ticket}
-```
+| `ticket_type` | URL | Required fields |
+| --- | --- | --- |
+| `agent_access` | `https://{backend_host}/vanity/agents?ticket=…` | `agent_ids`, `actor_id` |
+| `impersonation` | `https://{frontend_host}/sign-in?ticket=…` | `user_id` |
+| `api_auth_access` | `https://{backend_host}/vanity/api-auth?ticket=…` | `api_auth_app_slug` |
+| `webhook_app_access` | `https://{backend_host}/vanity/webhook?ticket=…` | `webhook_app_slug` |
 
-See the [Agent sessions guide](/docs/guides/agents/sessions) for ticket scoping fields.
+Tickets are one-time-redeemable and bounded by `expires_in` (seconds). See the [Agent sessions guide](/docs/guides/agents/sessions) for scoping fields and the per-product vanity-pages guides ([API auth](/docs/guides/api-auth/vanity-pages-implementation), [Webhooks](/docs/guides/webhook-apps/vanity-pages-implementation)) for non-agent flows.
 
 ## Related
 
