@@ -9,10 +9,18 @@ const { rewrite: rewriteDocs } = rewritePath(
   `{/*path}`,
   `${docsContentRoute}{/*path}/content.md`,
 );
-const { rewrite: rewriteSuffix } = rewritePath(
+const { rewrite: rewriteMdxSuffix } = rewritePath(
   `{/*path}.mdx`,
   `${docsContentRoute}{/*path}/content.md`,
 );
+const { rewrite: rewriteMdSuffix } = rewritePath(
+  `{/*path}.md`,
+  `${docsContentRoute}{/*path}/content.md`,
+);
+
+function rewriteSuffix(pathname: string): string | false {
+  return rewriteMdSuffix(pathname) || rewriteMdxSuffix(pathname);
+}
 
 function rewriteTo(request: NextRequest, target: string) {
   const url = request.nextUrl.clone();
