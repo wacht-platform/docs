@@ -68,18 +68,19 @@ export default function Layout({ children }: LayoutProps<'/'>) {
           <RootProvider theme={{ enabled: false }}>
             <div
               id="wacht-bench-launch"
-              className="sticky top-0 z-40 flex h-9 items-center justify-center px-4 text-center"
-              style={{
-                background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
-              }}
+              className="sticky top-0 z-40 flex h-9 items-center justify-center border-b border-white/5 bg-[#0a0612] px-4 text-center"
             >
               <Link
                 href="/guides/wacht-bench"
-                className="inline-flex items-center gap-2 text-[12px] font-medium text-white hover:text-white/90"
-                style={{ color: '#ffffff' }}
+                className="group inline-flex items-center gap-3 text-[12px] text-white/80 hover:text-white"
               >
+                <span className="rounded-full border border-violet-400/30 bg-violet-500/10 px-2 py-[2px] text-[10px] font-semibold uppercase tracking-wider text-violet-300">
+                  New
+                </span>
                 <span>Wacht Bench is live — AI-assisted development for Wacht</span>
-                <span aria-hidden>→</span>
+                <span aria-hidden className="text-white/60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-white">
+                  →
+                </span>
               </Link>
             </div>
             {children}

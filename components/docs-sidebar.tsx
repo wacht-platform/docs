@@ -1041,7 +1041,7 @@ function SidebarLinkNode({
           {method}
         </span>
       ) : null}
-      <span className="truncate font-mono">{name}</span>
+      <span className={cn('truncate', method && 'font-mono')}>{name}</span>
     </Link>
   );
 }
