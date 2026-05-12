@@ -1,27 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isMarkdownPreferred, rewritePath } from 'fumadocs-core/negotiation';
-import { docsContentRoute, docsRoute } from '@/lib/shared';
+import { docsContentRoute } from '@/lib/shared';
 
+// path-to-regexp v8: a leading `/` before `{/*path}` would force a double-slash
+// at match time and break every nested path. Keep the optional-prefix group as
+// the only `/` source.
 const { rewrite: rewriteDocs } = rewritePath(
-  `${docsRoute}{/*path}`,
+  `{/*path}`,
   `${docsContentRoute}{/*path}/content.md`,
 );
 const { rewrite: rewriteSuffix } = rewritePath(
-  `${docsRoute}{/*path}.mdx`,
+  `{/*path}.mdx`,
   `${docsContentRoute}{/*path}/content.md`,
 );
 
+function rewriteTo(request: NextRequest, target: string) {
+  const url = request.nextUrl.clone();
+  url.pathname = target;
+  return NextResponse.rewrite(url);
+}
+
 export default function proxy(request: NextRequest) {
-  const result = rewriteSuffix(request.nextUrl.pathname);
-  if (result) {
-    return NextResponse.rewrite(new URL(result, request.nextUrl));
+  const pathname = request.nextUrl.pathname;
+  const suffixResult = rewriteSuffix(pathname);
+  if (suffixResult) {
+    return rewriteTo(request, suffixResult);
   }
 
   if (isMarkdownPreferred(request)) {
-    const result = rewriteDocs(request.nextUrl.pathname);
-
-    if (result) {
-      return NextResponse.rewrite(new URL(result, request.nextUrl));
+    const docsResult = rewriteDocs(pathname);
+    if (docsResult) {
+      return rewriteTo(request, docsResult);
     }
   }
 

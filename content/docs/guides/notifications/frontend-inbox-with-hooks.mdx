@@ -5,7 +5,26 @@ description: "Build a production inbox with pagination, scoped filters, mutation
 
 # Frontend Inbox with Hooks
 
-`useNotifications` gives you the core read model and mutation actions for inbox UX.
+## Drop-in bell first
+
+For most apps, the prebuilt `NotificationBell` is all you need — it renders the icon, unread badge, and an opt-in popover with the full inbox UI. Reach for hooks only when you need custom layout, filters, or actions beyond what the bell ships with.
+
+```tsx
+import { NotificationBell } from "@wacht/nextjs";
+// or "@wacht/react-router" / "@wacht/tanstack-router"
+
+export function HeaderActions() {
+  return <NotificationBell />;
+}
+```
+
+`NotificationBell` accepts `className`, `showBadge`, `scope` (same shape as `useNotifications`), and an `onAction(payload)` callback fired when a user clicks an actionable CTA inside a notification.
+
+For more layout control: drop `NotificationPopover` next to your own trigger, or render `NotificationPanel` inline (e.g. on a dedicated `/notifications` page). Both take the same `scope` + `onAction` props as the bell.
+
+## Building from scratch with `useNotifications`
+
+`useNotifications` gives you the core read model and mutation actions for inbox UX. Use it when the drop-in components don't fit.
 
 ## What the hook provides
 
