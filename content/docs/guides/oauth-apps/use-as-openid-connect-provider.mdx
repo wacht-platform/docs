@@ -255,17 +255,95 @@ The private half never leaves Wacht's database. The console exposes only the pub
 
 ## Trying it locally
 
-A 200-line zero-dep Node script that walks the entire flow lives at `platform-api/oidc-test.mjs` in the Wacht repo. It opens a browser, listens on localhost, exchanges the code, verifies the id_token against JWKS, calls UserInfo, refreshes, replays the old refresh token to confirm replay detection fires, and exercises logout. Use it as a reference when integrating your own library.
+Below is a self-contained Node script (zero dependencies, Node 18+) that walks the full flow: opens a browser, listens on localhost, exchanges the code, verifies the id_token against JWKS, and calls UserInfo. Edit `OAUTH_HOST` and `CLIENT_ID` at the top and run `node oidc-test.mjs`.
 
-```bash
-# Edit OAUTH_HOST + CLIENT_ID at the top, then:
-node oidc-test.mjs
+Register `http://localhost:8765/callback` as a redirect URI on the OAuth client first.
 
-# Try variants:
-node oidc-test.mjs prompt=consent
-node oidc-test.mjs prompt=none
-node oidc-test.mjs max_age=10
+```js
+import http from "node:http";
+import crypto from "node:crypto";
+import { exec } from "node:child_process";
+
+const OAUTH_HOST = "<your-oauth-fqdn>";          // e.g. abc.oapi.trywacht.xyz
+const CLIENT_ID  = "<your-client-id>";           // e.g. oc_xxxxxxxxxxxx
+const PORT       = 8765;
+const REDIRECT   = `http://localhost:${PORT}/callback`;
+const SCOPE      = "openid profile email offline_access";
+
+const b64url = (b) =>
+  Buffer.from(b).toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+const decodePart = (p) => JSON.parse(Buffer.from(p, "base64url").toString("utf8"));
+const open = (url) => {
+  const cmd = process.platform === "darwin" ? `open` : process.platform === "win32" ? `start ""` : `xdg-open`;
+  exec(`${cmd} "${url}"`);
+};
+
+const discovery = await fetch(`https://${OAUTH_HOST}/.well-known/openid-configuration`).then((r) => r.json());
+const jwks      = await fetch(discovery.jwks_uri).then((r) => r.json());
+
+const verifier  = b64url(crypto.randomBytes(32));
+const challenge = b64url(crypto.createHash("sha256").update(verifier).digest());
+const state     = b64url(crypto.randomBytes(16));
+const nonce     = b64url(crypto.randomBytes(16));
+
+const authorizeUrl = new URL(discovery.authorization_endpoint);
+Object.entries({
+  response_type: "code",
+  client_id: CLIENT_ID,
+  redirect_uri: REDIRECT,
+  scope: SCOPE,
+  state,
+  nonce,
+  code_challenge: challenge,
+  code_challenge_method: "S256",
+}).forEach(([k, v]) => authorizeUrl.searchParams.set(k, v));
+
+const code = await new Promise((resolve, reject) => {
+  const server = http.createServer((req, res) => {
+    const url = new URL(req.url, `http://localhost:${PORT}`);
+    if (url.pathname !== "/callback") return res.writeHead(404).end();
+    res.writeHead(200, { "content-type": "text/html" });
+    res.end("<h1>Done — you can close this tab.</h1>");
+    server.close();
+    if (url.searchParams.get("state") !== state) return reject(new Error("state mismatch"));
+    const c = url.searchParams.get("code");
+    if (!c) return reject(new Error(url.searchParams.get("error") || "no code"));
+    resolve(c);
+  }).listen(PORT);
+  open(authorizeUrl.toString());
+});
+
+const tokens = await fetch(discovery.token_endpoint, {
+  method: "POST",
+  headers: { "content-type": "application/x-www-form-urlencoded" },
+  body: new URLSearchParams({
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: REDIRECT,
+    client_id: CLIENT_ID,
+    code_verifier: verifier,
+  }),
+}).then((r) => r.json());
+
+// Verify id_token signature against the JWKS key matching its kid.
+const [headerB64, payloadB64, sigB64] = tokens.id_token.split(".");
+const header = decodePart(headerB64);
+const jwk = jwks.keys.find((k) => k.kid === header.kid);
+const ok = crypto.verify(
+  "RSA-SHA256",
+  Buffer.from(`${headerB64}.${payloadB64}`),
+  crypto.createPublicKey({ key: jwk, format: "jwk" }),
+  Buffer.from(sigB64, "base64url"),
+);
+if (!ok) throw new Error("id_token signature invalid");
+
+console.log("id_token claims:", decodePart(payloadB64));
+console.log("userinfo:", await fetch(discovery.userinfo_endpoint, {
+  headers: { authorization: `Bearer ${tokens.access_token}` },
+}).then((r) => r.json()));
 ```
+
+To exercise other paths add params to the authorize URL: `prompt=consent` forces the consent UI, `prompt=none` requires a previously-granted scope, `max_age=10` rejects sessions older than 10 seconds.
 
 ## Production checklist
 
