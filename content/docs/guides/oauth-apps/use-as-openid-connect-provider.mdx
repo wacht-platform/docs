@@ -1,38 +1,34 @@
 ---
 title: "Use Wacht as an OpenID Connect Provider"
-description: "Vendor-agnostic OIDC for relying parties — how to authenticate users through Wacht using any standard OIDC client library."
+description: "Authenticate users through Wacht using OpenID Connect — discovery, id_tokens, UserInfo, RP-initiated logout."
 ---
 
 # Use Wacht as an OpenID Connect Provider
 
-If you want to sign users into your application through Wacht without committing to the Wacht SDK, you can talk to Wacht over plain OpenID Connect.
+Every OAuth app in Wacht is an OpenID Connect provider. The same OAuth FQDN that serves `/oauth/authorize` and `/oauth/token` also serves `.well-known/openid-configuration`, `.well-known/jwks.json`, `/oauth/userinfo`, and `/oauth/logout`. There's no separate toggle to enable, no second product to set up, and no deployment-level flag.
 
-Every OAuth app you create in Wacht is an OIDC provider out of the box. There's no separate toggle, no second product to enable, no deployment-level flag. The same OAuth FQDN you'd use for OAuth 2.x also serves `.well-known/openid-configuration`, `.well-known/jwks.json`, `/oauth/userinfo`, and `/oauth/logout`.
+This guide covers what Wacht implements, how the flow looks end to end, and what to expect from each endpoint. Use it when you're integrating an OIDC client library — Auth.js, oidc-client-ts, AppAuth, MSAL, the Spring Security OIDC client, anything that speaks the spec.
 
-This guide is for relying parties — your app, your backend, your OIDC client library. If you're building Wacht's first-party UI you probably want the SDKs instead.
+## What's implemented
 
-## What you get without doing anything special
-
-1. **Auth code flow with PKCE** — the only flow Wacht implements, and the only one most RPs need.
-2. **Discovery + JWKS** — your library can self-configure from `https://<oauth-fqdn>/.well-known/openid-configuration`.
+1. **Authorization code flow with PKCE** — the only flow Wacht supports, and what current best practice (RFC 9700) recommends for every client type.
+2. **Discovery + JWKS** — clients can self-configure from `https://<oauth-fqdn>/.well-known/openid-configuration`.
 3. **id_token with the standard claims** — `iss`, `sub`, `aud`, `exp`, `iat`, `auth_time`, `nonce`, `at_hash`, `sid`, plus scope-gated identity claims (`name`, `email`, `email_verified`, etc.).
-4. **Per-OAuth-app RSA signing keys** — provisioned at app creation time, rotatable from console without code changes.
+4. **Per-OAuth-app RSA signing keys** — provisioned automatically at app creation, rotatable from console.
 5. **`/oauth/userinfo`** — bearer-token-protected, returns claims gated by the access_token's scopes.
 6. **RP-Initiated Logout** — cascades through the user's Wacht session and revokes every token derived from that session.
-7. **Refresh tokens with rotation + replay detection** — captured-token reuse triggers full family revocation.
-8. **`prompt` and `max_age` parameter handling** — `none`, `login`, `consent`, `select_account` are all wired through; `max_age` is enforced against the actual authentication time.
+7. **Refresh tokens with rotation + replay detection** — reusing a captured refresh token triggers full family revocation.
+8. **`prompt` and `max_age` parameter handling** — `none`, `login`, `consent`, `select_account` are all honored; `max_age` is enforced against the actual authentication time.
 
-## What's intentionally **not** implemented
+## What's not implemented
 
-These don't change what a normal RP can do, but it's good to know upfront:
+These are optional in OIDC Core, and most client libraries don't require them. Listed for completeness:
 
-1. **Implicit and hybrid flows** — code flow only. RFC 9700 recommends this anyway.
-2. **Pairwise subject identifiers** — every RP sees the same `sub` for the same user.
-3. **`claims` request parameter / request objects / `request_uri`** — out of scope for a code-flow OP.
-4. **Front-channel / back-channel logout** — only RP-Initiated logout is wired.
+1. **Implicit and hybrid flows** — authorization code flow only.
+2. **Pairwise subject identifiers** — every client receives the same `sub` for the same user.
+3. **`claims` request parameter / request objects / `request_uri`**.
+4. **Front-channel and back-channel logout** — RP-Initiated logout is the only logout flow.
 5. **Signed or encrypted UserInfo responses** — JSON over HTTPS only.
-
-If your client library expects any of these, it should still work — these features are optional in OIDC Core and most libraries don't require them.
 
 ## Setup
 
