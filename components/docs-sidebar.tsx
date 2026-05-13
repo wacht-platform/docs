@@ -676,6 +676,7 @@ const guidesSection: NavSection = {
       page('Create OAuth App And Clients', '/guides/oauth-apps/create-oauth-app-and-clients'),
       page('Implement Consent Flow', '/guides/oauth-apps/implement-consent-flow'),
       page('Verify Access Tokens And Operate Clients', '/guides/oauth-apps/verify-access-tokens-and-operate-clients'),
+      page('Use as OpenID Connect Provider', '/guides/oauth-apps/use-as-openid-connect-provider'),
     ], KeyRound),
     group('Notifications', [
       page('Overview', '/guides/notifications/overview-scope-design'),
