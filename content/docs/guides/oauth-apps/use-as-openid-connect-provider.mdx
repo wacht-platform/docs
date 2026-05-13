@@ -1,0 +1,287 @@
+---
+title: "Use Wacht as an OpenID Connect Provider"
+description: "Vendor-agnostic OIDC for relying parties — how to authenticate users through Wacht using any standard OIDC client library."
+---
+
+# Use Wacht as an OpenID Connect Provider
+
+If you want to sign users into your application through Wacht without committing to the Wacht SDK, you can talk to Wacht over plain OpenID Connect.
+
+Every OAuth app you create in Wacht is an OIDC provider out of the box. There's no separate toggle, no second product to enable, no deployment-level flag. The same OAuth FQDN you'd use for OAuth 2.x also serves `.well-known/openid-configuration`, `.well-known/jwks.json`, `/oauth/userinfo`, and `/oauth/logout`.
+
+This guide is for relying parties — your app, your backend, your OIDC client library. If you're building Wacht's first-party UI you probably want the SDKs instead.
+
+## What you get without doing anything special
+
+1. **Auth code flow with PKCE** — the only flow Wacht implements, and the only one most RPs need.
+2. **Discovery + JWKS** — your library can self-configure from `https://<oauth-fqdn>/.well-known/openid-configuration`.
+3. **id_token with the standard claims** — `iss`, `sub`, `aud`, `exp`, `iat`, `auth_time`, `nonce`, `at_hash`, `sid`, plus scope-gated identity claims (`name`, `email`, `email_verified`, etc.).
+4. **Per-OAuth-app RSA signing keys** — provisioned at app creation time, rotatable from console without code changes.
+5. **`/oauth/userinfo`** — bearer-token-protected, returns claims gated by the access_token's scopes.
+6. **RP-Initiated Logout** — cascades through the user's Wacht session and revokes every token derived from that session.
+7. **Refresh tokens with rotation + replay detection** — captured-token reuse triggers full family revocation.
+8. **`prompt` and `max_age` parameter handling** — `none`, `login`, `consent`, `select_account` are all wired through; `max_age` is enforced against the actual authentication time.
+
+## What's intentionally **not** implemented
+
+These don't change what a normal RP can do, but it's good to know upfront:
+
+1. **Implicit and hybrid flows** — code flow only. RFC 9700 recommends this anyway.
+2. **Pairwise subject identifiers** — every RP sees the same `sub` for the same user.
+3. **`claims` request parameter / request objects / `request_uri`** — out of scope for a code-flow OP.
+4. **Front-channel / back-channel logout** — only RP-Initiated logout is wired.
+5. **Signed or encrypted UserInfo responses** — JSON over HTTPS only.
+
+If your client library expects any of these, it should still work — these features are optional in OIDC Core and most libraries don't require them.
+
+## Setup
+
+You need an OAuth app and at least one OAuth client. If you've already done the [OAuth Apps create flow](/docs/guides/oauth-apps/create-oauth-app-and-clients), skip ahead.
+
+### 1. Create the OAuth app
+
+In Console under **OAuth → New App**:
+
+1. Set a stable `slug`. Don't rename it later — your discovery URL bakes it into the FQDN.
+2. Pick a production FQDN (production deployments) or accept the auto-generated `<random>.oapi.trywacht.xyz` (staging).
+3. You don't need to add `openid`, `profile`, `email`, `offline_access` to the supported-scopes catalog. They're accepted on every app implicitly.
+
+### 2. Create the OAuth client
+
+For a typical SPA or native app, register a **public client**:
+
+1. `client_auth_method`: `none` (means no client_secret — PKCE is mandatory)
+2. `grant_types`: `authorization_code`, optionally `refresh_token`
+3. `redirect_uris`: every redirect URI your app will use
+4. `post_logout_redirect_uris`: every URL your app will land users on after logout
+5. `id_token_signing_alg`: leave default (RS256)
+
+For a confidential server-side client, use `client_secret_basic` and the same fields plus a generated `client_secret`.
+
+### 3. Note your endpoints
+
+From the Console **Runtime** tab on your OAuth app, copy these. They're also discoverable at `/.well-known/openid-configuration`:
+
+```
+issuer                = https://<oauth-fqdn>
+authorization_endpoint = https://<oauth-fqdn>/oauth/authorize
+token_endpoint         = https://<oauth-fqdn>/oauth/token
+userinfo_endpoint      = https://<oauth-fqdn>/oauth/userinfo
+end_session_endpoint   = https://<oauth-fqdn>/oauth/logout
+jwks_uri               = https://<oauth-fqdn>/.well-known/jwks.json
+```
+
+## The auth flow, end to end
+
+The full sequence for an RP authenticating a user:
+
+1. **RP builds an `/oauth/authorize` URL** with `response_type=code`, `client_id`, `redirect_uri`, `scope=openid profile email`, a random `state`, a random `nonce`, and PKCE (`code_challenge` + `code_challenge_method=S256`).
+2. **Browser navigates to that URL** on Wacht's OAuth FQDN.
+3. **Wacht handles the user** — sign-in if needed, consent UI if the user hasn't approved these scopes for this client before.
+4. **Wacht redirects to the RP's `redirect_uri`** with `?code=…&state=…`.
+5. **RP exchanges the code at `/oauth/token`** with `grant_type=authorization_code`, `code`, `redirect_uri`, `client_id`, the matching `code_verifier`, and `client_secret` (confidential clients only).
+6. **Wacht returns** an opaque `access_token`, an opaque `refresh_token` (if `offline_access` was requested or the client has `refresh_token` grant enabled), and a signed `id_token`.
+
+That's the entire flow your library needs to understand. Everything after step 6 — calling UserInfo, refreshing, logging out — is independent and orthogonal.
+
+## The id_token
+
+The id_token is a signed JWT (RS256). Verify it against the JWKS endpoint, then trust the claims.
+
+A typical payload looks like:
+
+```json
+{
+  "iss": "https://<oauth-fqdn>",
+  "sub": "62015145345353729",
+  "aud": "oc_4PtfpJ9M1mfgMhBb5YMYSLKDrHY2LOVH",
+  "exp": 1778707315,
+  "iat": 1778706415,
+  "auth_time": 1778706402,
+  "nonce": "pF3IdC-ebIEUbOAjMEhqxg",
+  "at_hash": "4Y8D82ALW5BvkcMuRH1D3Q",
+  "sid": "72170182881052673",
+  "name": "Jane Doe",
+  "given_name": "Jane",
+  "family_name": "Doe",
+  "email": "jane@example.com",
+  "email_verified": true
+}
+```
+
+What every claim means in Wacht's specific case:
+
+1. **`iss`** — your OAuth FQDN with `https://` prefix. Verify it matches what you got from discovery.
+2. **`sub`** — Wacht's user ID, stringified. Stable across sessions and clients. Use this as your primary user key.
+3. **`aud`** — your client_id. Verify it matches.
+4. **`auth_time`** — the timestamp of the user's most recent sign-in, read from `signins.created_at`. **Not** the time `/authorize` ran. This matters for `max_age` enforcement.
+5. **`nonce`** — echoes back the nonce you sent at `/authorize`. Verify it matches. Use a fresh nonce per request.
+6. **`at_hash`** — base64url of the leftmost 128 bits of `SHA-256(access_token)`. Defends against token substitution; most libraries verify this automatically.
+7. **`sid`** — the Wacht session ID. Required for RP-Initiated Logout to cascade properly. Don't drop it.
+8. **`name`/`given_name`/`family_name`/`picture`/`preferred_username`** — only present when the request had `profile` scope.
+9. **`email`/`email_verified`** — only present when the request had `email` scope.
+
+## Verifying the id_token
+
+Standard JWT validation:
+
+1. Decode the header, pull `kid`.
+2. Fetch `/.well-known/jwks.json`, find the key with that `kid`.
+3. Verify the signature with that key (RS256).
+4. Check `iss`, `aud`, `exp`, `iat`, `nonce`, and `at_hash` against your expected values.
+
+Every mainstream OIDC client library does this for you. Don't roll your own.
+
+### Key rotation
+
+Wacht publishes both **active** and **retired** keys in JWKS. When you rotate a key in console:
+
+1. The current key flips to `retired` (still in JWKS, still verifies old id_tokens).
+2. A new key becomes `active` (signs new id_tokens going forward).
+
+This grace window lets in-flight tokens keep working. If a key is marked **compromised**, it's removed from JWKS immediately and every id_token it signed stops verifying.
+
+Cache JWKS responses for at most an hour and refresh on `kid` miss.
+
+## /oauth/userinfo
+
+Call this when you need claims that weren't in the id_token, or to confirm the user is still valid against the current session.
+
+```
+GET /oauth/userinfo
+Authorization: Bearer <access_token>
+```
+
+It returns a JSON object with `sub` (always) plus whatever profile/email claims the access_token's scopes permit.
+
+### Error model
+
+Errors follow RFC 6750. The HTTP status is set, plus a `WWW-Authenticate` header. Examples:
+
+```
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer realm="wacht", error="invalid_token", error_description="Access token expired"
+```
+
+```
+HTTP/1.1 403 Forbidden
+WWW-Authenticate: Bearer realm="wacht", error="insufficient_scope", scope="openid", error_description="userinfo requires the `openid` scope"
+```
+
+Wacht's UserInfo verifies more than just the token signature — it also confirms:
+
+1. The token's underlying OAuth grant is still active and not expired.
+2. The Wacht session that approved the original consent hasn't been logged out.
+
+If the session has been terminated via RP-Initiated Logout, UserInfo will 401 with `invalid_token` even though the access_token's own expiry hasn't passed. This is intentional — it's how the logout cascade reaches your resource server.
+
+## Refresh tokens
+
+Refresh tokens are opaque. They rotate on every use: each successful refresh returns a new `refresh_token` and revokes the old one. Replaying an old refresh token is detected and revokes the entire family (every token descended from the original auth code).
+
+To get a refresh_token, ask for the `offline_access` scope at `/authorize`, or ensure your client has the `refresh_token` grant enabled (most do by default).
+
+```
+POST /oauth/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token&refresh_token=<old>&client_id=<id>
+```
+
+If your access_token is opaque too — and it is — verify it with `/oauth/userinfo` or `/oauth/introspect`, not by treating it as a JWT.
+
+## RP-Initiated Logout
+
+When the user clicks "Sign out" in your app, send them to `/oauth/logout`. This is the only logout flow Wacht implements — there's no front-channel or back-channel logout.
+
+```
+https://<oauth-fqdn>/oauth/logout
+  ?id_token_hint=<id_token>
+  &client_id=<client_id>
+  &post_logout_redirect_uri=<your-registered-uri>
+  &state=<random>
+```
+
+What Wacht does on this URL:
+
+1. Validates the id_token_hint's signature (against any active or retired key, by `kid`).
+2. Verifies `iss` matches your issuer.
+3. When `client_id` is supplied, verifies the id_token's `aud` matches.
+4. Skips expiry validation — old id_tokens are explicitly allowed for logout (the spec mandates this).
+5. Reads `sid` from the id_token.
+6. Marks that Wacht session as deleted, then revokes every access_token and refresh_token that referenced that session, across every OAuth client the user authorized.
+7. Validates `post_logout_redirect_uri` against the client's allowlist and redirects there with `?state=<your-state>`.
+
+If `id_token_hint` is missing, Wacht still redirects to the post-logout URL but can't cascade the session revoke. Always send the hint when you have one.
+
+Endpoint accepts both `GET` (preferred for browser navigation) and `POST` (for form posts).
+
+## prompt and max_age
+
+These are OIDC parameters your library may surface. Wacht honors them:
+
+| Parameter | Behavior |
+|---|---|
+| `prompt=login` | Forces re-authentication even if the user has a live session. The user goes through sign-in again before consent. |
+| `prompt=consent` | Forces the consent UI to render even if the user has already approved these scopes. |
+| `prompt=none` | Returns the auth code silently if the user has an active session **and** has previously approved these exact scopes for this client and resource. Otherwise the RP gets `error=consent_required` (or `login_required`) on the redirect — no UI is shown. |
+| `prompt=select_account` | Renders the multi-account picker when the user is signed into multiple accounts. |
+| `max_age=N` | If the user's last sign-in is older than N seconds, the request is rejected with `error=login_required`. |
+
+Unknown `prompt` values are rejected with `400 invalid_request`. Negative `max_age` is rejected. Send `prompt` and `max_age` in `/authorize` exactly as your library asks for them.
+
+## The "skip consent when already covered" default
+
+Wacht's consent UI shows once per (user, client, scopes, resource) tuple. After the user approves, subsequent `/authorize` calls for the same combination skip the consent screen — the auth code is issued silently and the user returns to your app without seeing a prompt.
+
+This matches what Google, Auth0, Okta do. If you want to force a re-prompt (consent screen changed, app got more sensitive, …), send `prompt=consent`.
+
+## Identity-only vs tenant-scoped requests
+
+Wacht has a concept of "resources" — workspaces and organizations the user is a member of. Pure-identity OIDC requests (any subset of `openid profile email offline_access`) **always** grant against the personal user resource and never show a resource picker.
+
+If your `scope` parameter includes non-identity scopes (`workspace:read`, custom Wacht scopes), the consent UI shows the resource picker so the user can choose which workspace/org you're acting on behalf of. The chosen resource shows up in the access_token introspection response and constrains what your server-side code can act on.
+
+For most pure OIDC use cases, this isn't something you need to think about — just request identity scopes and you get the user's profile.
+
+## Signing keys
+
+Each OAuth app gets its own RSA-2048 keypair, generated when the app is created. You can rotate or compromise keys from console without restarting anything:
+
+1. **Rotate** when you want to refresh keys on a schedule. The old key retires (stays in JWKS for grace), a new key signs going forward.
+2. **Compromise** when you suspect a private-key leak. The key is pulled from JWKS immediately, every id_token it signed stops verifying.
+
+The private half never leaves Wacht's database. The console exposes only the public PEM for download (for use in offline verification or trust-chain documentation).
+
+## Trying it locally
+
+A 200-line zero-dep Node script that walks the entire flow lives at `platform-api/oidc-test.mjs` in the Wacht repo. It opens a browser, listens on localhost, exchanges the code, verifies the id_token against JWKS, calls UserInfo, refreshes, replays the old refresh token to confirm replay detection fires, and exercises logout. Use it as a reference when integrating your own library.
+
+```bash
+# Edit OAUTH_HOST + CLIENT_ID at the top, then:
+node oidc-test.mjs
+
+# Try variants:
+node oidc-test.mjs prompt=consent
+node oidc-test.mjs prompt=none
+node oidc-test.mjs max_age=10
+```
+
+## Production checklist
+
+1. RP library configured from discovery, not hardcoded endpoints.
+2. JWKS cache short (≤ 1 hour) and re-fetches on `kid` miss.
+3. id_token signature, `iss`, `aud`, `exp`, `nonce` all verified per request.
+4. `state` and PKCE used on every `/authorize`.
+5. `post_logout_redirect_uri` registered in console matches what your app sends.
+6. Refresh tokens stored server-side or in secure storage; replay protection means a leak triggers full family revoke automatically.
+7. `id_token_hint` always sent on `/oauth/logout` so the session cascade fires.
+
+## Related references
+
+1. [Create OAuth Apps and Clients](/docs/guides/oauth-apps/create-oauth-app-and-clients)
+2. [Implement OAuth Consent Flow](/docs/guides/oauth-apps/implement-consent-flow)
+3. [Verify Tokens and Operate OAuth Clients](/docs/guides/oauth-apps/verify-access-tokens-and-operate-clients)
+4. [OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html)
+5. [OpenID Connect Discovery 1.0](https://openid.net/specs/openid-connect-discovery-1_0.html)
+6. [RP-Initiated Logout 1.0](https://openid.net/specs/openid-connect-rpinitiated-1_0.html)
