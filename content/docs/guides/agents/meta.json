@@ -1,4 +1,4 @@
 {
   "title": "Agents",
-  "pages": ["index", "model-overrides", "hooks", "approval-policy", "scheduling", "composio", "sessions"]
+  "pages": ["index", "model-overrides", "hooks", "approval-policy", "code-runner", "scheduling", "composio", "sessions"]
 }

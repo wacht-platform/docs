@@ -1,0 +1,136 @@
+---
+title: "CodeRunner tools"
+description: "Create Python tools that run inside a Wacht agent sandbox."
+---
+
+# CodeRunner tools
+
+Use a CodeRunner tool when an agent needs deterministic Python execution inside
+its sandbox: parsing files, probing generated media, calling model SDKs, or
+turning structured input into an artifact.
+
+For HTTP endpoints you own, use an `Api` tool. For external SaaS actions, use
+Composio/Virtual tools. For a custom tool server, use `Mcp`.
+
+## Runtime contract
+
+CodeRunner currently supports Python.
+
+The tool configuration stores:
+
+- `type: "CodeRunner"`
+- `runtime: "python"`
+- `code`: Python source
+- `input_schema`: Wacht `SchemaField[]`
+- `output_schema`: optional Wacht `SchemaField[]`
+- `env_variables`: optional encrypted per-tool environment variables
+- `timeout_seconds`
+- `allow_network`
+
+The Python source must define:
+
+```python
+def run(input):
+    return {"ok": True}
+```
+
+`input` is a JSON object filtered and validated against `input_schema`.
+The return value must be JSON-serializable. If `output_schema` is set, the
+returned object is validated against it.
+
+## Provider SDKs
+
+When the deployment has provider keys configured, CodeRunner injects:
+
+- `OPENAI_API_KEY`
+- `ANTHROPIC_API_KEY`
+- `GEMINI_API_KEY`
+
+The wrapper also initializes these globals for the script:
+
+```python
+openai_client
+anthropic_client
+gemini_client
+```
+
+If a provider key is not configured, accessing that client raises a clear
+runtime error.
+
+The repository's CodeRunner requirements currently include:
+
+- `openai`
+- `anthropic`
+- `google-genai`
+- `groq`
+- `cohere`
+- `mistralai`
+- `together`
+- `boto3`
+- `requests`, `httpx`, `tenacity`
+- `pydantic`, `jsonschema`
+- `numpy`, `pandas`
+- `Pillow`
+- `python-docx`, `docxtpl`
+- `python-pptx`
+- `reportlab`
+
+System binaries such as `ffmpeg` and `ffprobe` depend on the sandbox image. If a
+tool needs them, check availability at runtime and return a clear error when
+they are missing.
+
+## Create a tool
+
+```json
+{
+  "name": "media_probe",
+  "description": "Inspect a media file in the sandbox.",
+  "tool_type": "code_runner",
+  "configuration": {
+    "type": "CodeRunner",
+    "runtime": "python",
+    "timeout_seconds": 180,
+    "allow_network": false,
+    "input_schema": [
+      {
+        "name": "media_path",
+        "field_type": "STRING",
+        "required": true,
+        "description": "Sandbox path to inspect."
+      }
+    ],
+    "code": "def run(input):\n    return {\"media_path\": input[\"media_path\"]}\n"
+  }
+}
+```
+
+Then create and attach it:
+
+```sh
+wacht api call createAiTool --body @tool.json
+wacht api call attachToolToAgent --param agent_id=<agent_id> --param tool_id=<tool_id>
+```
+
+Set approval policy for expensive or side-effecting tools:
+
+```sh
+wacht api call updateAgentToolApprovalAction \
+  --param agent_id=<agent_id> \
+  --param tool_id=<tool_id> \
+  --body '{"approval_action":"review"}'
+```
+
+## Schema notes
+
+`configuration.type` uses PascalCase, for example `"CodeRunner"`.
+
+`field_type` and `items_type` use uppercase Wacht schema names:
+
+- `STRING`
+- `INTEGER`
+- `NUMBER`
+- `BOOLEAN`
+- `ARRAY`
+- `OBJECT`
+
+Lowercase names are not equivalent.

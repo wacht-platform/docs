@@ -21,16 +21,13 @@ pnpm add @wacht/backend
 ## Quick setup
 
 ```ts
-import { initClient, users } from '@wacht/backend';
-
-initClient({
-  apiKey: process.env.WACHT_API_KEY!,
-  baseUrl: process.env.WACHT_BACKEND_API_URL,
-});
+import { users } from '@wacht/backend';
 
 const response = await users.listUsers({ limit: 20 });
 console.log(response.data.length);
 ```
+
+The SDK reads `WACHT_API_KEY` and defaults to `https://api.wacht.dev`. Do not set the backend SDK base URL to a deployment `backend_host` or `fapi.trywacht.xyz` host.
 
 ## How this relates to framework SDKs
 
