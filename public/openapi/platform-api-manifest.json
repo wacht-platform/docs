@@ -413,6 +413,12 @@
           "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/filesystem/file"
         },
         {
+          "name": "Download Project Task Board Item Filesystem File",
+          "slug": "download-project-task-board-item-filesystem-file",
+          "method": "GET",
+          "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/filesystem/download"
+        },
+        {
           "name": "Update Project Task Board Item",
           "slug": "update-project-task-board-item",
           "method": "POST",
@@ -459,6 +465,12 @@
           "slug": "create-project-task-board-item-comment",
           "method": "POST",
           "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/comments"
+        },
+        {
+          "name": "Delegate Project Task",
+          "slug": "delegate-project-task",
+          "method": "POST",
+          "path": "/ai/actor-projects/{project_id}/board/items/delegate"
         },
         {
           "name": "List Agent Threads",
@@ -543,6 +555,12 @@
           "slug": "create-actor",
           "method": "POST",
           "path": "/ai/actors"
+        },
+        {
+          "name": "Lookup Actor",
+          "slug": "lookup-actor",
+          "method": "GET",
+          "path": "/ai/actors/lookup"
         }
       ]
     },
@@ -849,6 +867,24 @@
           "slug": "revoke-oauth-grant",
           "method": "POST",
           "path": "/oauth/apps/{oauth_app_slug}/clients/{oauth_client_id}/grants/{grant_id}/revoke"
+        },
+        {
+          "name": "List Signing Keys",
+          "slug": "list-signing-keys",
+          "method": "GET",
+          "path": "/oauth/apps/{oauth_app_slug}/signing-keys"
+        },
+        {
+          "name": "Rotate Signing Key",
+          "slug": "rotate-signing-key",
+          "method": "POST",
+          "path": "/oauth/apps/{oauth_app_slug}/signing-keys/rotate"
+        },
+        {
+          "name": "Compromise Signing Key",
+          "slug": "compromise-signing-key",
+          "method": "POST",
+          "path": "/oauth/apps/{oauth_app_slug}/signing-keys/{kid}/compromise"
         }
       ]
     },
@@ -917,6 +953,18 @@
           "path": "/organizations/{organization_id}/members/{membership_id}"
         },
         {
+          "name": "Add Organization Member Role",
+          "slug": "add-organization-member-role",
+          "method": "POST",
+          "path": "/organizations/{organization_id}/members/{membership_id}/roles/{role_id}"
+        },
+        {
+          "name": "Remove Organization Member Role",
+          "slug": "remove-organization-member-role",
+          "method": "DELETE",
+          "path": "/organizations/{organization_id}/members/{membership_id}/roles/{role_id}"
+        },
+        {
           "name": "Get Organization Roles",
           "slug": "get-organization-roles",
           "method": "GET",
@@ -927,6 +975,24 @@
           "slug": "create-organization-role",
           "method": "POST",
           "path": "/organizations/{organization_id}/roles"
+        },
+        {
+          "name": "List Organization Invitations",
+          "slug": "list-organization-invitations",
+          "method": "GET",
+          "path": "/organizations/{organization_id}/invitations"
+        },
+        {
+          "name": "Create Organization Invitation",
+          "slug": "create-organization-invitation",
+          "method": "POST",
+          "path": "/organizations/{organization_id}/invitations"
+        },
+        {
+          "name": "Discard Organization Invitation",
+          "slug": "discard-organization-invitation",
+          "method": "POST",
+          "path": "/organizations/{organization_id}/invitations/{invitation_id}/discard"
         },
         {
           "name": "Update Organization Role",
@@ -1133,6 +1199,12 @@
           "path": "/users/{user_id}/password"
         },
         {
+          "name": "Remove User Password",
+          "slug": "remove-user-password",
+          "method": "DELETE",
+          "path": "/users/{user_id}/password"
+        },
+        {
           "name": "Add User Email",
           "slug": "add-user-email",
           "method": "POST",
@@ -1169,10 +1241,94 @@
           "path": "/users/{user_id}/phones/{phone_id}"
         },
         {
+          "name": "Get User Social Connections",
+          "slug": "get-user-social-connections",
+          "method": "GET",
+          "path": "/users/{user_id}/social-connections"
+        },
+        {
           "name": "Delete User Social Connection",
           "slug": "delete-user-social-connection",
           "method": "DELETE",
           "path": "/users/{user_id}/social-connections/{connection_id}"
+        },
+        {
+          "name": "Get User Organization Memberships",
+          "slug": "get-user-organization-memberships",
+          "method": "GET",
+          "path": "/users/{user_id}/organization-memberships"
+        },
+        {
+          "name": "Get User Workspace Memberships",
+          "slug": "get-user-workspace-memberships",
+          "method": "GET",
+          "path": "/users/{user_id}/workspace-memberships"
+        },
+        {
+          "name": "Get User Signins",
+          "slug": "get-user-signins",
+          "method": "GET",
+          "path": "/users/{user_id}/sessions"
+        },
+        {
+          "name": "Revoke User Signin",
+          "slug": "revoke-user-signin",
+          "method": "POST",
+          "path": "/users/{user_id}/sessions/{signin_id}/revoke"
+        },
+        {
+          "name": "Revoke All User Signins",
+          "slug": "revoke-all-user-signins",
+          "method": "POST",
+          "path": "/users/{user_id}/sessions/revoke-all"
+        },
+        {
+          "name": "Get User Passkeys",
+          "slug": "get-user-passkeys",
+          "method": "GET",
+          "path": "/users/{user_id}/passkeys"
+        },
+        {
+          "name": "Rename User Passkey",
+          "slug": "rename-user-passkey",
+          "method": "PATCH",
+          "path": "/users/{user_id}/passkeys/{passkey_id}"
+        },
+        {
+          "name": "Delete User Passkey",
+          "slug": "delete-user-passkey",
+          "method": "DELETE",
+          "path": "/users/{user_id}/passkeys/{passkey_id}"
+        },
+        {
+          "name": "Create User Authenticator",
+          "slug": "create-user-authenticator",
+          "method": "POST",
+          "path": "/users/{user_id}/authenticators"
+        },
+        {
+          "name": "Delete User Authenticator",
+          "slug": "delete-user-authenticator",
+          "method": "DELETE",
+          "path": "/users/{user_id}/authenticators"
+        },
+        {
+          "name": "Regenerate User Backup Codes",
+          "slug": "regenerate-user-backup-codes",
+          "method": "POST",
+          "path": "/users/{user_id}/backup-codes/regenerate"
+        },
+        {
+          "name": "Make User Email Primary",
+          "slug": "make-user-email-primary",
+          "method": "POST",
+          "path": "/users/{user_id}/emails/{email_id}/make-primary"
+        },
+        {
+          "name": "Make User Phone Primary",
+          "slug": "make-user-phone-primary",
+          "method": "POST",
+          "path": "/users/{user_id}/phones/{phone_id}/make-primary"
         }
       ]
     },
@@ -1455,6 +1611,18 @@
           "slug": "update-workspace-member",
           "method": "PATCH",
           "path": "/workspaces/{workspace_id}/members/{membership_id}"
+        },
+        {
+          "name": "Add Workspace Member Role",
+          "slug": "add-workspace-member-role",
+          "method": "POST",
+          "path": "/workspaces/{workspace_id}/members/{membership_id}/roles/{role_id}"
+        },
+        {
+          "name": "Remove Workspace Member Role",
+          "slug": "remove-workspace-member-role",
+          "method": "DELETE",
+          "path": "/workspaces/{workspace_id}/members/{membership_id}/roles/{role_id}"
         }
       ]
     }

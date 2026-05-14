@@ -1,0 +1,299 @@
+---
+title: "Verify OAuth Access Tokens"
+description: "Two ways to verify Wacht-issued access tokens in your resource server: gateway introspection (opaque tokens) and stateless JWT verification (zero round-trips)."
+---
+
+# Verify OAuth Access Tokens
+
+Wacht issues OAuth access tokens in one of two formats, configured **per OAuth client**:
+
+| Format | How you verify | When to pick it |
+|---|---|---|
+| `opaque` *(default)* | Call Wacht's gateway / `/oauth/introspect`. One network hop per request. | You want live revocation, scope changes, and resource constraints reflected immediately. |
+| `jwt` | Verify the signature locally against the OAuth app's JWKS. Zero round-trips. | You want stateless verification at the edge or in a hot path where the introspect round-trip is too expensive. |
+
+Both share the same JWKS, the same OAuth app issuer, and the same RSA-2048 signing key as the `id_token`. Switching modes only changes how *your* code reads the access_token — Wacht's authorize / token / refresh flow is identical either way.
+
+You change the format in Console under **OAuth → Clients → your client → OIDC Settings → Access Token Format**, or via the OAuth client API:
+
+```json
+PATCH /deployments/{deployment_id}/oauth/apps/{slug}/clients/{client_id}
+{
+  "access_token_format": "jwt",
+  "access_token_ttl_seconds": 3600
+}
+```
+
+`access_token_ttl_seconds` accepts values between 60 and 86400. The default is 3600.
+
+---
+
+## Opaque tokens via the gateway
+
+This is the default and what most apps should pick. An opaque token is a random, server-side-stored string — verifying it means asking Wacht "is this still valid, and what's it for?" Wacht checks revocation, grant status, session liveness, and resource binding in one call.
+
+### Node / TypeScript
+
+```ts
+import { WachtClient } from "@wacht/backend";
+
+const client = new WachtClient({
+  apiKey: process.env.WACHT_BACKEND_API_KEY!,
+});
+
+export async function verifyOAuthRequest(
+  token: string,
+  method: string,
+  resource: string,
+) {
+  const authz = await client.gateway.checkPrincipalAuthz({
+    principalType: "oauth_access_token",
+    principalValue: token,
+    method,
+    resource,
+    requiredPermissions: ["mcp:invoke"],
+  });
+
+  if (!authz.allowed) {
+    throw new Error("Forbidden");
+  }
+
+  return {
+    clientId: authz.headers["x-wacht-oauth-client-id"],
+    grantedResource: authz.headers["x-wacht-granted-resource"],
+    scopes: authz.metadata?.scopes ?? [],
+    expiresAt: authz.metadata?.expires_at,
+  };
+}
+```
+
+### Rust
+
+```rust
+use wacht::{WachtClient, WachtConfig};
+use wacht::gateway::{GatewayAuthzOptions, GatewayPrincipalType};
+
+let client = WachtClient::new(WachtConfig::new(
+    std::env::var("WACHT_BACKEND_API_KEY")?,
+    std::env::var("WACHT_FRONTEND_HOST")?,
+))?;
+
+let authz = client
+    .gateway()
+    .check_authz_with_principal_type(
+        GatewayPrincipalType::OauthAccessToken,
+        access_token,
+        "POST",
+        "mcp",
+        GatewayAuthzOptions {
+            required_permissions: Some(vec!["mcp:invoke".to_string()]),
+            ..Default::default()
+        },
+    )
+    .await?;
+
+if !authz.allowed {
+    // Reject in your framework middleware.
+}
+
+let principal = authz.resolve_principal_context();
+let scopes = principal.metadata.scopes;
+let granted_resource = principal.metadata.granted_resource;
+```
+
+### What the gateway checks
+
+A single `checkPrincipalAuthz` call verifies:
+
+1. The token exists and isn't revoked.
+2. The token isn't expired.
+3. The backing OAuth grant is still `active`.
+4. The Wacht session that approved the original consent is still alive (not logged out).
+5. The token's scopes cover `requiredPermissions`.
+6. The token's granted resource matches `resource`.
+
+If any check fails, `authz.allowed === false` — reject the request.
+
+### Calling `/oauth/introspect` directly
+
+If you're not using a Wacht SDK, hit `/oauth/introspect` on the OAuth app's issuer. RFC 7662 format.
+
+```http
+POST /oauth/introspect HTTP/1.1
+Host: <oauth-fqdn>
+Content-Type: application/x-www-form-urlencoded
+Authorization: Basic <base64(client_id:client_secret)>
+
+token=<access_token>&token_type_hint=access_token
+```
+
+Response:
+
+```json
+{
+  "active": true,
+  "scope": "openid profile email",
+  "client_id": "oc_4PtfpJ9M1mfgMhBb5YMYSLKDrHY2LOVH",
+  "exp": 1778707315,
+  "iat": 1778706415,
+  "sub": "62015145345353729",
+  "aud": "oc_4PtfpJ9M1mfgMhBb5YMYSLKDrHY2LOVH"
+}
+```
+
+A response of `{"active": false}` always means "reject". Don't try to interpret why — revoked, expired, never-existed all collapse to the same answer.
+
+---
+
+## JWT tokens, verified locally
+
+When a client is set to `access_token_format = "jwt"`, the access token *is* a signed JWT. Same key as the id_token, same JWKS. Your resource server verifies it without calling Wacht.
+
+This is what you want when:
+
+- You're terminating auth at the edge (Cloudflare Worker, Lambda authorizer, Envoy filter).
+- You need sub-millisecond auth checks.
+- You don't need live revocation — short TTLs (`access_token_ttl_seconds`) are your revocation strategy.
+
+The trade-off is that revocation is delayed by up to the token TTL. If you revoke a grant or rotate a refresh token, in-flight JWT access tokens stay valid until they expire. Keep TTLs short (≤ 1 hour for sensitive resources; 5–15 min if revocation latency matters) and rely on the refresh-token cycle for renewal.
+
+### Token format
+
+```
+Header  { "alg": "RS256", "kid": "<active key id>", "typ": "JWT" }
+Payload {
+  "iss":        "https://<oauth-fqdn>",
+  "sub":        "<wacht user id>",
+  "aud":        "<resource or client_id>",
+  "exp":        <unix>,
+  "iat":        <unix>,
+  "jti":        "<unique id>",
+  "client_id":  "<oauth client id>",
+  "scope":      "openid profile email",
+  "sid":        "<wacht session id>",
+  "token_use":  "access_token"
+}
+```
+
+`token_use` is `"access_token"` — always check this so you don't accidentally accept an `id_token` as a bearer credential.
+
+### Node / TypeScript (`jose`)
+
+```ts
+import { createRemoteJWKSet, jwtVerify } from "jose";
+
+const OAUTH_HOST = process.env.OAUTH_HOST!; // e.g. abc.oapi.trywacht.xyz
+const ISSUER     = `https://${OAUTH_HOST}`;
+const JWKS       = createRemoteJWKSet(new URL(`${ISSUER}/.well-known/jwks.json`));
+
+export async function verifyAccessTokenJwt(token: string, expectedAudience: string) {
+  const { payload } = await jwtVerify(token, JWKS, {
+    issuer: ISSUER,
+    audience: expectedAudience,
+    algorithms: ["RS256"],
+  });
+
+  if (payload.token_use !== "access_token") {
+    throw new Error("Not an access token");
+  }
+
+  return {
+    userId:       payload.sub as string,
+    clientId:     payload.client_id as string,
+    sessionId:    payload.sid as string | undefined,
+    scopes:       String(payload.scope ?? "").split(" ").filter(Boolean),
+    expiresAt:    payload.exp,
+  };
+}
+```
+
+`createRemoteJWKSet` caches the JWKS and re-fetches on `kid` miss — that's exactly the rotation behavior you want. No extra caching needed.
+
+### Rust (`jsonwebtoken` + `reqwest`)
+
+```rust
+use jsonwebtoken::{decode, decode_header, Algorithm, DecodingKey, Validation};
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+struct Jwk { kid: String, n: String, e: String }
+#[derive(Deserialize)]
+struct Jwks { keys: Vec<Jwk> }
+
+#[derive(Deserialize)]
+pub struct AccessClaims {
+    pub iss: String,
+    pub sub: String,
+    pub aud: String,
+    pub exp: usize,
+    pub client_id: String,
+    pub scope: String,
+    #[serde(default)]
+    pub sid: Option<String>,
+    pub token_use: String,
+}
+
+pub async fn verify_access_token_jwt(
+    token: &str,
+    issuer: &str,
+    audience: &str,
+) -> anyhow::Result<AccessClaims> {
+    let header = decode_header(token)?;
+    let kid = header.kid.ok_or_else(|| anyhow::anyhow!("missing kid"))?;
+
+    let jwks: Jwks = reqwest::get(format!("{issuer}/.well-known/jwks.json"))
+        .await?
+        .json()
+        .await?;
+    let jwk = jwks.keys.into_iter().find(|k| k.kid == kid)
+        .ok_or_else(|| anyhow::anyhow!("kid not in JWKS"))?;
+
+    let key = DecodingKey::from_rsa_components(&jwk.n, &jwk.e)?;
+    let mut validation = Validation::new(Algorithm::RS256);
+    validation.set_issuer(&[issuer]);
+    validation.set_audience(&[audience]);
+
+    let data = decode::<AccessClaims>(token, &key, &validation)?;
+    if data.claims.token_use != "access_token" {
+        anyhow::bail!("not an access token");
+    }
+    Ok(data.claims)
+}
+```
+
+For production, cache the JWKS for ≤ 1 hour and refresh on `kid` miss instead of fetching every request.
+
+### What you do NOT get with JWTs
+
+These checks only happen with the gateway / introspect path. If you need them, stay on opaque tokens — or supplement JWT verification with a periodic / risk-based gateway call.
+
+1. **Live revocation.** Logging the user out or revoking the grant will not invalidate an in-flight JWT until it expires.
+2. **Per-request scope mutation.** Scopes are baked into the JWT at issue time. Updating the grant doesn't update tokens already in the wild.
+3. **Session liveness.** Tokens minted before logout keep verifying until they expire. Use a short TTL.
+
+### Picking a TTL
+
+| Sensitivity | Suggested `access_token_ttl_seconds` |
+|---|---|
+| Low — read-only profile, public assets | 3600 (default) |
+| Medium — most CRUD APIs | 600–900 |
+| High — payments, admin, secret access | 60–300 |
+
+Shorter TTLs mean more `/oauth/token` refresh calls but bound revocation latency to the TTL. Pick the largest value that keeps revocation latency tolerable for your threat model.
+
+---
+
+## Choosing between the two
+
+If you're not sure, start with **opaque + gateway**. It's the default, supports every feature (live revocation, granular grants, resource binding), and is fast enough for most workloads. Switch a client to **JWT** when you have a specific reason — usually edge auth or extreme throughput.
+
+You can mix modes across clients in the same OAuth app: e.g. confidential server-to-server client on opaque, public SPA client on JWT with a 10-minute TTL.
+
+## Related references
+
+1. [Use Wacht as an OpenID Connect Provider](/docs/guides/oauth-apps/use-as-openid-connect-provider)
+2. [Implement the OAuth Consent Flow](/docs/guides/oauth-apps/implement-consent-flow)
+3. [Operate OAuth Clients](/docs/guides/oauth-apps/verify-access-tokens-and-operate-clients)
+4. [Node SDK Server Auth](/docs/sdks/node/server-auth)
+5. [Rust SDK OAuth Apps](/docs/sdks/rust/api-auth-oauth)
+6. [RFC 7662 — OAuth Introspection](https://datatracker.ietf.org/doc/html/rfc7662)

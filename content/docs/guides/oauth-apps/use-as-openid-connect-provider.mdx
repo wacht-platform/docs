@@ -76,9 +76,11 @@ The full sequence for an RP authenticating a user:
 3. **Wacht handles the user** — sign-in if needed, consent UI if the user hasn't approved these scopes for this client before.
 4. **Wacht redirects to the RP's `redirect_uri`** with `?code=…&state=…`.
 5. **RP exchanges the code at `/oauth/token`** with `grant_type=authorization_code`, `code`, `redirect_uri`, `client_id`, the matching `code_verifier`, and `client_secret` (confidential clients only).
-6. **Wacht returns** an opaque `access_token`, an opaque `refresh_token` (if `offline_access` was requested or the client has `refresh_token` grant enabled), and a signed `id_token`.
+6. **Wacht returns** an `access_token` (opaque by default, or a signed JWT if the client is configured for it), an opaque `refresh_token` (if `offline_access` was requested or the client has `refresh_token` grant enabled), and a signed `id_token`.
 
 That's the entire flow your library needs to understand. Everything after step 6 — calling UserInfo, refreshing, logging out — is independent and orthogonal.
+
+Access token format is a per-client setting. See [Verify OAuth Access Tokens](/docs/guides/oauth-apps/access-token-verification) for how to verify either format and which one to pick.
 
 ## The id_token
 
@@ -184,7 +186,7 @@ Content-Type: application/x-www-form-urlencoded
 grant_type=refresh_token&refresh_token=<old>&client_id=<id>
 ```
 
-If your access_token is opaque too — and it is — verify it with `/oauth/userinfo` or `/oauth/introspect`, not by treating it as a JWT.
+If the access_token is opaque (the default), verify it with `/oauth/userinfo` or `/oauth/introspect`. If you've set the client to JWT access tokens, verify locally against the JWKS — see [Verify OAuth Access Tokens](/docs/guides/oauth-apps/access-token-verification).
 
 ## RP-Initiated Logout
 

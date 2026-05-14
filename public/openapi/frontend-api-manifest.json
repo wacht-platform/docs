@@ -125,6 +125,12 @@
           "path": "/ai/projects/{project_id}/board/items/{item_id}/filesystem/file"
         },
         {
+          "name": "Download Board Item Task Workspace File",
+          "slug": "download-board-item-task-workspace-file",
+          "method": "GET",
+          "path": "/ai/projects/{project_id}/board/items/{item_id}/filesystem/download"
+        },
+        {
           "name": "Update Board Item",
           "slug": "update-board-item",
           "method": "POST",

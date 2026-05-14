@@ -1,1 +1,1 @@
-{ "title": "OAuth Apps", "pages": ["overview", "create-oauth-app-and-clients", "implement-consent-flow", "verify-access-tokens-and-operate-clients", "use-as-openid-connect-provider"] }
+{ "title": "OAuth Apps", "pages": ["overview", "create-oauth-app-and-clients", "implement-consent-flow", "access-token-verification", "verify-access-tokens-and-operate-clients", "use-as-openid-connect-provider"] }
