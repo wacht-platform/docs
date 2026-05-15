@@ -1,0 +1,129 @@
+---
+title: User Management
+description: Admin operations on a user's sessions, passkeys, MFA, and memberships from the Rust SDK.
+---
+
+The Rust SDK exposes the same admin-level user-management surface that the Node SDK does, grouped into sub-APIs on `client.users()`. Each method is a builder — call `.send().await?` to execute.
+
+## Sessions
+
+List active sign-ins, revoke a single sign-in, or kill every active session for the user.
+
+```rust
+// All active sign-ins; pass .include_expired(true) to also see expired rows.
+let signins = client
+    .users()
+    .sessions()
+    .list("user_id")
+    .send()
+    .await?;
+
+// Revoke a single sign-in.
+client
+    .users()
+    .sessions()
+    .revoke("user_id", "signin_id")
+    .send()
+    .await?;
+
+// Sign-out everywhere. The returned count excludes already-expired rows.
+let summary = client
+    .users()
+    .sessions()
+    .revoke_all("user_id")
+    .send()
+    .await?;
+println!("revoked {} sign-ins", summary.revoked);
+```
+
+## Passkeys
+
+List, rename, or delete a user's registered passkeys. The actual credential bytes are never exposed — only descriptive metadata (transports, device type, last-used time).
+
+```rust
+let passkeys = client.users().passkeys().list("user_id").send().await?;
+
+client
+    .users()
+    .passkeys()
+    .rename("user_id", "passkey_id", "Hardware key")
+    .send()
+    .await?;
+
+client
+    .users()
+    .passkeys()
+    .delete("user_id", "passkey_id")
+    .send()
+    .await?;
+```
+
+## TOTP authenticator + backup codes
+
+`create_authenticator` provisions a TOTP authenticator on behalf of the user with an admin-provided base32 secret. The returned `otp_url` is the `otpauth://` URL — render as a QR code or share out-of-band. Fails with **409** if the user already has an active authenticator — call `delete_authenticator` first to re-enroll.
+
+```rust
+use wacht::models::CreateAuthenticatorRequest;
+
+let setup = client
+    .users()
+    .mfa()
+    .create_authenticator(
+        "user_id",
+        CreateAuthenticatorRequest {
+            secret: "JBSWY3DPEHPK3PXP".into(),
+            account_name: Some("jane@example.com".into()),
+        },
+    )
+    .send()
+    .await?;
+println!("otpauth url: {}", setup.otp_url);
+
+// Take an authenticator away — typically before re-enrolling.
+client
+    .users()
+    .mfa()
+    .delete_authenticator("user_id")
+    .send()
+    .await?;
+
+// Fresh backup codes are returned exactly once; surface them to the user
+// immediately. Any prior codes are invalidated.
+let codes = client
+    .users()
+    .mfa()
+    .regenerate_backup_codes("user_id")
+    .send()
+    .await?;
+for code in codes.backup_codes {
+    println!("{code}");
+}
+```
+
+## Organization + workspace memberships
+
+List the user's memberships with the resolved org/workspace and the user's roles already attached — no chained lookups needed.
+
+```rust
+let orgs = client
+    .users()
+    .memberships()
+    .list_organizations("user_id")
+    .send()
+    .await?;
+
+let workspaces = client
+    .users()
+    .memberships()
+    .list_workspaces("user_id")
+    .send()
+    .await?;
+```
+
+## Method group summary
+
+- `users.sessions.*` — list / revoke / revoke_all
+- `users.passkeys.*` — list / rename / delete
+- `users.mfa.*` — create_authenticator / delete_authenticator / regenerate_backup_codes
+- `users.memberships.*` — list_organizations / list_workspaces
+- `users.emails.*` / `users.phones.*` / `users.social_connections.*` — existing surfaces (see [Getting Started](/docs/sdks/rust/getting-started))

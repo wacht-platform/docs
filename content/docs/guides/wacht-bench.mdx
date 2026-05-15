@@ -153,6 +153,25 @@ Each call issues a new key under the deployment's reserved `aa_<deployment_id>` 
 
 The endpoint behind this command is `POST /deployments/{id}/credentials` ([createDeploymentCredentials](https://wacht.dev/docs/openapi/platform-api.json)). The minted `WACHT_API_KEY` is `sk_test_…` on staging deployments and `sk_live_…` on production.
 
+If you need to mint credentials from your own automation rather than the CLI, both backend SDKs expose this endpoint directly. The `api_key.secret` is only returned at creation — persist it immediately.
+
+**Node**
+
+```ts
+import { credentials } from "@wacht/backend";
+
+const creds = await credentials.createDeploymentCredentials();
+console.log(creds.publishable_key, creds.api_key.secret);
+```
+
+**Rust**
+
+```rust
+let creds = client.credentials().create().send().await?;
+println!("publishable key: {}", creds.publishable_key);
+println!("api key secret:  {}", creds.api_key.secret);
+```
+
 ## Manage deployment settings as code
 
 ```bash

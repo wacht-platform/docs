@@ -136,15 +136,15 @@ Implement exponential backoff when building automation pipelines that issue many
 
 Create, retrieve, update, and delete user accounts. Search and filter users by email, name, or metadata. Manage pending invitations — create, list, revoke, and resend them.
 
-### Authentication — 37 operations
-`API Auth` · `Session` · `OAuth` · `JWT Templates`
+### Authentication — 42 operations
+`API Auth` · `Session` · `OAuth` · `JWT Templates` · `Signing Keys` · `Deployment Credentials` · `Session Tickets`
 
-Create and manage API keys with configurable scopes. List and revoke active sessions across users. Administer OAuth applications and their clients — create apps, manage secrets, and configure redirect URIs. Configure JWT template overrides for custom claims.
+Create and manage API keys with configurable scopes. List and revoke active sessions across users. Administer OAuth applications and their clients — create apps, manage secrets, and configure redirect URIs. Rotate OIDC signing keys per OAuth app, or mark them compromised on suspected leak. Configure JWT template overrides for custom claims. Mint fresh deployment credentials (publishable key, hosts, and a one-shot API key) for bootstrap pipelines. Issue server-side session tickets (impersonation, agent access, webhook-app access, API-auth access) that hand the user a short-lived redeemable URL.
 
-### Organizations & Workspaces — 26 operations
-`Organizations` · `Workspaces`
+### Organizations & Workspaces — 29 operations
+`Organizations` · `Workspaces` · `Invitations`
 
-Create and manage organizations and their settings. Control membership, roles, and permissions. Create and configure workspaces within organizations. Manage workspace members and transfer ownership.
+Create and manage organizations and their settings. Control membership, roles, and permissions. Create and configure workspaces within organizations. Manage workspace members and transfer ownership. Issue, list, and discard organization invitations — optionally scoped to a workspace and role.
 
 ### Platform — 128 operations
 `AI` · `Analytics` · `Notifications` · `Webhooks` · `Settings` · `Segments`

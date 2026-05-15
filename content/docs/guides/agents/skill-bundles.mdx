@@ -1,0 +1,155 @@
+---
+title: Agent Skill Bundles
+description: Upload, inspect, and manage per-agent skill bundles from the backend SDKs.
+---
+
+# Agent Skill Bundles
+
+Agents in Wacht run with two kinds of skills:
+
+1. **System skills** — built into the platform, available to every agent. These are the reusable agentic primitives Wacht maintains.
+2. **Agent skills** — per-agent bundles you upload as a ZIP. They land in the agent's filesystem under `/skills/agent/<slug>` and are tracked in the database so they can be listed, fetched, and deleted independently.
+
+The backend SDKs (`@wacht/backend`, `wacht-rs`) expose the full lifecycle.
+
+## Bundle format
+
+A skill bundle is a ZIP file that contains one or more skill folders. Each folder must include a `SKILL.md` at its root with frontmatter:
+
+```markdown
+---
+name: my-skill
+description: One-line summary used by agents to decide when to load this skill.
+---
+
+# Body content
+```
+
+The `name` becomes the slug after kebab-case normalization. The folder name is irrelevant — the slug comes from frontmatter.
+
+Bundles are capped at **25 MB**.
+
+## List the summary
+
+Get both system and agent skills for an agent in one call. Each row carries `slug`, `name`, optional `description`, `mount_path`, and `source` (`"system"` or `"agent"`).
+
+**Node**
+
+```ts
+import { ai } from "@wacht/backend";
+
+const summary = await ai.listAgentSkillsSummary("agent_id");
+console.log("system skills:", summary.system.length);
+console.log("agent skills:", summary.agent.length);
+```
+
+**Rust**
+
+```rust
+let summary = client
+    .ai()
+    .agents()
+    .list_skills_summary("agent_id")
+    .send()
+    .await?;
+```
+
+## Browse the filesystem
+
+`list_skill_tree` returns the directory listing for a given scope (`system` or `agent`) at a given path. Use it to walk the bundle structure or render a tree UI.
+
+**Node**
+
+```ts
+const tree = await ai.listAgentSkillTree("agent_id", "agent", "/");
+for (const entry of tree.entries) {
+  console.log(entry.kind, entry.path);
+}
+```
+
+**Rust**
+
+```rust
+use wacht::models::SkillScope;
+
+let tree = client
+    .ai()
+    .agents()
+    .list_skill_tree("agent_id", SkillScope::Agent)
+    .send()
+    .await?;
+```
+
+## Read a file
+
+For text files you get `content`; for binaries you get `content_base64`. `is_text` tells you which one to read.
+
+**Node**
+
+```ts
+const file = await ai.readAgentSkillFile("agent_id", "agent", "/my-skill/SKILL.md");
+const body = file.is_text ? file.content : Buffer.from(file.content_base64!, "base64");
+```
+
+**Rust**
+
+```rust
+let file = client
+    .ai()
+    .agents()
+    .read_skill_file("agent_id", SkillScope::Agent, "/my-skill/SKILL.md")
+    .send()
+    .await?;
+```
+
+## Upload a bundle
+
+Multipart POST. `replace_existing` controls whether matching slugs are overwritten or added alongside.
+
+**Node**
+
+```ts
+const file = new File([buffer], "skills.zip", { type: "application/zip" });
+const tree = await ai.importAgentSkillBundle("agent_id", file, {
+  replace_existing: true,
+});
+```
+
+**Rust**
+
+```rust
+let bytes = std::fs::read("./skills.zip")?;
+let tree = client
+    .ai()
+    .agents()
+    .import_skill_bundle("agent_id", "skills.zip", bytes)
+    .send()
+    .await?;
+```
+
+## Delete an agent skill
+
+Removes the skill row and its files. System skills aren't deletable — only agent-scoped ones.
+
+**Node**
+
+```ts
+await ai.deleteAgentSkill("agent_id", "my-skill");
+```
+
+**Rust**
+
+```rust
+client
+    .ai()
+    .agents()
+    .delete_skill("agent_id", "my-skill")
+    .send()
+    .await?;
+```
+
+## Notes
+
+- Slugs are unique per `(agent_id, source)`. Re-uploading with `replace_existing=true` overwrites; `false` errors on conflict.
+- System skills are read-only through this API. Manage them via the platform deployment.
+- All endpoints are on the **backend API surface** (`/ai/agents/{id}/skills/*`) — API-key authenticated, not user-session.

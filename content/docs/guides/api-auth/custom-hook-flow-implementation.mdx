@@ -40,7 +40,7 @@ app.post("/api/settings/api-keys/embed-ticket", async (req, res) => {
   if (!user.canManageApiKeys) return res.status(403).json({ error: "Forbidden" });
   if (!deploymentId) return res.status(400).json({ error: "deploymentId is required" });
 
-  const ticket = await wacht.post<{ ticket: string; expires_at: number }>("/session/tickets", {
+  const ticket = await wacht.sessions.createSessionTicket({
     ticket_type: "api_auth_access",
     api_auth_app_slug: `aa_${deploymentId}`,
     expires_in: 120,

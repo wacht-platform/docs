@@ -30,6 +30,55 @@ let workspace_roles = client
 
 Validated method groups:
 
-- `organizations.*` (CRUD + members + roles + create workspace for organization)
+- `organizations.*` (CRUD + members + roles + invitations + create workspace for organization)
 - `workspaces.*` (CRUD + members + roles)
+
+## Organization invitations
+
+Invite an email into an organization (and optionally a specific workspace + role), list pending invitations, and discard ones that should no longer be redeemable.
+
+```rust
+use wacht::models::CreateOrganizationInvitationRequest;
+
+// Invite someone into the org + a specific workspace.
+let summary = client
+    .organizations()
+    .invitations()
+    .create(
+        "organization_id",
+        CreateOrganizationInvitationRequest {
+            email: "newhire@example.com".into(),
+            role_id: Some("organization_role_id".into()),
+            workspace_id: Some("workspace_id".into()),
+            workspace_role_id: Some("workspace_role_id".into()),
+            expiry_days: Some(7),
+        },
+    )
+    .send()
+    .await?;
+// summary.token is the random token used to build the accept URL.
+
+// List pending invitations for the org (optionally filtered by workspace).
+let invitations = client
+    .organizations()
+    .invitations()
+    .list("organization_id")
+    .workspace_id("workspace_id")
+    .send()
+    .await?;
+
+// Revoke an invitation before it's accepted.
+client
+    .organizations()
+    .invitations()
+    .discard("organization_id", "invitation_id")
+    .send()
+    .await?;
+```
+
+Notes:
+
+- A row is soft-deleted both when a user accepts the invitation **and** when an admin discards it — the data doesn't distinguish. Pass `.include_deleted(true)` on `list(...)` to see both states.
+- `expiry_days` defaults to 10 when omitted.
+- `discard` is idempotent — calling it on an already-discarded invitation is a no-op.
 

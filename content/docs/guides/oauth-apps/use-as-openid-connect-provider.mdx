@@ -251,6 +251,45 @@ Each OAuth app gets its own RSA-2048 keypair, generated when the app is created.
 
 The private half never leaves Wacht's database. The console exposes only the public PEM for download (for use in offline verification or trust-chain documentation).
 
+### Programmatic access
+
+Both rotate and compromise are scriptable via the backend SDKs — useful for scheduled key rotation pipelines or incident-response automation.
+
+**Node**
+
+```ts
+import { oauth } from "@wacht/backend";
+
+// List both active and retired keys (compromised keys are removed from JWKS
+// and not returned).
+const keys = await oauth.listOAuthAppSigningKeys("my-app");
+
+// Routine rotation — old key retires gracefully, new key signs going forward.
+const rotated = await oauth.rotateOAuthAppSigningKey("my-app");
+console.log("now signing with kid:", rotated.new.kid);
+
+// Emergency: a leak is suspected. Pulls the key from JWKS immediately;
+// every id_token it signed stops verifying.
+await oauth.compromiseOAuthAppSigningKey("my-app", "oas-1234-5678");
+```
+
+**Rust**
+
+```rust
+let keys = client.oauth().list_signing_keys("my-app").send().await?;
+
+let rotated = client.oauth().rotate_signing_key("my-app").send().await?;
+println!("now signing with kid: {}", rotated.new.kid);
+
+client
+    .oauth()
+    .compromise_signing_key("my-app", "oas-1234-5678")
+    .send()
+    .await?;
+```
+
+Use `rotate_signing_key` for scheduled rotation and `compromise_signing_key` only on suspected leak — the latter breaks any in-flight tokens signed by that key.
+
 ## Trying it locally
 
 Below is a self-contained Node script (zero dependencies, Node 18+) that walks the full flow: opens a browser, listens on localhost, exchanges the code, verifies the id_token against JWKS, and calls UserInfo. Edit `OAUTH_HOST` and `CLIENT_ID` at the top and run `node oidc-test.mjs`.

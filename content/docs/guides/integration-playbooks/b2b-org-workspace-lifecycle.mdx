@@ -49,6 +49,87 @@ Use backend SDK methods and scope-aware checks:
 - [Rust Organizations and Workspaces](/docs/sdks/rust/organizations-workspaces)
 - [Backend JS SDK](/docs/sdks/node)
 
+## Onboarding via organization invitations
+
+Inviting users into an organization (and optionally a starting workspace + role) is a first-party flow with backend SDK coverage on both Node and Rust. Use it when:
+
+- An admin needs to add a teammate by email without provisioning them through the deployment-wide invitations surface.
+- You want the new user to land in a specific workspace and role on first sign-in.
+- You need to revoke a pending invite before it's accepted.
+
+A row is soft-deleted both on user accept **and** on admin discard, so the data doesn't distinguish — pass `include_deleted` when listing if you need to see both states.
+
+### Node
+
+```ts
+import { organizations } from "@wacht/backend";
+
+// Create — returns a slim summary that includes the invite token.
+const summary = await organizations.createOrganizationInvitation(
+  "organization_id",
+  {
+    email: "newhire@example.com",
+    role_id: "organization_role_id",
+    workspace_id: "workspace_id",
+    workspace_role_id: "workspace_role_id",
+    expiry_days: 7,
+  },
+);
+
+// List pending invitations (optionally filter to one workspace).
+const pending = await organizations.listOrganizationInvitations(
+  "organization_id",
+  { workspace_id: "workspace_id" },
+);
+
+// Discard an invitation before it's accepted.
+await organizations.discardOrganizationInvitation(
+  "organization_id",
+  "invitation_id",
+);
+```
+
+### Rust
+
+```rust
+use wacht::models::CreateOrganizationInvitationRequest;
+
+let summary = client
+    .organizations()
+    .invitations()
+    .create(
+        "organization_id",
+        CreateOrganizationInvitationRequest {
+            email: "newhire@example.com".into(),
+            role_id: Some("organization_role_id".into()),
+            workspace_id: Some("workspace_id".into()),
+            workspace_role_id: Some("workspace_role_id".into()),
+            expiry_days: Some(7),
+        },
+    )
+    .send()
+    .await?;
+
+let pending = client
+    .organizations()
+    .invitations()
+    .list("organization_id")
+    .workspace_id("workspace_id")
+    .send()
+    .await?;
+
+client
+    .organizations()
+    .invitations()
+    .discard("organization_id", "invitation_id")
+    .send()
+    .await?;
+```
+
+`expiry_days` defaults to 10 when omitted. The returned `token` builds the accept-invitation URL — surface to admin tooling only when out-of-band sharing is needed and treat it like a secret otherwise.
+
+For the corresponding webhook events fired by these operations (`organization.invitation.created`, `.accepted`, `.revoked`), see [Webhooks → keep your backend in sync](/docs/guides/deployment-events/use-webhooks-to-keep-backend-in-sync).
+
 ## Scope enforcement rules
 
 - Treat org/workspace IDs as authoritative backend inputs, not frontend hints.

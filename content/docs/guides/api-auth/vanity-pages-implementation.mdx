@@ -53,7 +53,7 @@ app.post("/api/settings/api-keys/embed-ticket", async (req, res) => {
 
   // Add tenant ownership check here.
 
-  const ticket = await wacht.post<{ ticket: string; expires_at: number }>("/session/tickets", {
+  const ticket = await wacht.sessions.createSessionTicket({
     ticket_type: "api_auth_access",
     api_auth_app_slug: `aa_${deploymentId}`,
     expires_in: 120,

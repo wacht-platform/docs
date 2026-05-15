@@ -36,7 +36,7 @@ app.post("/api/settings/webhooks/embed-ticket", async (req, res) => {
 
   // Add your tenant ownership check here before ticket issuance.
 
-  const ticket = await wacht.post<{ ticket: string; expires_at: number }>("/session/tickets", {
+  const ticket = await wacht.sessions.createSessionTicket({
     ticket_type: "webhook_app_access",
     webhook_app_slug: `wh_${deploymentId}`,
     expires_in: 120,

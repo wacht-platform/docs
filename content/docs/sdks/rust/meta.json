@@ -3,6 +3,7 @@
   "pages": [
     "getting-started",
     "frameworks",
+    "user-management",
     "organizations-workspaces",
     "api-auth-oauth",
     "webhooks",

@@ -18,14 +18,45 @@ actor
 
 | Object | Identity | API verbs |
 | --- | --- | --- |
-| Actor | `subject_type` + `external_key` | `createActor`, `listActors` |
+| Actor | `subject_type` + `external_key` | `createActor`, `listActors`, `lookupActor` |
 | Agent | `id` (per deployment) | `createAiAgent`, `getAiAgentById`, `updateAiAgent`, `deleteAiAgent` |
 | Actor project | `id` (per deployment); binds one actor + one agent | `createActorProjectFlat` (query: `actor_id`; body: `agent_id`, `name`) |
-| Board item | `id` (per project) | `createProjectTaskBoardItem`, `updateProjectTaskBoardItem`, `archiveProjectTaskBoardItem`, `cancelProjectTaskBoardItem` |
+| Board item | `id` (per project) | `createProjectTaskBoardItem`, `updateProjectTaskBoardItem`, `archiveProjectTaskBoardItem`, `cancelProjectTaskBoardItem`, `delegateProjectTask`, `downloadProjectTaskBoardItemFilesystemFile` |
 | Thread | `id` (per project) | `createAgentThread`, `executeAgentThreadAsync`, `getAgentThreadById`, `getAgentThreadMessages` |
 | Session ticket | one-time `ticket` string | `createBackendSessionTicket`, `createSessionTicket` |
 
 The agent record has no `instructions` or schedule field. Task content lives on the board item; that's why a single agent can run many different tasks.
+
+## Resolving an actor
+
+`lookupActor` finds an actor by its `(subject_type, external_key)` pair — the same pair used at creation. Use it when your service holds the external identifier and needs the Wacht actor id (e.g. to attach a project). Returns `{ actor: null }` when no match exists rather than 404.
+
+```ts
+import { ai } from "@wacht/backend";
+
+const { actor } = await ai.lookupActor({
+  subject_type: "user",
+  external_key: "ext-1234",
+});
+if (!actor) {
+  // No actor for that external key yet — call createActor.
+}
+```
+
+```rust
+use wacht::models::LookupActorParams;
+
+let response = client
+    .ai()
+    .actors()
+    .lookup_actor(LookupActorParams {
+        subject_type: "user".into(),
+        external_key: "ext-1234".into(),
+    })
+    .send()
+    .await?;
+let actor = response.actor;
+```
 
 ## Schedule kinds
 
@@ -48,6 +79,68 @@ The agent record has no `instructions` or schedule field. Task content lives on 
 | `Virtual` | Third-party SaaS via Composio. | Not created directly — surfaces at runtime once `enableComposioApp` is called and the actor authorizes the toolkit. |
 
 `wacht api describe createAiTool` shows the full per-variant payload schema for the persisted variants. See [Composio](/docs/guides/agents/composio) for the Virtual flow.
+
+## Delegating between threads
+
+A board item can delegate work to a different lane thread within the same project. The target thread takes over execution; the new board item carries forward the parent's project context and is routed based on `capability_tags`.
+
+```ts
+import { ai } from "@wacht/backend";
+
+const delegation = await ai.delegateProjectTask(projectId, {
+  target_lane_thread_id: "thread_id",
+  title: "Run the data-validation lane",
+  description: "Validate the rows produced by the ingestion thread.",
+  capability_tags: ["data-validation"],
+});
+// delegation.task_key, delegation.board_item_id, delegation.assigned_agent_id
+```
+
+```rust
+use wacht::models::DelegateProjectTaskRequest;
+
+let delegation = client
+    .ai()
+    .actor_projects()
+    .delegate_task(
+        project_id,
+        DelegateProjectTaskRequest {
+            target_lane_thread_id: "thread_id".into(),
+            title: "Run the data-validation lane".into(),
+            description: Some("Validate the rows produced by the ingestion thread.".into()),
+            capability_tags: Some(vec!["data-validation".into()]),
+        },
+    )
+    .send()
+    .await?;
+```
+
+Empty / omitted `capability_tags` match any agent on the target lane.
+
+## Downloading board-item artifacts
+
+Each board item has a workspace filesystem. Listing and reading metadata uses `listProjectTaskBoardItemFilesystem` / `getProjectTaskBoardItemFilesystemFile` (returns JSON). To pull the bytes directly — including the server's `Content-Type` and a suggested filename — use the download variant:
+
+```ts
+import { ai } from "@wacht/backend";
+
+const file = await ai.downloadProjectTaskBoardItemFilesystemFile(
+  projectId,
+  itemId,
+  "/output/report.pdf",
+);
+// file.data is a Uint8Array; file.mime_type and file.file_name come from response headers.
+```
+
+```rust
+let file = client
+    .ai()
+    .actor_projects()
+    .download_board_item_filesystem_file(project_id, item_id, "/output/report.pdf")
+    .send()
+    .await?;
+// file.data: Vec<u8>; file.mime_type / file.file_name parsed from headers.
+```
 
 ## Sharing a session
 
