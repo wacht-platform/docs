@@ -19,6 +19,8 @@ Every webhook delivery uses this envelope:
 
 The payload sections below are representative examples to guide receiver implementation. Treat the active event catalog and backend API reference as the authoritative contract surface for production validation.
 
+`user.created`, `user.updated`, and `user.deleted` are emitted for both end-user self-service flows **and** admin-driven mutations from the backend API (`POST /users`, `PATCH /users/{user_id}`, `DELETE /users/{user_id}`). Subscribers should treat them identically.
+
 ## User Events
 
 ### user.created

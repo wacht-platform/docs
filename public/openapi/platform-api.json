@@ -602,6 +602,10 @@
                   "disabled": {
                     "type": "boolean"
                   },
+                  "second_factor_policy": {
+                    "type": "string",
+                    "description": "one of `none`, `optional`, `enforced`"
+                  },
                   "remove_profile_image": {
                     "type": "boolean"
                   },
