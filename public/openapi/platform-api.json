@@ -40512,6 +40512,29 @@
               "type": "integer"
             },
             "nullable": true
+          },
+          "strong_model": {
+            "$ref": "#/components/schemas/AgentModelOverride",
+            "nullable": true
+          },
+          "weak_model": {
+            "$ref": "#/components/schemas/AgentModelOverride",
+            "nullable": true
+          },
+          "require_approval_mcp": {
+            "type": "boolean"
+          },
+          "require_approval_virtual": {
+            "type": "boolean"
+          },
+          "tool_approval_rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentToolApprovalRule"
+            }
+          },
+          "hooks": {
+            "$ref": "#/components/schemas/AgentHooksConfig"
           }
         },
         "required": [
@@ -44864,6 +44887,21 @@
           "model"
         ]
       },
+      "AgentToolApprovalRule": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string"
+          },
+          "action": {
+            "$ref": "#/components/schemas/ApprovalAction"
+          }
+        },
+        "required": [
+          "pattern",
+          "action"
+        ]
+      },
       "AgentHooksConfig": {
         "type": "object",
         "properties": {
@@ -44910,21 +44948,6 @@
             }
           }
         }
-      },
-      "AgentToolApprovalRule": {
-        "type": "object",
-        "properties": {
-          "pattern": {
-            "type": "string"
-          },
-          "action": {
-            "$ref": "#/components/schemas/ApprovalAction"
-          }
-        },
-        "required": [
-          "pattern",
-          "action"
-        ]
       },
       "AgentHookStep": {
         "type": "object",
