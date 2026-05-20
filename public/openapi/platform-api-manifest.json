@@ -685,18 +685,6 @@
       ]
     },
     {
-      "name": "Credentials",
-      "slug": "credentials",
-      "operations": [
-        {
-          "name": "Create Deployment Credentials",
-          "slug": "create-deployment-credentials",
-          "method": "POST",
-          "path": "/credentials"
-        }
-      ]
-    },
-    {
       "name": "Default",
       "slug": "default",
       "operations": [

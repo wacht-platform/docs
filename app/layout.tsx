@@ -65,7 +65,10 @@ export default function Layout({ children }: LayoutProps<'/'>) {
       <body className="flex min-h-screen flex-col bg-background font-sans text-foreground antialiased">
         <style>{`:root { --fd-banner-height: 2.25rem; }`}</style>
         <DocsAnalyticsProvider>
-          <RootProvider theme={{ enabled: false }}>
+          <RootProvider
+            theme={{ enabled: false }}
+            search={{ options: { api: '/docs/api/search' } }}
+          >
             <div
               id="wacht-bench-launch"
               className="sticky top-0 z-40 flex h-9 items-center justify-center border-b border-white/5 bg-[#0a0612] px-4 text-center"

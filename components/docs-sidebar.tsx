@@ -660,13 +660,13 @@ const guidesSection: NavSection = {
       page('Wacht Skills', '/guides/bench-skills', FileCode2),
     ], Blocks),
     group('API Auth', [
-      page('Overview', '/guides/api-auth/overview'),
+      page('Overview', '/guides/api-auth'),
       page('Custom Hook Flow Implementation', '/guides/api-auth/custom-hook-flow-implementation'),
       page('Audit Observability Screens', '/guides/api-auth/audit-observability-screens'),
       page('Vanity Pages Implementation', '/guides/api-auth/vanity-pages-implementation'),
     ], KeyRound),
     group('Webhook Apps', [
-      page('Overview', '/guides/webhook-apps/overview'),
+      page('Overview', '/guides/webhook-apps'),
       page('Vanity Pages Implementation', '/guides/webhook-apps/vanity-pages-implementation'),
       page('Custom Hook Flow Implementation', '/guides/webhook-apps/custom-hook-flow-implementation'),
       page('Deliveries, Replay, and Observability', '/guides/webhook-apps/deliveries-replay-and-observability'),

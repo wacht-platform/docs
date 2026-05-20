@@ -3388,7 +3388,7 @@
                       "type": "string"
                     },
                     "data": {
-                      "$ref": "#/components/schemas/TaskWorkspaceFileContent"
+                      "type": "object"
                     },
                     "session": {
                       "type": "object",
@@ -35342,35 +35342,6 @@
             "items": {
               "$ref": "#/components/schemas/TaskWorkspaceMount"
             }
-          }
-        }
-      },
-      "TaskWorkspaceFileContent": {
-        "type": "object",
-        "properties": {
-          "path": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "mime_type": {
-            "type": "string"
-          },
-          "is_text": {
-            "type": "boolean"
-          },
-          "size_bytes": {
-            "type": "integer"
-          },
-          "truncated": {
-            "type": "boolean"
-          },
-          "content": {
-            "type": "string"
-          },
-          "content_base64": {
-            "type": "string"
           }
         }
       },

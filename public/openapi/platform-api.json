@@ -27,9 +27,6 @@
       "name": "Analytics"
     },
     {
-      "name": "Credentials"
-    },
-    {
       "name": "Default"
     },
     {
@@ -13679,131 +13676,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AnalyticsStatsResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/credentials": {
-      "post": {
-        "operationId": "createDeploymentCredentials",
-        "summary": "Create Deployment Credentials",
-        "tags": [
-          "Credentials"
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeploymentCredentialsResponse"
                 }
               }
             }
@@ -39664,29 +39536,6 @@
           "recent_signins"
         ]
       },
-      "DeploymentCredentialsResponse": {
-        "type": "object",
-        "properties": {
-          "publishable_key": {
-            "type": "string"
-          },
-          "frontend_host": {
-            "type": "string"
-          },
-          "backend_host": {
-            "type": "string"
-          },
-          "api_key": {
-            "$ref": "#/components/schemas/DeploymentCredentialsApiKey"
-          }
-        },
-        "required": [
-          "publishable_key",
-          "frontend_host",
-          "backend_host",
-          "api_key"
-        ]
-      },
       "ListApiAuthAppsResponse": {
         "type": "object",
         "properties": {
@@ -45346,33 +45195,6 @@
           "per_key",
           "per_key_and_ip",
           "per_app_and_ip"
-        ]
-      },
-      "DeploymentCredentialsApiKey": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "secret": {
-            "type": "string"
-          },
-          "prefix": {
-            "type": "string"
-          },
-          "suffix": {
-            "type": "string"
-          },
-          "app_slug": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "secret",
-          "prefix",
-          "suffix",
-          "app_slug"
         ]
       },
       "DailyAuthMetric": {
