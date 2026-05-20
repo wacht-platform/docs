@@ -8,8 +8,7 @@
     "start": "next start",
     "types:check": "fumadocs-mdx && next typegen && tsc --noEmit",
     "postinstall": "fumadocs-mdx",
-    "generate:openapi": "tsx scripts/generate-openapi/index.ts",
-    "sync:orama-cloud": "node scripts/sync-orama-cloud.mjs"
+    "generate:openapi": "tsx scripts/generate-openapi/index.ts"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.5",

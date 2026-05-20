@@ -2991,6 +2991,14 @@
             }
           },
           {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -3388,7 +3396,7 @@
                       "type": "string"
                     },
                     "data": {
-                      "type": "object"
+                      "$ref": "#/components/schemas/TaskWorkspaceFileContent"
                     },
                     "session": {
                       "type": "object",
@@ -4277,6 +4285,21 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "freeform_text": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
@@ -6192,6 +6215,14 @@
           },
           {
             "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
             "in": "query",
             "required": false,
             "schema": {
@@ -35292,6 +35323,12 @@
           },
           "pending_approval": {
             "$ref": "#/components/schemas/ThreadPendingApprovalRequestState"
+          },
+          "deliverables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectTaskDeliverable"
+            }
           }
         },
         "required": [
@@ -35342,6 +35379,35 @@
             "items": {
               "$ref": "#/components/schemas/TaskWorkspaceMount"
             }
+          }
+        }
+      },
+      "TaskWorkspaceFileContent": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "mime_type": {
+            "type": "string"
+          },
+          "is_text": {
+            "type": "boolean"
+          },
+          "size_bytes": {
+            "type": "integer"
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "content": {
+            "type": "string"
+          },
+          "content_base64": {
+            "type": "string"
           }
         }
       },
@@ -40543,6 +40609,9 @@
             "items": {
               "$ref": "#/components/schemas/QuestionAnswer"
             }
+          },
+          "freeform_text": {
+            "type": "string"
           }
         },
         "required": [
@@ -41171,6 +41240,49 @@
         "required": [
           "description",
           "tools"
+        ]
+      },
+      "ProjectTaskDeliverable": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string"
+          },
+          "assignment_id": {
+            "type": "string"
+          },
+          "by_thread_id": {
+            "type": "string"
+          },
+          "by_agent_name": {
+            "type": "string"
+          },
+          "result_summary": {
+            "type": "string"
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "findings": {
+            "type": "string"
+          },
+          "cautions": {
+            "type": "string"
+          },
+          "next": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "at",
+          "assignment_id",
+          "by_thread_id",
+          "by_agent_name",
+          "result_summary",
+          "artifacts"
         ]
       },
       "RequestedToolApprovalState": {

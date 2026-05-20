@@ -41495,7 +41495,8 @@
           "exclusive_owner_agent_id": {
             "type": "string",
             "nullable": true
-          }
+          },
+          "deliverables": {}
         },
         "required": [
           "id",
@@ -41736,11 +41737,12 @@
             "items": {
               "$ref": "#/components/schemas/QuestionAnswer"
             }
+          },
+          "freeform_text": {
+            "type": "string",
+            "nullable": true
           }
-        },
-        "required": [
-          "answers"
-        ]
+        }
       },
       "ApprovalSubmission": {
         "type": "object",
@@ -43600,7 +43602,9 @@
           "clarification_request",
           "clarification_response",
           "task_subscription_notification",
-          "task_subscription_delivery"
+          "task_subscription_delivery",
+          "assignment_execution_trigger",
+          "task_routing_trigger"
         ]
       },
       "ConversationMessageType": {
@@ -43615,7 +43619,9 @@
           "execution_summary",
           "clarification_request",
           "clarification_response",
-          "task_subscription_notification"
+          "task_subscription_notification",
+          "assignment_execution_trigger",
+          "task_routing_trigger"
         ]
       },
       "ApprovalSubmissionItem": {
