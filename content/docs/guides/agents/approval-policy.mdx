@@ -12,9 +12,9 @@ Each agent owns a small policy that decides, for every tool call the model emits
 For each tool name the model wants to call, the runtime evaluates these in order and stops at the first match:
 
 1. **Regex rules** on the agent (`tool_approval_rules`). First rule whose `pattern` matches the tool name wins. Universal — overrides everything below.
-2. **Per-attachment action** on `ai_agent_tools.approval_action`. Only applies to tools the operator has explicitly attached to the agent (created via `POST /ai/tools` and joined via `/agents/{id}/tools/{tool_id}`).
-3. **MCP toggle** (`require_approval_mcp`). When `true`, every tool whose name starts with `mcp_` resolves to `review`.
-4. **Virtual toggle** (`require_approval_virtual`). When `true`, every tool whose name starts with `v_` resolves to `review`.
+2. **MCP toggle** (`require_approval_mcp`). When `true`, every tool whose name starts with `mcp_` resolves to `review`.
+3. **Virtual toggle** (`require_approval_virtual`). When `true`, every tool whose name starts with `v_` resolves to `review`.
+4. **Per-attachment action** on `ai_agent_tools.approval_action`. Only applies to tools the operator has explicitly attached to the agent (created via `POST /ai/tools` and joined via `/agents/{id}/tools/{tool_id}`).
 5. Default: `allow`.
 
 ## API shape
@@ -60,3 +60,4 @@ Console → AI agents → pick an agent → **Approvals** for the toggles + rege
 - Regex override: precise control over a subset of a namespace — e.g. allow `mcp_linear_get_*` while reviewing `mcp_linear_create_*`.
 
 If a regex rule already covers a tool, the per-tool dropdown is purely cosmetic — the rule wins.
+Namespace toggles for MCP and virtual tools also take priority over the per-tool dropdown.
