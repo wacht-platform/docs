@@ -20,31 +20,40 @@ The CLI is opinionated about being agent-first: it scaffolds context, never patc
 Install the full skill pack:
 
 ```bash
-wacht skills add
+wacht skills install
 ```
 
 Install one skill:
 
 ```bash
-wacht skills add --skill wacht-nextjs-patterns
+wacht skills install --skill wacht-nextjs-patterns
 ```
+
+Install into specific agents (skips the interactive picker):
+
+```bash
+wacht skills install --agent claude-code,cursor,codex
+wacht skills install --all-agents
+```
+
+Install at user scope instead of project scope with `--global`. Copy files instead of symlinking with `--copy`.
 
 ## Use the Bench CLI
 
-Bench is currently on the `beta` dist-tag while we stabilise. Pin to `@wacht/bench@beta` (or pass `--tag beta` when installing globally) until we promote to `latest`.
+The package is `@wacht/bench`. Installing it provides the `wacht` binary.
 
 Run without installing:
 
 ```bash
-npx @wacht/bench@beta init
+npx @wacht/bench@latest init
 ```
 
-To install globally (binary is `wacht`):
+To install globally:
 
 ```bash
-npm i -g @wacht/bench@beta
+npm i -g @wacht/bench@latest
 # or
-pnpm add -g @wacht/bench@beta
+pnpm add -g @wacht/bench@latest
 ```
 
 Then:

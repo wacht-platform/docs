@@ -10,7 +10,13 @@ Wacht skills are portable agent instructions that teach AI coding tools how to b
 They are installed with:
 
 ```bash
-wacht skills add
+wacht skills install
+```
+
+One skill at a time:
+
+```bash
+wacht skills install --skill wacht-nextjs-patterns
 ```
 
 ## Core pattern
@@ -24,17 +30,18 @@ Use the skill for workflow, file placement, implementation checks, and validatio
 
 MCP answers what Wacht says now. Skills answer how an AI assistant should do the work.
 
-## V1 skills
+## Available skills
 
 | Skill | Use it for |
 | --- | --- |
 | `wacht` | Router skill that selects the right Wacht skill. |
 | `wacht-setup` | Framework detection and first Wacht install. |
+| `wacht-bench-cli` | Driving the Bench CLI — projects, deployments, users, orgs, workspaces. |
 | `wacht-nextjs-patterns` | Next.js provider, proxy, server auth, route protection. |
 | `wacht-react-router-patterns` | React Router loaders, actions, providers, auth guards. |
 | `wacht-tanstack-router-patterns` | TanStack Router route guards and server integration. |
-| `wacht-react-spa-patterns` | React SPA and Vite client-side auth patterns. |
 | `wacht-backend-js` | `@wacht/backend`, token verification, gateway checks. |
+| `wacht-rust-axum` | Rust SDK on Axum — AuthLayer, extractors, permission checks. |
 | `wacht-orgs-workspaces` | Organizations, workspaces, roles, and tenant isolation. |
 | `wacht-api-auth` | API keys, OAuth clients, gateway auth, audit flows. |
 | `wacht-webhooks` | Webhook endpoints, verification, replay, idempotency. |
