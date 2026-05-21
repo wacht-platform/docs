@@ -1,0 +1,244 @@
+---
+title: "File uploads"
+description: "Get user files into a task's workspace at three points: task creation, task update, and comments."
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+Three endpoints accept file attachments. Each one accepts JSON (no files) OR multipart (with files) by content-type. Form field for files is `attachments`. Files land in S3 under the task's workspace at `/task/uploads/<id>_<safe-name>`. Attachment metadata gets merged into the board item's or comment's `metadata.attachments`.
+
+Per-file size cap: **64 MB**.
+
+## At task creation
+
+Use when the user submits a task with files attached.
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+import { createProjectTaskBoardItemWithAttachments } from "@wacht/backend";
+
+const task = await createProjectTaskBoardItemWithAttachments(
+  projectId,
+  {
+    title: "Review these contracts",
+    description: "Flag IP, auto-renewal, and termination clauses.",
+  },
+  [
+    { filename: "contract-a.pdf", content: bufA, contentType: "application/pdf" },
+    { filename: "contract-b.pdf", content: bufB, contentType: "application/pdf" },
+  ],
+);
+```
+</Tab>
+<Tab>
+```rust
+use wacht::api::ai::actor_projects::WachtFileUpload;
+use wacht::models::CreateProjectTaskBoardItemRequest;
+
+let task = wacht::try_get_client()?
+    .ai()
+    .actor_projects()
+    .create_board_item_with_attachments(
+        project_id,
+        CreateProjectTaskBoardItemRequest {
+            title: "Review these contracts".into(),
+            description: Some("Flag IP, auto-renewal, and termination clauses.".into()),
+            ..Default::default()
+        },
+        vec![
+            WachtFileUpload {
+                filename: "contract-a.pdf".into(),
+                content_type: Some("application/pdf".into()),
+                bytes: bytes_a,
+            },
+            WachtFileUpload {
+                filename: "contract-b.pdf".into(),
+                content_type: Some("application/pdf".into()),
+                bytes: bytes_b,
+            },
+        ],
+    )
+    .send()
+    .await?;
+```
+</Tab>
+</Tabs>
+
+When the agent runs, files appear at `/task/uploads/<id>_<safe-name>`. The agent can read them with the filesystem tool or via `code_runner`. The attachment list is also in `task.metadata.attachments` so your UI can render it.
+
+### Agent prompt example
+
+```
+Files attached to the task are under /task/uploads/. For each file:
+  1. Read it with read_file
+  2. Identify flagged clauses
+  3. Write findings to /task/artifacts/review-<filename>.md
+Mark the task completed when all inputs are reviewed.
+```
+
+## At task update
+
+Add more files to an existing task without changing other fields.
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+import { updateProjectTaskBoardItemWithAttachments } from "@wacht/backend";
+
+await updateProjectTaskBoardItemWithAttachments(
+  projectId,
+  taskId,
+  {},
+  [{ filename: "addendum.pdf", content: buf, contentType: "application/pdf" }],
+);
+```
+</Tab>
+<Tab>
+```rust
+use wacht::api::ai::actor_projects::WachtFileUpload;
+use wacht::models::UpdateProjectTaskBoardItemRequest;
+
+wacht::try_get_client()?
+    .ai()
+    .actor_projects()
+    .update_board_item_with_attachments(
+        project_id,
+        task_id,
+        UpdateProjectTaskBoardItemRequest::default(),
+        vec![WachtFileUpload {
+            filename: "addendum.pdf".into(),
+            content_type: Some("application/pdf".into()),
+            bytes,
+        }],
+    )
+    .send()
+    .await?;
+```
+</Tab>
+</Tabs>
+
+The new attachments append to `metadata.attachments`; existing entries are preserved.
+
+## On a comment
+
+Use when the user adds context (file + note) to an in-progress task. Posting a comment also preempts any active assignment, so the agent's next iteration sees the new context.
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+import { createProjectTaskBoardItemCommentWithAttachments } from "@wacht/backend";
+
+await createProjectTaskBoardItemCommentWithAttachments(
+  projectId,
+  taskId,
+  actorId,
+  "Use this updated spec instead.",
+  [{ filename: "spec-v2.md", content: buf, contentType: "text/markdown" }],
+);
+```
+</Tab>
+<Tab>
+```rust
+use wacht::api::ai::actor_projects::WachtFileUpload;
+
+wacht::try_get_client()?
+    .ai()
+    .actor_projects()
+    .create_board_item_comment_with_attachments(
+        project_id,
+        task_id,
+        actor_id,
+        "Use this updated spec instead.",
+        vec![WachtFileUpload {
+            filename: "spec-v2.md".into(),
+            content_type: Some("text/markdown".into()),
+            bytes,
+        }],
+    )
+    .send()
+    .await?;
+```
+</Tab>
+</Tabs>
+
+The comment is stored with attachments in its `metadata.attachments`. The agent's prompt on the next iteration includes the comment body and can see the new files at `/task/uploads/`.
+
+## S3 mounts (alternative for large inputs)
+
+When the file is huge (think hours of video) or already lives in your S3, don't upload — mount it. The runtime makes the S3 object visible to the agent as a regular file without copying it into the workspace.
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+import { createProjectTaskBoardItem } from "@wacht/backend";
+
+await createProjectTaskBoardItem(projectId, {
+  title: "Annotate the demo recording",
+  description: "Mark up chapters.",
+  mounts: [
+    {
+      mount_path: "/task/source",
+      s3_relative_key: "demos/2026-q2/full-recording.mp4",
+      mode: "ro",
+    },
+  ],
+});
+```
+</Tab>
+<Tab>
+```rust
+use serde_json::json;
+use wacht::models::{CreateProjectTaskBoardItemRequest, ScheduleMount};
+
+let mount: ScheduleMount = serde_json::from_value(json!({
+    "mount_path": "/task/source",
+    "s3_relative_key": "demos/2026-q2/full-recording.mp4",
+    "mode": "ro",
+}))?;
+
+wacht::try_get_client()?
+    .ai()
+    .actor_projects()
+    .create_board_item(
+        project_id,
+        CreateProjectTaskBoardItemRequest {
+            title: "Annotate the demo recording".into(),
+            description: Some("Mark up chapters.".into()),
+            mounts: Some(vec![mount]),
+            ..Default::default()
+        },
+    )
+    .send()
+    .await?;
+```
+</Tab>
+</Tabs>
+
+Use this for any input larger than the upload cap, or when the same source is referenced by many tasks.
+
+## What the attachment metadata looks like
+
+After upload, each attachment surfaces in `metadata.attachments`:
+
+```json
+{
+  "attachments": [
+    {
+      "path": "/task/uploads/1735781234_contract-a.pdf",
+      "name": "1735781234_contract-a.pdf",
+      "original_name": "contract-a.pdf",
+      "mime_type": "application/pdf",
+      "size_bytes": 142307
+    }
+  ]
+}
+```
+
+Read it from `task.metadata.attachments` or `comment.metadata.attachments` in your UI. The `path` is what the agent's filesystem tool will see.
+
+## Where to go next
+
+- [Workspace and artifacts](/guides/tasks/workspace-and-artifacts) — how the agent reads what you uploaded
+- [Deliverables](/guides/tasks/deliverables) — how the agent reports back
+- [Realtime UI](/guides/tasks/realtime-ui) — surfacing live state to the user

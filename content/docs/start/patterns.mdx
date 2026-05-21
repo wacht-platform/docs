@@ -1,0 +1,107 @@
+---
+title: "Common patterns"
+description: "The shapes most Wacht apps fall into."
+---
+
+Pick the closest match to what you're building. It tells you which features you'll touch and which to ignore.
+
+## Chat copilot
+
+A user opens a session, talks to an agent, gets answers. No background work, no task boards.
+
+```
+actor → project → thread
+```
+
+One agent. Work is the conversation. Use [session tickets](/guides/agents/sessions) if you want to embed the chat without putting the user through your auth again.
+
+Drop in `<AgentSession />` from `@wacht/jsx`, or build your own UI on `useAgentThread` and `executeAgentThreadAsync`.
+
+Don't add task boards or coordinators here. They get in the way of straight chat.
+
+## Submit-and-walk-away task
+
+The user describes what they want. The agent runs asynchronously. The user comes back to see what came out.
+
+```
+actor → project → board item → executor + deliverables + /task/artifacts/
+```
+
+Document generation, data analysis, content workflows. Minutes to hours of agent work. Use `createProjectTaskBoardItem` to start it from your backend and `useProjectTaskBoardItem` to render it in your UI.
+
+Plan for `pending_question` from the start. Agents will ask for clarification, and your UI needs to surface those.
+
+This is the shape used in [Your first build](/start/your-first-build).
+
+## Coordinator with specialists
+
+A coordinator agent breaks the work into stages and routes each stage to a different specialist agent. Each specialist runs in its own thread.
+
+```
+actor → project (coordinator agent)
+        ├── coordinator thread       (routes)
+        └── executor lanes           (script, image-gen, video-gen, ...)
+```
+
+Reach for this when stages need different models, tools, or prompts. The video editor example (script → storyboard → image-gen → video-gen → verification) is exactly this pattern.
+
+Set `capability_tags` on each lane thread so the coordinator can route correctly. Define handoff payloads (`findings`, `cautions`, `next`) — the coordinator reads them to decide what's next. Use [delegate_task](/guides/agents/multi-agent#child-tasks-for-fan-out) for explicit lane-to-lane handoffs.
+
+Two rules that prevent most bugs: coordinators don't call execution tools, and executors don't decide routing. The runtime enforces both via the status machine.
+
+Full walkthrough in [Multi-agent orchestration](/guides/agents/multi-agent).
+
+## Scheduled or event-driven
+
+Work runs on a schedule or in response to events. No user kicks it off. Results surface through notifications.
+
+```
+actor (user or service) → project → scheduled board item
+```
+
+Recurring reports, monitoring loops, follow-up automations. Set `schedule_kind` and `next_run_at` when you create the board item. Wire `useNotifications` so the user sees results when they happen.
+
+`overlap_policy` matters when intervals are short or tasks are long. Always attach an actor — schedules still run under some identity.
+
+See [Scheduling](/guides/agents/scheduling).
+
+## Shareable agent session
+
+You mint a one-time URL that someone outside your auth opens to chat with your agent.
+
+```
+actor → project → thread + session ticket
+```
+
+Customer demos, partner integrations, anyone who shouldn't have to sign into your app. The ticket grants scoped access to one thread for a short window. The recipient hits the URL; the SDK handles the rest.
+
+Mint the ticket with `createBackendSessionTicket` from your backend.
+
+See [Agent sessions](/guides/agents/sessions).
+
+## B2B copilot
+
+Each customer (organization or workspace) gets agents with org-scoped data and role-aware permissions.
+
+```
+deployment
+└── organizations/workspaces → members → actors → projects
+```
+
+Wacht's B2B identity layer sits under the agent runtime. Domain auto-join, invitations, SAML SSO are wired. Use `<OrganizationSwitcher />` and `useActiveOrganization` from `@wacht/jsx`, and scope agent creation per org.
+
+See [B2B](/product/b2b).
+
+## API-key-backed agent platform
+
+Your customers issue API keys and call your agents programmatically.
+
+```
+deployment → api auth app → customer keys → projects
+```
+
+You're developer infrastructure. Customers manage their own keys; their server calls Wacht with them; each call resolves to their actor. Use the [API Auth](/guides/api-auth) flow for the management UX.
+
+## Mixing patterns
+
+Real products combine these. A B2B SaaS with a workspace-scoped chat copilot, scheduled nightly reports, async tasks for heavy work, and an API-key-backed developer surface is all one Wacht deployment. Pick the dominant pattern; layer the others where they fit.

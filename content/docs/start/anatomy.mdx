@@ -1,0 +1,148 @@
+---
+title: "Anatomy of a Wacht app"
+description: "The nouns: actors, projects, threads, board items, assignments, workspaces — and how they fit together."
+---
+
+A Wacht app is built from a small set of objects. Every product, from a single-agent copilot to a multi-lane content workflow, is some combination of these. Get the shape in your head once and the rest of the docs make sense.
+
+## The big picture
+
+```
+deployment                    ← your tenant of Wacht (prod, staging)
+├── agents                    ← reusable configured workers (model + tools + rules)
+│
+├── actors                    ← who work runs as (a user, a service, a tenant)
+│   └── actor project         ← binds one actor + one agent (a workspace)
+│       ├── board items       ← discrete pieces of work (tasks)
+│       │   ├── assignments   ← who's working on this task right now
+│       │   ├── deliverables  ← what was produced (summary + artifact paths)
+│       │   └── workspace     ← /task/ filesystem (artifacts, journal, scratch)
+│       └── threads           ← live conversations (one per role/lane)
+│           └── conversation  ← messages, tool calls, results
+│
+├── api keys / oauth apps     ← machine credentials
+├── webhook apps              ← event delivery to customer endpoints
+└── notifications             ← in-app inboxes
+```
+
+Day one you usually only touch the agent runtime (the lower half of the diagram). The rest is the platform substrate around it.
+
+## The nouns
+
+### Deployment
+
+A `deployment` is your tenant of Wacht. Think production, staging, preview. Everything below lives inside a deployment. You usually have a handful of these and don't think about them in code.
+
+### Agent
+
+A reusable, configured worker. You give it a model, a system prompt, a set of tools, knowledge bases, approval policy, and behavior rules. The agent record itself does not own tasks or schedules — that lives one layer down.
+
+One agent is reused across many tasks for many users. Think of it like a function definition: configure once, invoke many times.
+
+### Actor
+
+The principal that work runs as. An actor has a `subject_type` and an `external_key` — usually your own user id or tenant id. Wacht doesn't care what the external_key is; you pick a stable identifier from your system.
+
+Actors are the unit of tenancy in the agent runtime. Two actors can't see each other's projects.
+
+### Actor project
+
+A project binds one actor to one agent. It's the workspace for that pairing — what tasks they share, what threads they have, what files they accumulate.
+
+A single user might have multiple projects (one per agent they use). A single agent might back many projects (one per user using it). The project is the join.
+
+### Board item (task)
+
+A board item is a discrete piece of work. Title, description, status, optional schedule, optional file attachments. This is what users create when they say "go do this." It's also what scheduled or programmatic work shows up as.
+
+Board items have a lifecycle: `pending` → `available` → `claimed` → `in_progress` → `completed` (or `blocked`, `rejected`, `cancelled`). The runtime drives the transitions; you observe them.
+
+### Assignment
+
+An assignment is the binding between a board item and the thread/agent currently working on it. A board item can have multiple assignments over its lifetime — one executor lane finishes, the coordinator routes again, a new assignment appears.
+
+Assignments have a `role`: `executor` (does the work), `coordinator` (decides who does the work next), `reviewer` (verifies). Each role has its own thread.
+
+### Thread
+
+A thread is a running conversation between an agent and the rest of the system. Tool calls, tool results, user messages, system decisions, agent text — all live as ordered conversation messages on the thread.
+
+A project has one thread per role (one coordinator, one or more executors, optionally a reviewer). They run independently but **share conversation history at the board-item level** — every thread on the same board item sees the same log.
+
+### Workspace and artifacts
+
+Each board item gets a filesystem workspace at `/task/`. Inside that:
+
+- `/task/artifacts/` — deliverables produced by executors. Validated to exist when a task completes.
+- `/task/JOURNAL.md` — append-only log of structured handoffs from each completed assignment.
+- Free space for scratch files agents leave behind.
+
+The workspace is shared across all threads on the board item. Coordinator can write briefs to it; executors read and write; reviewers inspect.
+
+### Deliverables
+
+When a task is marked completed, the runtime appends a structured entry to the board item's `deliverables` array:
+
+```json
+{
+  "at": "2026-05-20T14:33:00Z",
+  "by_agent_name": "video-editor",
+  "assignment_id": "1234567890",
+  "result_summary": "Rendered 30s teaser with 4 cuts and music bed.",
+  "artifacts": ["/task/artifacts/teaser-final.mp4"],
+  "findings": "Source clips needed -2dB normalization.",
+  "cautions": "Audio drift after 25s — re-encode source if reusing.",
+  "next": "Run color grade pass before publish."
+}
+```
+
+This is the canonical surface for "what came out of this task." Your UI reads it, the next coordinator turn reads it, the audit log reads it.
+
+## One task, end to end
+
+Concretely, here's what a single task looks like moving through the system:
+
+1. **User creates a task.** Your frontend calls `createProjectTaskBoardItem` with a title and description. A board item is created with status `pending`. A coordinator thread for the project handles routing.
+
+2. **Coordinator decides.** The coordinator thread wakes up, reads the board, decides which executor lane should run. It creates an `executor` assignment pointing at a thread that has the right capability tags.
+
+3. **Executor runs.** The executor thread wakes up, sees the assignment, reads the brief from the workspace, calls its tools, writes outputs under `/task/artifacts/`, asks the user clarifying questions if needed.
+
+4. **Executor finishes.** The executor emits a terminal message. The runtime flips the assignment to `completed`. The coordinator wakes up again.
+
+5. **Coordinator wraps the task.** If the work satisfies the task, the coordinator calls `update_project_task(status="completed")` with `result_summary`, `artifacts`, `findings`, `cautions`, `next`. The runtime appends to `/task/JOURNAL.md` and the `deliverables` array. The board item is now `completed`.
+
+6. **UI updates.** Your frontend, subscribed via the SDK's hooks (`useProjectTaskBoardItem`, `useProjectTaskBoardItemComments`), sees the new status, the new deliverable, the new artifact paths, and renders the result.
+
+That whole flow happens with no orchestration code on your side. You configure the agent and write your UI; Wacht runs the loop.
+
+## The platform substrate
+
+Around the agent runtime sit the things that make a product useful:
+
+- **API keys and OAuth apps** — for traffic that comes in over machine credentials. Each request gets a verified actor.
+- **Webhook apps** — for events that go out. Customers register URLs, Wacht delivers with retries and signing.
+- **Notifications** — for surfacing things that need attention. Includes both in-app inboxes and actionable items.
+- **Organizations and workspaces** — the B2B layer. Roles, memberships, invitations, domain auto-join, scoped permissions.
+
+These are not separate products; they're the same identity, permissions, and audit model the agent runtime sits on. An API key call into Wacht still maps to an actor. A webhook delivery is tagged with a tenant. An in-app notification can be scoped to a workspace member.
+
+## What you DON'T need to model yourself
+
+If you've built this before, here are the things you'd normally build that Wacht just hands you:
+
+- Membership management UX with invitations, role-aware approvals, and audit history
+- API key issuance, rotation, revocation, scoping, and audit
+- Webhook signing with timestamp tolerance, idempotent retries, and replay
+- Agent sandboxing — process isolation, filesystem boundaries, network policy
+- File workspace mount for agents, with the ability to surface contents to the UI
+- Multi-agent orchestration with handoff payloads, journal logs, and durable conversation history
+- Per-tenant rate limiting, cost attribution, and quota gating
+
+You can replace any one of them later if you outgrow the defaults. The point of having them all built as one product is they share a model — your audit log spans all of them, your roles apply across all of them, your tenant boundaries are enforced everywhere.
+
+## Where to go next
+
+- [Mental model](/start/mental-model) — how to think when designing your app
+- [Your first build](/start/your-first-build) — concrete end-to-end recipe
+- [Patterns](/start/patterns) — catalog of common app shapes

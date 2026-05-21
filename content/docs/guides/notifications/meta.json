@@ -1,1 +1,1 @@
-{ "title": "Notifications", "pages": ["overview-scope-design", "backend-sending-patterns", "frontend-inbox-with-hooks", "realtime-stream-handling", "actionable-notification-ux"] }
+{ "title": "Notifications", "pages": ["index", "backend-sending-patterns", "frontend-inbox-with-hooks", "realtime-stream-handling", "actionable-notification-ux"] }

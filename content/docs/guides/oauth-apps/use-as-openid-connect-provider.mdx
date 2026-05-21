@@ -32,7 +32,7 @@ These are optional in OIDC Core, and most client libraries don't require them. L
 
 ## Setup
 
-You need an OAuth app and at least one OAuth client. If you've already done the [OAuth Apps create flow](/docs/guides/oauth-apps/create-oauth-app-and-clients), skip ahead.
+You need an OAuth app and at least one OAuth client. If you've already done the [OAuth Apps create flow](/guides/oauth-apps/create-oauth-app-and-clients), skip ahead.
 
 ### 1. Create the OAuth app
 
@@ -80,7 +80,7 @@ The full sequence for an RP authenticating a user:
 
 That's the entire flow your library needs to understand. Everything after step 6 — calling UserInfo, refreshing, logging out — is independent and orthogonal.
 
-Access token format is a per-client setting. See [Verify OAuth Access Tokens](/docs/guides/oauth-apps/access-token-verification) for how to verify either format and which one to pick.
+Access token format is a per-client setting. See [Verify OAuth Access Tokens](/guides/oauth-apps/access-token-verification) for how to verify either format and which one to pick.
 
 ## The id_token
 
@@ -186,7 +186,7 @@ Content-Type: application/x-www-form-urlencoded
 grant_type=refresh_token&refresh_token=<old>&client_id=<id>
 ```
 
-If the access_token is opaque (the default), verify it with `/oauth/userinfo` or `/oauth/introspect`. If you've set the client to JWT access tokens, verify locally against the JWKS — see [Verify OAuth Access Tokens](/docs/guides/oauth-apps/access-token-verification).
+If the access_token is opaque (the default), verify it with `/oauth/userinfo` or `/oauth/introspect`. If you've set the client to JWT access tokens, verify locally against the JWKS — see [Verify OAuth Access Tokens](/guides/oauth-apps/access-token-verification).
 
 ## RP-Initiated Logout
 
@@ -394,9 +394,9 @@ To exercise other paths add params to the authorize URL: `prompt=consent` forces
 
 ## Related references
 
-1. [Create OAuth Apps and Clients](/docs/guides/oauth-apps/create-oauth-app-and-clients)
-2. [Implement OAuth Consent Flow](/docs/guides/oauth-apps/implement-consent-flow)
-3. [Verify Tokens and Operate OAuth Clients](/docs/guides/oauth-apps/verify-access-tokens-and-operate-clients)
+1. [Create OAuth Apps and Clients](/guides/oauth-apps/create-oauth-app-and-clients)
+2. [Implement OAuth Consent Flow](/guides/oauth-apps/implement-consent-flow)
+3. [Verify Tokens and Operate OAuth Clients](/guides/oauth-apps/verify-access-tokens-and-operate-clients)
 4. [OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html)
 5. [OpenID Connect Discovery 1.0](https://openid.net/specs/openid-connect-discovery-1_0.html)
 6. [RP-Initiated Logout 1.0](https://openid.net/specs/openid-connect-rpinitiated-1_0.html)

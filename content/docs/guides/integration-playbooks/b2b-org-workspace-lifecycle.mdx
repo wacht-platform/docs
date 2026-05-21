@@ -38,16 +38,16 @@ Resolve membership set
 
 Use SDK tenancy surfaces to manage active organization/workspace and account controls:
 
-- [React Router Organizations/Workspaces hooks](/docs/sdks/react-router/hooks/organizations-workspaces)
-- [TanStack Router Organizations/Workspaces hooks](/docs/sdks/tanstack-router/hooks/organizations-workspaces)
-- [Next.js Organizations/Workspaces hooks](/docs/sdks/nextjs/hooks/organizations-workspaces)
+- [React Router Organizations/Workspaces hooks](/sdks/react-router/hooks/organizations-workspaces)
+- [TanStack Router Organizations/Workspaces hooks](/sdks/tanstack-router/hooks/organizations-workspaces)
+- [Next.js Organizations/Workspaces hooks](/sdks/nextjs/hooks/organizations-workspaces)
 
 ## Backend implementation
 
 Use backend SDK methods and scope-aware checks:
 
-- [Rust Organizations and Workspaces](/docs/sdks/rust/organizations-workspaces)
-- [Backend JS SDK](/docs/sdks/node)
+- [Rust Organizations and Workspaces](/sdks/rust/organizations-workspaces)
+- [Backend JS SDK](/sdks/node)
 
 ## Onboarding via organization invitations
 
@@ -128,7 +128,7 @@ client
 
 `expiry_days` defaults to 10 when omitted. The returned `token` builds the accept-invitation URL — surface to admin tooling only when out-of-band sharing is needed and treat it like a secret otherwise.
 
-For the corresponding webhook events fired by these operations (`organization.invitation.created`, `.accepted`, `.revoked`), see [Webhooks → keep your backend in sync](/docs/guides/deployment-events/use-webhooks-to-keep-backend-in-sync).
+For the corresponding webhook events fired by these operations (`organization.invitation.created`, `.accepted`, `.revoked`), see [Webhooks → keep your backend in sync](/guides/deployment-events).
 
 ## Scope enforcement rules
 
@@ -145,5 +145,5 @@ For the corresponding webhook events fired by these operations (`organization.in
 
 ## Contract validation checkpoints
 
-- [Frontend API org/workspace surfaces](/docs/reference/frontend-api)
-- [Backend API org/workspace surfaces](/docs/reference/backend-api)
+- [Frontend API org/workspace surfaces](/reference/frontend-api)
+- [Backend API org/workspace surfaces](/reference/backend-api)

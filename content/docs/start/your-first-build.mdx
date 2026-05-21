@@ -1,0 +1,340 @@
+---
+title: "Your first build"
+description: "Zero to a working AI-native app — deployment, agent, frontend wiring, your first task, surfaced result."
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+This walks you through building a complete (small) Wacht app end to end. By the end you'll have:
+
+- A deployment with your branding
+- An agent configured to do real work
+- A Next.js frontend with auth, a task board, and a chat surface
+- A working task that runs, produces an artifact, and surfaces it in your UI
+
+Plan on 30-45 minutes. If you're using an AI coding assistant, this is a much faster session with [Wacht Bench](/guides/wacht-bench).
+
+## What you'll need
+
+- A Wacht account ([sign up](https://console.wacht.dev))
+- Node 20+ and pnpm
+- An OpenAI or Anthropic API key (for the agent's model)
+
+## Step 1: Create a deployment
+
+In the console, create a new project, then create a deployment under it (production or development).
+
+You'll get:
+- A frontend API URL (e.g. `https://your-deployment.wacht.dev`)
+- A publishable key (for the frontend SDK)
+- A backend secret key (for server-side / Node SDK)
+- A console URL for managing the deployment
+
+Stash these in your environment.
+
+## Step 2: Scaffold a Next.js app
+
+Wacht ships SDK packages for Next.js, React Router, and TanStack Router. For this walkthrough we'll use Next.js.
+
+```bash
+pnpm create next-app my-wacht-app
+cd my-wacht-app
+pnpm add @wacht/nextjs @wacht/types
+```
+
+Add the Wacht provider to `app/layout.tsx`:
+
+```tsx
+import { WachtProvider } from "@wacht/nextjs";
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        <WachtProvider
+          publicKey={process.env.NEXT_PUBLIC_WACHT_PUBLIC_KEY!}
+        >
+          {children}
+        </WachtProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+Set environment variables in `.env.local`:
+
+```
+NEXT_PUBLIC_WACHT_PUBLIC_KEY=pk_...
+WACHT_BACKEND_SECRET=sk_...
+```
+
+You now have auth working. Drop the `<SignIn />` and `<UserButton />` components anywhere in your tree; you can sign in immediately.
+
+## Step 3: Configure an agent
+
+In the console, go to **AI → Agents → New agent**.
+
+- **Name:** `note-summarizer`
+- **Model:** `claude-sonnet-4-6` (or any model you have keys for)
+- **System prompt:**
+
+  ```
+  You are a notes summarizer. When given a body of notes,
+  produce a one-paragraph summary, a list of key decisions,
+  and a list of open questions. Write your output to
+  /task/artifacts/summary.md.
+  ```
+
+- **Tools:** enable the **filesystem** tool so the agent can write files.
+
+Save. You now have a reusable agent.
+
+## Step 4: Create a project and a task from your backend
+
+The agent doesn't do anything until you give it work. From your Next.js backend (an API route or server action), use the backend SDK:
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+// app/api/summarize/route.ts
+import { ai } from "@wacht/backend";
+
+export async function POST(req: Request) {
+  const { userId, notesText } = await req.json();
+
+  // Look up or create the actor for this user
+  const { actor } = await ai.lookupActor({
+    subject_type: "user",
+    external_key: userId,
+  });
+  const actorId =
+    actor?.id ??
+    (await ai.createActor({
+      subject_type: "user",
+      external_key: userId,
+    })).id;
+
+  // Create (or reuse) a project pairing this actor with the agent
+  const project = await ai.createActorProjectFlat(
+    { actor_id: actorId },
+    { agent_id: "agent_id_from_console", name: "Notes" }
+  );
+
+  // Create a task on that project
+  const task = await ai.createProjectTaskBoardItem(project.id, {
+    title: "Summarize these notes",
+    description: notesText,
+  });
+
+  return Response.json({ projectId: project.id, taskId: task.id });
+}
+```
+
+Initialize the backend client with your secret key in your bootstrap:
+
+```ts
+// instrumentation.ts (or wherever your server boots)
+import { initBackend } from "@wacht/backend";
+
+initBackend({ secretKey: process.env.WACHT_BACKEND_SECRET! });
+```
+</Tab>
+<Tab>
+```rust
+// In your Axum/Actix handler
+use wacht::{try_get_client, models::{LookupActorParams, CreateActorRequest, CreateActorProjectRequest, CreateProjectTaskBoardItemRequest}};
+
+pub async fn summarize(Json(body): Json<SummarizeRequest>) -> Result<Json<TaskRef>, AppError> {
+    let client = try_get_client()?;
+
+    let lookup = client
+        .ai()
+        .actors()
+        .lookup_actor(LookupActorParams {
+            subject_type: "user".into(),
+            external_key: body.user_id.clone(),
+        })
+        .send()
+        .await?;
+
+    let actor_id = match lookup.actor {
+        Some(a) => a.id,
+        None => {
+            client
+                .ai()
+                .actors()
+                .create_actor(CreateActorRequest {
+                    subject_type: "user".into(),
+                    external_key: body.user_id,
+                })
+                .send()
+                .await?
+                .id
+        }
+    };
+
+    let project = client
+        .ai()
+        .actor_projects()
+        .create_actor_project(
+            actor_id,
+            CreateActorProjectRequest {
+                name: "Notes".into(),
+                agent_id: Some("agent_id_from_console".into()),
+                ..Default::default()
+            },
+        )
+        .send()
+        .await?;
+
+    let task = client
+        .ai()
+        .actor_projects()
+        .create_board_item(
+            project.id.clone(),
+            CreateProjectTaskBoardItemRequest {
+                title: "Summarize these notes".into(),
+                description: Some(body.notes_text),
+                ..Default::default()
+            },
+        )
+        .send()
+        .await?;
+
+    Ok(Json(TaskRef { project_id: project.id, task_id: task.id }))
+}
+```
+
+Initialize the client at startup (typically in `main`):
+
+```rust
+use wacht::init_from_env;
+
+#[tokio::main]
+async fn main() {
+    init_from_env().await.expect("wacht init failed");
+    // build your router...
+}
+```
+</Tab>
+</Tabs>
+
+## Step 5: Surface the task in your UI
+
+Use the Wacht hooks to observe the task as it runs:
+
+```tsx
+// app/notes/[projectId]/[taskId]/page.tsx
+"use client";
+import { useProjectTaskBoardItem } from "@wacht/nextjs";
+
+export default function TaskPage({ params }) {
+  const { item, loading } = useProjectTaskBoardItem(
+    params.projectId,
+    params.taskId,
+  );
+
+  if (loading || !item) return <div>Loading…</div>;
+
+  return (
+    <div>
+      <h1>{item.title}</h1>
+      <p>Status: {item.status}</p>
+
+      {item.deliverables?.map((d, i) => (
+        <section key={i}>
+          <h2>{d.by_agent_name} finished</h2>
+          <p>{d.result_summary}</p>
+          {d.artifacts.map((path) => (
+            <a key={path} href={`/api/task/${item.id}/file?path=${path}`}>
+              {path}
+            </a>
+          ))}
+        </section>
+      ))}
+    </div>
+  );
+}
+```
+
+The hook subscribes to live updates. When the agent flips the task to `completed` and the runtime appends a `deliverable`, your UI re-renders automatically.
+
+## Step 6: Serve the generated file
+
+The agent wrote `/task/artifacts/summary.md` inside its sandbox. Serve it to the user via the workspace file API:
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+// app/api/task/[taskId]/file/route.ts
+import { ai } from "@wacht/backend";
+
+export async function GET(req: Request, { params }) {
+  const url = new URL(req.url);
+  const path = url.searchParams.get("path")!;
+  const file = await ai.downloadProjectTaskBoardItemFilesystemFile(
+    params.taskId,
+    { path },
+  );
+  return new Response(file.body, {
+    headers: { "content-type": file.contentType },
+  });
+}
+```
+</Tab>
+<Tab>
+```rust
+pub async fn download_task_file(
+    Path((project_id, task_id)): Path<(String, String)>,
+    Query(q): Query<FileQuery>,
+) -> Result<Response, AppError> {
+    let client = wacht::try_get_client()?;
+    let file = client
+        .ai()
+        .actor_projects()
+        .download_board_item_filesystem_file(project_id, task_id, q.path)
+        .send()
+        .await?;
+    Ok(Response::builder()
+        .header(
+            "content-type",
+            file.content_type.unwrap_or_else(|| "application/octet-stream".into()),
+        )
+        .body(file.body.into())
+        .unwrap())
+}
+```
+</Tab>
+</Tabs>
+
+## What happened end-to-end
+
+1. Your user signed in. Wacht resolved their identity.
+2. Your backend created an actor mapped to that user.
+3. You bound the actor to the `note-summarizer` agent via a project.
+4. You created a board item with the notes as description.
+5. The runtime woke up the coordinator thread, which assigned the task to the executor lane.
+6. The executor invoked the model with the system prompt + the description, the model called the filesystem tool to write `/task/artifacts/summary.md`, then emitted terminal text.
+7. The coordinator saw the executor finish, validated the artifact existed, marked the task `completed`, and appended an entry to the `deliverables` array.
+8. Your UI hook fired, re-rendered, showed the deliverable, linked to the artifact.
+
+You did not write a queue, a worker, a retry loop, a file storage layer, or an orchestration engine. You wrote a system prompt, a server action, and a React component.
+
+## What to read next
+
+You have a working app. To go further:
+
+- [Patterns](/start/patterns) — pick a more sophisticated app shape (coordinator + specialists, scheduled, ambient)
+- [Agents guide](/guides/agents) — model overrides, hooks, approval policy, scheduling
+- [Sessions guide](/guides/agents/sessions) — chat surfaces backed by a session ticket
+- [SDK quickstarts](/sdks) — if you're not on Next.js
+- [B2B guide](/product/b2b) — when your app needs organizations and workspaces
+
+## When you outgrow the defaults
+
+This walkthrough used the SDK convenience methods. Everything is also available as raw HTTP — see the [API reference](/reference). Common reasons to drop down:
+
+- You're building a non-Next.js or non-Node backend → see the [Rust SDK](/sdks/rust/getting-started)
+- You want to drive Wacht state from CI / a script → see the [bench CLI](/guides/wacht-bench)
+- You need to do something the SDK doesn't expose yet → call the API directly with your secret key

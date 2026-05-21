@@ -58,8 +58,8 @@ Pick the narrowest scope your use case allows. A ticket bound to neither a `user
 | --- | --- | --- | --- |
 | `agent_access` | `https://{backend_host}/vanity/agents?ticket=…` | `agent_ids`, `actor_id` | (this page) |
 | `impersonation` | `https://{frontend_host}/sign-in?ticket=…` | `user_id` | Console "impersonate user" action |
-| `api_auth_access` | `https://{backend_host}/vanity/api-auth?ticket=…` | `api_auth_app_slug` | [API-auth vanity pages](/docs/guides/api-auth/vanity-pages-implementation) |
-| `webhook_app_access` | `https://{backend_host}/vanity/webhook?ticket=…` | `webhook_app_slug` | [Webhook vanity pages](/docs/guides/webhook-apps/vanity-pages-implementation) |
+| `api_auth_access` | `https://{backend_host}/vanity/api-auth?ticket=…` | `api_auth_app_slug` | [API-auth vanity pages](/guides/api-auth/vanity-pages-implementation) |
+| `webhook_app_access` | `https://{backend_host}/vanity/webhook?ticket=…` | `webhook_app_slug` | [Webhook vanity pages](/guides/webhook-apps/vanity-pages-implementation) |
 
 Tickets are one-time-redeemable and expire per `expires_at`. There's no explicit revocation — set a short `expires_in` (seconds) when you need tight bounds.
 

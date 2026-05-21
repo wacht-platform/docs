@@ -5,7 +5,7 @@ description: "Object hierarchy and API verbs for driving the Wacht agent runtime
 
 # Agent runtime objects
 
-This reference is for engineers wiring the agent runtime through the platform API, `@wacht/backend`, or the bench CLI. If you're using the console UI, see the [Agents guide](/docs/guides/agents) instead.
+This reference is for engineers wiring the agent runtime through the platform API, `@wacht/backend`, or the bench CLI. If you're using the console UI, see the [Agents guide](/guides/agents) instead.
 
 ## Hierarchy
 
@@ -78,7 +78,7 @@ let actor = response.actor;
 | `PlatformEvent` | Tools that react to platform events. | `createAiTool` |
 | `Virtual` | Third-party SaaS via Composio. | Not created directly — surfaces at runtime once `enableComposioApp` is called and the actor authorizes the toolkit. |
 
-`wacht api describe createAiTool` shows the full per-variant payload schema for the persisted variants. See [Composio](/docs/guides/agents/composio) for the Virtual flow.
+`wacht api describe createAiTool` shows the full per-variant payload schema for the persisted variants. See [Composio](/guides/agents/composio) for the Virtual flow.
 
 ## Delegating between threads
 
@@ -153,11 +153,11 @@ let file = client
 | `api_auth_access` | `https://{backend_host}/vanity/api-auth?ticket=…` | `api_auth_app_slug` |
 | `webhook_app_access` | `https://{backend_host}/vanity/webhook?ticket=…` | `webhook_app_slug` |
 
-Tickets are one-time-redeemable and bounded by `expires_in` (seconds). See the [Agent sessions guide](/docs/guides/agents/sessions) for scoping fields and the per-product vanity-pages guides ([API auth](/docs/guides/api-auth/vanity-pages-implementation), [Webhooks](/docs/guides/webhook-apps/vanity-pages-implementation)) for non-agent flows.
+Tickets are one-time-redeemable and bounded by `expires_in` (seconds). See the [Agent sessions guide](/guides/agents/sessions) for scoping fields and the per-product vanity-pages guides ([API auth](/guides/api-auth/vanity-pages-implementation), [Webhooks](/guides/webhook-apps/vanity-pages-implementation)) for non-agent flows.
 
 ## Related
 
-- [Agents](/docs/guides/agents) — user-facing overview.
-- [Scheduling](/docs/guides/agents/scheduling)
-- [Composio](/docs/guides/agents/composio)
-- [Agent sessions](/docs/guides/agents/sessions)
+- [Agents](/guides/agents) — user-facing overview.
+- [Scheduling](/guides/agents/scheduling)
+- [Composio](/guides/agents/composio)
+- [Agent sessions](/guides/agents/sessions)

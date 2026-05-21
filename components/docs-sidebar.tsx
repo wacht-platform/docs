@@ -25,7 +25,7 @@ import type { ComponentType } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { generatedBackendCoverageDocs } from '@/components/shared-backend-coverage';
 import { backendCoverageGroupOrder, classifyBackendCoverageDoc } from '@/components/backend-docs/grouping';
-import { backendGroups } from '@/components/shared-backend-pages.catalog';
+import { clientBackendGroups as backendGroups } from '@/components/shared-backend-pages.client-groups';
 import { rustBackendMethodLabel } from '@/components/rust-backend-labels';
 import { cn } from '@/lib/cn';
 import frontendApiManifest from '@/public/openapi/frontend-api-manifest.json';
@@ -648,6 +648,19 @@ const documentationSections: NavSection[] = [
   },
 ] as const;
 
+const startSection: NavSection = {
+  key: 'start',
+  name: 'Start',
+  match: '/start',
+  entries: [
+    topPage('Start here', '/start', Rocket),
+    topPage('Anatomy of a Wacht app', '/start/anatomy', Blocks),
+    topPage('Mental model', '/start/mental-model', FileText),
+    topPage('Your first build', '/start/your-first-build', Rocket),
+    topPage('Common patterns', '/start/patterns', Layers3),
+  ],
+};
+
 const guidesSection: NavSection = {
   key: 'guides',
   name: 'Guides',
@@ -659,6 +672,30 @@ const guidesSection: NavSection = {
       page('Docs MCP', '/guides/docs-mcp', Blocks),
       page('Wacht Skills', '/guides/bench-skills', FileCode2),
     ], Blocks),
+    group('Integration Playbooks', [
+      page('Frontend + backend auth lifecycle', '/guides/integration-playbooks/fullstack-auth-lifecycle-react-rust'),
+      page('B2B org/workspace lifecycle', '/guides/integration-playbooks/b2b-org-workspace-lifecycle'),
+      page('Unsupported stack adaptation', '/guides/integration-playbooks/unsupported-stacks'),
+    ], Layers3),
+    group('Agents', [
+      page('Overview', '/guides/agents'),
+      page('Multi-agent', '/guides/agents/multi-agent'),
+      page('Model overrides', '/guides/agents/model-overrides'),
+      page('Execution hooks', '/guides/agents/hooks'),
+      page('Approval policy', '/guides/agents/approval-policy'),
+      page('Code runner', '/guides/agents/code-runner'),
+      page('Skill bundles', '/guides/agents/skill-bundles'),
+      page('Scheduling', '/guides/agents/scheduling'),
+      page('Composio', '/guides/agents/composio'),
+      page('Sessions', '/guides/agents/sessions'),
+    ], Blocks),
+    group('Tasks', [
+      page('Overview', '/guides/tasks'),
+      page('Workspace and artifacts', '/guides/tasks/workspace-and-artifacts'),
+      page('Deliverables and journal', '/guides/tasks/deliverables'),
+      page('File uploads', '/guides/tasks/file-uploads'),
+      page('Realtime UI', '/guides/tasks/realtime-ui'),
+    ], FileCode2),
     group('API Auth', [
       page('Overview', '/guides/api-auth'),
       page('Custom Hook Flow Implementation', '/guides/api-auth/custom-hook-flow-implementation'),
@@ -672,21 +709,21 @@ const guidesSection: NavSection = {
       page('Deliveries, Replay, and Observability', '/guides/webhook-apps/deliveries-replay-and-observability'),
     ], Server),
     group('OAuth Apps', [
-      page('Overview', '/guides/oauth-apps/overview'),
+      page('Overview', '/guides/oauth-apps'),
       page('Create OAuth App And Clients', '/guides/oauth-apps/create-oauth-app-and-clients'),
       page('Implement Consent Flow', '/guides/oauth-apps/implement-consent-flow'),
       page('Verify Access Tokens And Operate Clients', '/guides/oauth-apps/verify-access-tokens-and-operate-clients'),
       page('Use as OpenID Connect Provider', '/guides/oauth-apps/use-as-openid-connect-provider'),
     ], KeyRound),
     group('Notifications', [
-      page('Overview', '/guides/notifications/overview-scope-design'),
+      page('Overview', '/guides/notifications'),
       page('Backend Sending Patterns', '/guides/notifications/backend-sending-patterns'),
       page('Frontend Inbox With Hooks', '/guides/notifications/frontend-inbox-with-hooks'),
       page('Realtime Stream Handling', '/guides/notifications/realtime-stream-handling'),
       page('Actionable Notification UX', '/guides/notifications/actionable-notification-ux'),
     ], FileText),
     group('Deployment Events', [
-      page('Use Webhooks To Keep Backend In Sync', '/guides/deployment-events/use-webhooks-to-keep-backend-in-sync'),
+      page('Use Webhooks To Keep Backend In Sync', '/guides/deployment-events'),
     ], Rocket),
   ],
 };
@@ -762,11 +799,14 @@ export function DocsSidebar() {
   }, []);
 
   const isGuides = pathname.startsWith('/guides');
+  const isStart = pathname.startsWith('/start');
   const sidebarMode = pathname.startsWith('/reference')
     ? 'reference'
-    : isGuides
-      ? 'guides'
-      : 'documentation';
+    : isStart
+      ? 'start'
+      : isGuides
+        ? 'guides'
+        : 'documentation';
 
   const activeSdk =
     documentationSections.find((sdk) => pathname === sdk.match || pathname.startsWith(`${sdk.match}/`)) ??
@@ -780,7 +820,9 @@ export function DocsSidebar() {
     ? activeRefSection
     : sidebarMode === 'guides'
       ? guidesSection
-      : activeSdk;
+      : sidebarMode === 'start'
+        ? startSection
+        : activeSdk;
 
   return (
     <>

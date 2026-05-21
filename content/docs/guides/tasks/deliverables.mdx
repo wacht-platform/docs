@@ -1,0 +1,166 @@
+---
+title: "Deliverables and the journal"
+description: "Every task completion produces a structured handoff — landing in the deliverables JSONB array, on the assignment row, and in /task/JOURNAL.md."
+---
+
+When a coordinator marks a task `completed`, three things happen at once:
+
+1. An entry appends to the board item's `deliverables` array
+2. The handoff payload merges into the assignment row's `result_payload`
+3. A new entry appends to `/task/JOURNAL.md`
+
+This page is about that handoff — what it carries, where it lives, and how to use each surface.
+
+## The handoff payload
+
+When code (typically the coordinator agent) calls `update_project_task(status="completed", ...)`, it must include:
+
+| Field | Required | Constraint |
+|---|---|---|
+| `result_summary` | ✅ | ≥30 characters, single line |
+| `artifacts` | ✅ | At least one path, all must exist under `/task/` |
+| `findings` | optional | ≤200 chars, single line |
+| `cautions` | optional | ≤200 chars, single line |
+| `next` | optional | ≤200 chars, single line |
+
+Anything that fails validation rejects the status change with a `BadRequest`. The agent sees the error and can fix it on the next iteration.
+
+## Where the handoff lands
+
+### 1. The `deliverables` array on the board item
+
+```json
+{
+  "id": "board_item_id",
+  "title": "30s teaser for launch",
+  "status": "completed",
+  "deliverables": [
+    {
+      "at": "2026-05-20T14:33:12Z",
+      "assignment_id": "1234567890",
+      "by_thread_id": "987654",
+      "by_agent_name": "video-coordinator",
+      "result_summary": "Rendered 30s teaser with 4 cuts and music bed.",
+      "artifacts": ["/task/artifacts/teaser-final.mp4"],
+      "findings": "Source clips needed -2dB normalization.",
+      "cautions": "Audio drift after 25s — re-encode source if reusing.",
+      "next": "Run color grade pass before publish."
+    }
+  ]
+}
+```
+
+Each completion appends. If a task is reopened and recompleted, you get multiple entries — the array is the audit trail.
+
+**This is the surface your UI should read.** It's stable, queryable, and ordered.
+
+### 2. The assignment's `result_payload`
+
+The `findings`, `cautions`, and `next` fields are also shallow-merged into `project_task_board_item_assignments.result_payload` JSONB. Useful when querying assignment-level history rather than task-level.
+
+The `result_summary` is mirrored to the assignment's `result_summary` column.
+
+### 3. `/task/JOURNAL.md`
+
+A markdown-formatted entry appends to the journal:
+
+```
+## [2026-05-20T14:33:12Z] · video-coordinator · completed
+outcome: Rendered 30s teaser with 4 cuts and music bed.
+findings: Source clips needed -2dB normalization.
+cautions: Audio drift after 25s — re-encode source if reusing.
+artifacts: /task/artifacts/teaser-final.mp4
+next: Run color grade pass before publish.
+<!-- assignment:1234567890 -->
+```
+
+The `<!-- assignment:N -->` marker makes the append idempotent — if the same handoff fires twice, the second one is a no-op.
+
+The coordinator's next prompt automatically receives the last 60 lines of this journal, so it sees recent handoffs without querying.
+
+## Surfacing deliverables in your UI
+
+```tsx
+"use client";
+import { useProjectTaskBoardItem } from "@wacht/nextjs";
+
+export function DeliverablesPanel({ taskId }: { taskId: string }) {
+  const { item } = useProjectTaskBoardItem(taskId);
+  const deliverables = item?.deliverables ?? [];
+
+  if (deliverables.length === 0) {
+    return <div>No deliverables yet. The agent is still working.</div>;
+  }
+
+  return (
+    <ol>
+      {deliverables.map((d, i) => (
+        <li key={i}>
+          <header>
+            <strong>{d.by_agent_name}</strong>
+            <time>{d.at}</time>
+          </header>
+          <p>{d.result_summary}</p>
+          {d.findings && <p><b>Findings:</b> {d.findings}</p>}
+          {d.cautions && <p><b>Cautions:</b> {d.cautions}</p>}
+          {d.next && <p><b>Next:</b> {d.next}</p>}
+          <ul>
+            {d.artifacts.map((p) => (
+              <li key={p}><a href={`/api/task/${taskId}/file?path=${encodeURIComponent(p)}`}>{p}</a></li>
+            ))}
+          </ul>
+        </li>
+      ))}
+    </ol>
+  );
+}
+```
+
+The hook subscribes via SWR — when a new entry appends, your UI re-renders.
+
+## Reading the journal directly
+
+If you want the markdown narrative (e.g. to show a "history" tab):
+
+```tsx
+import { useTaskWorkspaceFile } from "@wacht/nextjs";
+
+export function JournalView({ taskId }: { taskId: string }) {
+  const { text, loading } = useTaskWorkspaceFile(taskId, "/task/JOURNAL.md");
+  if (loading) return <div>Loading…</div>;
+  return <pre>{text}</pre>;
+}
+```
+
+Or render through markdown — `react-markdown` works on the raw text.
+
+## When to use which surface
+
+| You want | Use |
+|---|---|
+| "Show me the latest output" | `deliverables[last].artifacts` |
+| "Show me a structured list of every completion" | `deliverables` (the array) |
+| "Show me the narrative history" | `/task/JOURNAL.md` |
+| "Query findings/cautions per assignment" | `result_payload` JSONB |
+| "Render the result_summary in the task list" | `assignment.result_summary` from the assignment row |
+
+The data is duplicated across three places on purpose — each one is optimized for a different access pattern. Your UI generally just needs `deliverables`.
+
+## What about partial handoffs?
+
+Sometimes an executor completes but the overall task isn't done (other lanes still running). In multi-agent flows, the executor itself doesn't mark the task `completed` — it marks its own assignment complete via the runtime's finalization path. The handoff payload still gets recorded on the assignment row (in `result_payload`), but it doesn't append to `deliverables` yet.
+
+Only when the **coordinator** (or a conversation thread) calls `update_project_task(status="completed", ...)` does the deliverable land on the array. The coordinator's `result_summary` summarizes the whole task; the per-lane summaries live on each assignment.
+
+This means:
+
+- **`deliverables[]`** = task-level summaries (one per "round trip" through completion)
+- **`result_payload` on assignments** = per-lane summaries (one per executor run)
+
+Pull from both if you want a complete picture; pull from `deliverables[]` if you just want the headline.
+
+## Where to go next
+
+- [Multi-agent orchestration](/guides/agents/multi-agent) — how multiple lanes coordinate their handoffs
+- [Realtime UI](/guides/tasks/realtime-ui) — surfacing deliverables as they land
+- [Workspace and artifacts](/guides/tasks/workspace-and-artifacts) — the file side of handoffs

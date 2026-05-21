@@ -1,0 +1,59 @@
+---
+title: "Mental model"
+description: "How to think about a Wacht app while you're designing it."
+---
+
+A Wacht app has three layers. Agents do work. Tasks capture what work was requested. Threads run the conversation that produces it. Your UI sits on top, observing state and creating new tasks.
+
+If you keep these layers separated, the rest of the system clicks. If you collapse them, you'll fight the model.
+
+## Where state belongs
+
+Three places. The split is fuzzy until you internalize it.
+
+**Configuration that's true for every task the agent will ever do → the agent record.** System prompt, tools, knowledge bases, approval policy, model, iteration cap. Anything you'd write once and not change per request.
+
+**The specific request → the board item (task).** Title, description, attachments, schedule. The thing you'd say in a Slack message if you were asking a coworker. This is what users see and what the agent reads on iteration one.
+
+**Live execution state → the thread.** Tool calls, intermediate reasoning, conversation messages. You don't usually poke at this directly. You read from it (`getAgentThreadMessages`) when surfacing to the UI.
+
+If you find yourself stuffing task-specific instructions into the agent prompt, that's the wrong layer. If you find yourself reading thread state to make a routing decision, that's the wrong layer too.
+
+## What the agent sees vs what the user sees
+
+Two parallel views of "what happened" with different audiences:
+
+| Surface | Who reads it |
+| --- | --- |
+| Conversation history (`thread.messages`) | the agent, on every next iteration. Also your UI if you render a chat log. |
+| Deliverables (`board_item.deliverables`) | your UI primarily. The agent can query it. |
+| Journal (`/task/JOURNAL.md`) | the agent — the coordinator's prompt auto-includes the tail. Your UI if you render history. |
+| Artifacts (`/task/artifacts/`) | your UI for download. The agent reads/writes via filesystem tools. |
+
+When you're stuck, ask which audience needs to see the state and pick the matching surface. Showing the user something only the agent has access to (or vice versa) is a common confusion.
+
+## Coordinator vs executor
+
+If you use the coordinator-with-specialists pattern, one rule prevents most bugs:
+
+**Coordinators decide. Executors do.**
+
+The coordinator's job is to read state, pick a lane, create an assignment. The executor's job is to do the assigned work and report. If a coordinator starts calling content-producing tools, you'll get duplicate work. If an executor decides what to do next, you'll get conflicting handoffs.
+
+The status machine enforces it: executors can only mark themselves `blocked` or `needs_clarification` via `update_project_task`. Only coordinators (and conversation threads, like a user chatting directly with the project) can mark the task `completed`.
+
+## When the agent gets stuck
+
+Agents will get stuck. Three patterns:
+
+- **Needs user input.** The agent calls `ask_user` with a question. The board item gets a `pending_question`. Your UI renders it, the user answers, the thread resumes.
+- **Needs approval.** The agent calls a gated tool. The board item gets a `pending_approval`. Your UI renders it, the user approves or denies, the thread resumes.
+- **Blocked on something external.** The agent calls `abort_task("blocked")` with a reason. The assignment closes. The coordinator gets re-engaged with the context.
+
+The thing all three have in common: the agent doesn't sit idle waiting. It returns, the system carries the suspended state, something external resumes it. Don't write agents that poll.
+
+## Next
+
+[Your first build](/start/your-first-build) walks the full stack end to end with code.
+
+[Common patterns](/start/patterns) shows the shapes most apps fall into.

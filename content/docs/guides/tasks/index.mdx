@@ -1,0 +1,45 @@
+---
+title: "Tasks"
+description: "How work flows through a Wacht app: created, executed, surfaced."
+---
+
+A user makes a request. A board item appears. Agents work on it. Artifacts get produced. Your UI surfaces them. Tasks are the durable record of all of that.
+
+If [Anatomy](/start/anatomy) covered the nouns, this section is the verbs.
+
+## In this section
+
+- [Workspace and artifacts](/guides/tasks/workspace-and-artifacts). The `/task/` filesystem each board item gets. How agents use it. How to serve files back to your UI.
+- [Deliverables and the journal](/guides/tasks/deliverables). The structured handoff each completion produces, where it lands, how to render it.
+- [File uploads](/guides/tasks/file-uploads). Getting user files into the workspace at task creation, update, or comment time.
+- [Realtime UI](/guides/tasks/realtime-ui). Live hooks for status, pending questions, approvals, comments, notifications.
+
+## The lifecycle
+
+```
+pending → available → claimed → in_progress → completed
+                                            ↘ blocked
+                                            ↘ needs_clarification
+                                            ↘ rejected
+                                            ↘ cancelled
+```
+
+The runtime drives the transitions; you observe them. Brief on each:
+
+- `pending` — created, not yet picked up
+- `available` — visible to executor lanes for claiming
+- `claimed` — an executor lane took the work lease (prevents duplicate execution)
+- `in_progress` — the executor is iterating
+- `completed` — done, deliverable recorded
+- `blocked` — executor hit something it can't resolve, bubbled back to coordinator
+- `needs_clarification` — agent called `ask_user`, waiting on the user
+- `rejected` — explicitly declined (e.g. by a reviewer)
+- `cancelled` — user or system cancelled before completion
+
+## Tasks vs chat
+
+Use tasks when the work has a beginning, middle, and end you want to track, when the user shouldn't have to wait in the loop, when you want to surface deliverables outside conversation history, when multiple agents need to coordinate, or when work runs on a schedule.
+
+Use chat when the user wants synchronous back-and-forth, each result is a single message rather than a file, and no coordination across agents.
+
+A single product often uses both. A chat surface that can also kick off async tasks ("summarize last quarter's tickets into a doc") is normal. The chat thread and the task lifecycle are independent.

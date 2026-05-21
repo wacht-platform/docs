@@ -16,12 +16,12 @@ That's the whole product surface. The rest is how it's modeled.
 
 ## What you'll actually do
 
-- [Model overrides](/docs/guides/agents/model-overrides) — pick a different strong or weak model for one agent.
-- [Execution hooks](/docs/guides/agents/hooks) — run setup or cleanup tools around every run.
-- [Approval policy](/docs/guides/agents/approval-policy) — gate risky tool calls behind review.
-- [Scheduling](/docs/guides/agents/scheduling) — recurring or one-shot agent work.
-- [Composio integrations](/docs/guides/agents/composio) — wire Reddit, Gmail, Slack, and other third-party tools.
-- [Agent sessions](/docs/guides/agents/sessions) — share a chat URL.
+- [Model overrides](/guides/agents/model-overrides) — pick a different strong or weak model for one agent.
+- [Execution hooks](/guides/agents/hooks) — run setup or cleanup tools around every run.
+- [Approval policy](/guides/agents/approval-policy) — gate risky tool calls behind review.
+- [Scheduling](/guides/agents/scheduling) — recurring or one-shot agent work.
+- [Composio integrations](/guides/agents/composio) — wire Reddit, Gmail, Slack, and other third-party tools.
+- [Agent sessions](/guides/agents/sessions) — share a chat URL.
 
 ## How it's modeled (skip unless you're driving the API directly)
 
@@ -34,4 +34,4 @@ actor                ← who the work runs as
     └── thread       ← the running conversation
 ```
 
-This separation lets one agent be reused across many tasks and schedules. If you're calling the platform API directly (`@wacht/backend`, bench CLI), each layer is its own object — see the [agent runtime reference](/docs/reference/agent-objects).
+This separation lets one agent be reused across many tasks and schedules. If you're calling the platform API directly (`@wacht/backend`, bench CLI), each layer is its own object — see the [agent runtime reference](/reference/agent-objects).

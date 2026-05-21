@@ -1,0 +1,266 @@
+---
+title: "Workspace and artifacts"
+description: "Every task gets a /task/ filesystem. How agents use it, how to surface files to your UI."
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+Every board item gets a private filesystem mounted at `/task/` inside agent sandboxes. This is where work-in-progress lives, where deliverables get written, and where the journal accumulates. Your UI reads from it via the workspace file API.
+
+## The /task/ layout
+
+The convention agents follow:
+
+```
+/task/
+├── artifacts/         ← deliverables. Validated to exist when task completes.
+│   ├── summary.md
+│   ├── teaser-final.mp4
+│   └── ...
+├── JOURNAL.md         ← append-only log of structured handoffs per completion
+├── (scratch files)    ← agents leave whatever they need here
+└── (mounted dirs)     ← S3-backed mounts if configured on the schedule
+```
+
+- `artifacts/` is the canonical "this is the output" directory. Paths here get validated to actually exist before a task can be marked `completed`.
+- `JOURNAL.md` is auto-maintained — every handoff appends an entry.
+- Scratch files don't have to follow any convention; agents use it as working memory.
+
+## How agents read and write
+
+Agents reach the filesystem via the built-in **filesystem tool**. Common operations:
+
+| Operation | Tool call |
+|---|---|
+| Read a file | `read_file(path="/task/artifacts/script.txt")` |
+| Write a file | `write_file(path="/task/artifacts/summary.md", content="...")` |
+| List a directory | `list_directory(path="/task/artifacts")` |
+| Check existence | `exists(path="/task/artifacts/done.flag")` |
+| Append to a file | `append_file(path="/task/notes.md", content="...")` |
+
+The CodeRunner tool can also operate on `/task/` directly — Python scripts can read/write files there, run `ffmpeg`, etc.
+
+**The filesystem is shared across all threads on the board item.** The coordinator can write a brief to `/task/brief.md`, the executor reads it. One executor lane can pass files to the next via `/task/handoff/`.
+
+## Surfacing files to your UI
+
+Your frontend can browse and download workspace files via the backend SDK.
+
+### Listing files
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+import { ai } from "@wacht/backend";
+
+const result = await ai.listProjectTaskBoardItemFilesystem(taskId, {
+  path: "/task/artifacts",
+});
+
+// result.entries: [{ name, kind: "file" | "directory", size_bytes, modified_at }]
+```
+</Tab>
+<Tab>
+```rust
+let result = wacht::try_get_client()?
+    .ai()
+    .actor_projects()
+    .fetch_board_item_filesystem(project_id, task_id)
+    .path("/task/artifacts")
+    .send()
+    .await?;
+
+// result.entries: Vec<FilesystemEntry { name, kind, size_bytes, modified_at }>
+```
+</Tab>
+</Tabs>
+
+Or via the SDK hook on the frontend (relays through your backend):
+
+```tsx
+import { useTaskWorkspaceFiles } from "@wacht/nextjs";
+
+function ArtifactsList({ taskId }: { taskId: string }) {
+  const { entries, loading } = useTaskWorkspaceFiles(taskId, "/task/artifacts");
+  if (loading) return <div>Loading…</div>;
+  return (
+    <ul>
+      {entries?.map((e) => (
+        <li key={e.name}>{e.name} ({e.size_bytes} bytes)</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+### Downloading a file
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+// Backend route
+const file = await ai.downloadProjectTaskBoardItemFilesystemFile(taskId, {
+  path: "/task/artifacts/teaser-final.mp4",
+});
+
+return new Response(file.body, {
+  headers: { "content-type": file.contentType ?? "application/octet-stream" },
+});
+```
+</Tab>
+<Tab>
+```rust
+let file = wacht::try_get_client()?
+    .ai()
+    .actor_projects()
+    .download_board_item_filesystem_file(
+        project_id,
+        task_id,
+        "/task/artifacts/teaser-final.mp4",
+    )
+    .send()
+    .await?;
+
+// file.body is a stream; pipe it back to the client
+Ok(Response::builder()
+    .header("content-type", file.content_type.unwrap_or_else(|| "application/octet-stream".into()))
+    .body(file.body.into())
+    .unwrap())
+```
+</Tab>
+</Tabs>
+
+Stream it. Don't buffer entire video files into memory.
+
+### A complete React artifact viewer
+
+```tsx
+"use client";
+import { useProjectTaskBoardItem } from "@wacht/nextjs";
+
+export function TaskArtifacts({ taskId }: { taskId: string }) {
+  const { item } = useProjectTaskBoardItem(taskId);
+  const latest = item?.deliverables?.[item.deliverables.length - 1];
+
+  if (!latest) return <div>No deliverables yet.</div>;
+
+  return (
+    <section>
+      <h2>{latest.result_summary}</h2>
+      <ul>
+        {latest.artifacts.map((path) => (
+          <li key={path}>
+            <a href={`/api/task/${taskId}/file?path=${encodeURIComponent(path)}`}>
+              {path.split("/").pop()}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+```
+
+The `deliverables` array carries the artifact paths declared at completion time. Reading from `deliverables` instead of listing the filesystem gives you a stable list of "what the agent considers output" vs. scratch files left lying around.
+
+## Mounted directories (advanced)
+
+You can mount external storage (S3 buckets, typically) into `/task/<mount-path>` so agents can read large reference data without it being copied into the workspace.
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+await ai.createProjectTaskBoardItem(projectId, {
+  title: "Annotate the demo footage",
+  description: "Mark up the demo recording with chapter markers.",
+  mounts: [
+    {
+      mount_path: "/task/source",
+      s3_relative_key: "demos/2026-q2/demo-recording.mp4",
+      mode: "ro",
+    },
+  ],
+});
+```
+</Tab>
+<Tab>
+```rust
+use wacht::models::{CreateProjectTaskBoardItemRequest, ScheduleMount};
+use serde_json::json;
+
+let mount: ScheduleMount = serde_json::from_value(json!({
+    "mount_path": "/task/source",
+    "s3_relative_key": "demos/2026-q2/demo-recording.mp4",
+    "mode": "ro",
+}))?;
+
+client
+    .ai()
+    .actor_projects()
+    .create_board_item(
+        project_id,
+        CreateProjectTaskBoardItemRequest {
+            title: "Annotate the demo footage".into(),
+            description: Some("Mark up the demo recording with chapter markers.".into()),
+            mounts: Some(vec![mount]),
+            ..Default::default()
+        },
+    )
+    .send()
+    .await?;
+```
+</Tab>
+</Tabs>
+
+The agent sees `/task/source/demo-recording.mp4` as a regular file. Reads stream from S3; the workspace doesn't have a local copy. Use `mode: "rw"` if the agent should write back.
+
+This pattern is common for media workflows where the source material is huge and the deliverable is a smaller derived file.
+
+## Workspace size limits and cleanup
+
+- Workspaces are not infinite. Default cap is per-deployment configurable. Beyond the cap, writes start failing.
+- Scratch files persist for the life of the task. Archive the task to free the workspace.
+- For long-running schedules, design your agent prompts to clean up: "After completing, remove anything under /task/scratch/."
+
+## Common patterns
+
+### Agent writes summary + artifact, UI shows both
+
+Agent prompt:
+```
+Write a short markdown summary to /task/artifacts/summary.md
+and a structured JSON report to /task/artifacts/report.json.
+```
+
+Coordinator marks complete with both files in `artifacts: [...]`.
+
+UI iterates `latest.artifacts`, picks `.md` for inline render, `.json` for download.
+
+### Pass a file from one lane to the next
+
+```
+script lane writes  /task/handoff/script.txt
+storyboard lane reads /task/handoff/script.txt
+storyboard lane writes /task/handoff/storyboard.json
+image-gen lane reads /task/handoff/storyboard.json
+...
+```
+
+Each lane only depends on what the previous lane left in `/task/handoff/`. Lanes are loosely coupled.
+
+### Agent works on big input, outputs small derived file
+
+```
+mount: s3://demos/2026-q2/recording.mp4 → /task/source/recording.mp4 (ro)
+agent reads /task/source/recording.mp4 (streams from S3, no copy)
+agent writes /task/artifacts/chapters.json (small, served from workspace)
+```
+
+The big file never touches your storage budget.
+
+## Where to go next
+
+- [Deliverables and the journal](/guides/tasks/deliverables) — the structured handoff format
+- [File uploads](/guides/tasks/file-uploads) — going the other direction (UI → workspace)
+- [Realtime UI](/guides/tasks/realtime-ui) — surfacing files as they appear
+- [Agents → code runner](/guides/agents/code-runner) — Python that operates on `/task/`

@@ -1,0 +1,256 @@
+---
+title: "Realtime UI"
+description: "Surface in-flight task state, deliverables, pending questions, and comments in your UI as they happen."
+---
+
+A good Wacht UI doesn't make the user refresh to see what the agent is doing. The SDK gives you live-updating hooks for every kind of task state — status, deliverables, comments, pending questions, conversation messages. Wire them in and your UI tracks reality.
+
+## The hooks
+
+| Hook | What it returns | Updates when |
+|---|---|---|
+| `useProjectTaskBoardItem(projectId, taskId)` | the task object | status change, deliverables append, pending_question set/cleared |
+| `useProjectTaskBoardItemComments(projectId, taskId)` | comments array | comment added, edited, resolved |
+| `useTaskWorkspaceFiles(taskId, path)` | directory listing | files added/removed in the workspace |
+| `useTaskWorkspaceFile(taskId, path)` | file text | file content changed |
+| `useAgentThreadMessages(threadId)` | conversation messages | new message in the thread |
+| `useNotifications()` | user's notification inbox | new notification created |
+
+All built on SWR. Auto-revalidating, deduplicated, focus-aware.
+
+## Showing a task end to end
+
+A complete task page that surfaces status, deliverables, pending questions, and comments:
+
+```tsx
+"use client";
+import {
+  useProjectTaskBoardItem,
+  useProjectTaskBoardItemComments,
+} from "@wacht/nextjs";
+
+export function TaskPage({ projectId, taskId }: { projectId: string; taskId: string }) {
+  const { item, loading } = useProjectTaskBoardItem(projectId, taskId);
+  const { comments } = useProjectTaskBoardItemComments(projectId, taskId);
+
+  if (loading || !item) return <div>Loading…</div>;
+
+  return (
+    <article>
+      <header>
+        <h1>{item.title}</h1>
+        <StatusBadge status={item.status} />
+      </header>
+
+      {item.pending_question && (
+        <PendingQuestionCard
+          question={item.pending_question}
+          onAnswer={(submission) => answerQuestion(taskId, submission)}
+        />
+      )}
+
+      {item.pending_approval && (
+        <ApprovalCard
+          approval={item.pending_approval}
+          onDecide={(decisions) => submitApproval(taskId, decisions)}
+        />
+      )}
+
+      <DeliverablesList deliverables={item.deliverables ?? []} taskId={taskId} />
+
+      <CommentsThread comments={comments ?? []} taskId={taskId} />
+    </article>
+  );
+}
+```
+
+Three SWR subscriptions; the UI updates as any of them changes.
+
+## Status changes
+
+The simplest signal — `item.status` flips through the lifecycle. Render with a badge:
+
+```tsx
+function StatusBadge({ status }: { status: string }) {
+  const color = {
+    pending: "gray",
+    available: "blue",
+    claimed: "blue",
+    in_progress: "amber",
+    completed: "green",
+    blocked: "red",
+    needs_clarification: "yellow",
+    cancelled: "gray",
+    rejected: "red",
+  }[status] ?? "gray";
+  return <span className={`badge badge-${color}`}>{status}</span>;
+}
+```
+
+For long-running tasks, `in_progress` can sit for a while. Consider also showing the agent's most recent conversation message via `useAgentThreadMessages` to give the user something to watch.
+
+## Deliverables appearing
+
+When the coordinator marks a task `completed`, a new entry appends to `item.deliverables`. The hook fires, your list re-renders:
+
+```tsx
+function DeliverablesList({ deliverables, taskId }) {
+  if (deliverables.length === 0) {
+    return <div className="empty">No deliverables yet.</div>;
+  }
+  return (
+    <ol>
+      {deliverables.map((d, i) => (
+        <DeliverableCard key={i} deliverable={d} taskId={taskId} />
+      ))}
+    </ol>
+  );
+}
+```
+
+Animate new entries in (CSS transition on enter) so the user sees what just happened.
+
+## Pending questions (ask_user)
+
+When the agent calls `ask_user`, the board item gets a `pending_question` field. Surface it as a form:
+
+```tsx
+function PendingQuestionCard({ question, onAnswer }) {
+  // question.questions is an array of {id, text, answer_kind}
+  // your UI renders inputs for each
+  // also offer a freeform textarea (the AnswerSubmission supports freeform_text)
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); onAnswer(buildSubmission()); }}>
+      {question.questions.map((q) => (
+        <QuestionInput key={q.id} question={q} />
+      ))}
+      <details>
+        <summary>Or answer in your own words</summary>
+        <textarea name="freeform_text" maxLength={4000} />
+      </details>
+      <button>Submit</button>
+    </form>
+  );
+}
+```
+
+Submit via `answerProjectTaskBoardItemQuestion`. The agent resumes on the next iteration with your answer in context.
+
+## Approvals
+
+When the agent calls a gated tool, the board item gets a `pending_approval` field. Render the requested actions, let the user approve/deny each:
+
+```tsx
+function ApprovalCard({ approval, onDecide }) {
+  return (
+    <div>
+      <p>{approval.description}</p>
+      <ul>
+        {approval.tools.map((t) => (
+          <li key={t.tool_id}>
+            <strong>{t.tool_name}</strong>: {t.tool_description}
+            <button onClick={() => onDecide([{ tool_name: t.tool_name, mode: "allow_once" }])}>
+              Allow once
+            </button>
+            <button onClick={() => onDecide([{ tool_name: t.tool_name, mode: "allow_always" }])}>
+              Allow always for this thread
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+Submit via `approveProjectTaskBoardItemTool`. The agent's tool call proceeds (or aborts) accordingly.
+
+## Comments stream
+
+Comments are user/agent threads attached to the board item — useful for collaborative work where humans annotate the agent's output.
+
+```tsx
+function CommentsThread({ comments, taskId }) {
+  return (
+    <section>
+      {comments.map((c) => (
+        <Comment key={c.id} comment={c} />
+      ))}
+      <CommentForm onSubmit={(body) => postComment(taskId, body)} />
+    </section>
+  );
+}
+```
+
+Comments aren't part of the agent's conversation history by default — they're a side channel. If you want the agent to see them, your agent prompt can call a tool that reads comments via the API.
+
+## Live conversation messages
+
+If you want to surface the agent's chain of work as it happens (rather than just the final deliverable), subscribe to thread messages:
+
+```tsx
+import { useAgentThreadMessages } from "@wacht/nextjs";
+
+function LiveAgentLog({ threadId }: { threadId: string }) {
+  const { messages } = useAgentThreadMessages(threadId);
+  return (
+    <pre>
+      {messages?.map((m) => (
+        <Line key={m.id} message={m} />
+      ))}
+    </pre>
+  );
+}
+```
+
+Filter by `message_type` to show only what makes sense for users (e.g. hide `tool_result` blobs, show `steer` text).
+
+## Notifications
+
+For surfacing things that happen outside the current task — a scheduled task finished, an approval is waiting on the user, a sub-agent flagged something:
+
+```tsx
+import { useNotifications } from "@wacht/nextjs";
+
+function NotificationBell() {
+  const { items, unreadCount, markAsRead } = useNotifications();
+  return (
+    <button>
+      🔔 {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
+      <Dropdown>
+        {items.map((n) => (
+          <NotificationItem key={n.id} notification={n} onClick={() => markAsRead(n.id)} />
+        ))}
+      </Dropdown>
+    </button>
+  );
+}
+```
+
+The backend emits notifications via the platform-events tool or via your own backend call. See [Notifications guide](/guides/notifications).
+
+## Polling vs. realtime
+
+The current SDK uses SWR with periodic revalidation (focus + interval). This is "near-realtime" — typical latency 0.5–2 seconds.
+
+For a more aggressive realtime feel:
+
+- Lower the SWR `refreshInterval` for hot screens (1s during `in_progress`)
+- Cancel polling when the task is in a terminal state (`completed`, `failed`, etc.)
+- For server-pushed realtime, see the streaming endpoint on threads (`executeAgentThreadAsync` with `stream: true`)
+
+## Pitfalls
+
+Agents emit a lot of tool calls and intermediate results. Showing all conversation messages by default overwhelms the user. Filter to `Steer` text and the final deliverable.
+
+Polling at high frequency forever costs money. Cancel the SWR interval when the task hits a terminal status.
+
+The journal is the agent's memory. Deliverables are the user's view. Different audiences; don't surface the journal in the place a user expects to see results.
+
+When a task is `pending` for the first few seconds, render "starting…" rather than an empty list.
+
+## Where to go next
+
+- [Deliverables](/guides/tasks/deliverables) — what the agent reports when done
+- [Workspace and artifacts](/guides/tasks/workspace-and-artifacts) — surfacing files
+- [Notifications guide](/guides/notifications) — surfacing cross-task events

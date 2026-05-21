@@ -1,38 +1,53 @@
 ---
 title: Guides
-description: End-to-end implementation playbooks for auth, apps, notifications, and operational workflows.
+description: Hands-on building docs.
 ---
 
-Use guides when you want an implementation sequence, not just API surface details.
+## Agents
 
-## Guide flow diagram
+Configure and run the worker side of your app. Tasks are part of this.
 
-```text
-Pick track -> Implement baseline -> Validate contracts -> Add ops hardening
-    |                |                     |                    |
-    |                |                     |                    +-- retries
-    |                |                     |                    +-- idempotency
-    |                |                     |                    +-- observability
-    |                |                     +-- frontend-api/backend-api refs
-    |                +-- sandbox deployment
-    +-- API auth / OAuth / webhooks / notifications / integration playbooks
-```
+**Configure**
+- [Overview](/guides/agents) — what an agent is.
+- [Model overrides](/guides/agents/model-overrides) — strong/weak per agent.
+- [Execution hooks](/guides/agents/hooks) — setup and cleanup.
+- [Approval policy](/guides/agents/approval-policy) — gate risky tool calls.
+- [Code runner](/guides/agents/code-runner) — Python, ffmpeg, sandboxes.
+- [Skill bundles](/guides/agents/skill-bundles) — reusable behavior.
+- [Scheduling](/guides/agents/scheduling) — recurring or one-shot.
+- [Composio](/guides/agents/composio) — third-party integrations.
+- [Sessions](/guides/agents/sessions) — share an agent chat.
 
-## Core tracks
+**Orchestrate**
+- [Multi-agent](/guides/agents/multi-agent) — coordinator with specialists.
 
-- [API Auth](./api-auth/overview)
-- [Webhook Apps](./webhook-apps/overview)
-- [OAuth Apps](./oauth-apps/overview)
-- [Notifications](./notifications/overview-scope-design)
+**Tasks** (the unit of work an agent acts on)
+- [Tasks overview](/guides/tasks) — lifecycle and shape.
+- [Workspace and artifacts](/guides/tasks/workspace-and-artifacts) — the `/task/` filesystem.
+- [Deliverables and journal](/guides/tasks/deliverables) — structured handoff.
+- [File uploads](/guides/tasks/file-uploads) — files into the workspace.
+- [Realtime UI](/guides/tasks/realtime-ui) — surface live state.
 
-## Full-stack integration playbooks
+## Platform surfaces
 
-- [Frontend + backend auth lifecycle](./integration-playbooks/fullstack-auth-lifecycle-react-rust)
-- [B2B org/workspace lifecycle](./integration-playbooks/b2b-org-workspace-lifecycle)
-- [Unsupported stack adaptation guide](./integration-playbooks/unsupported-stacks)
+- [API Auth](/guides/api-auth) — customer API keys.
+- [Webhook Apps](/guides/webhook-apps) — customer event delivery.
+- [OAuth Apps](/guides/oauth-apps) — issue OAuth to third parties.
+- [Notifications](/guides/notifications) — in-app inboxes.
+- [Deployment Events](/guides/deployment-events) — keep your backend in sync.
 
-## How to use this section
+## Integration playbooks
 
-1. Start from the guide matching your deployment shape.
-2. Implement the baseline happy path in a sandbox deployment.
-3. Add retries, idempotency, and observability before production rollout.
+- [Frontend + backend auth](/guides/integration-playbooks/fullstack-auth-lifecycle-react-rust) — React + Rust.
+- [B2B lifecycle](/guides/integration-playbooks/b2b-org-workspace-lifecycle) — orgs, workspaces, tenancy.
+- [Unsupported stacks](/guides/integration-playbooks/unsupported-stacks) — no SDK package? Use this.
+
+## AI-assisted development
+
+- [Wacht Bench](/guides/wacht-bench) — the CLI.
+- [Docs MCP](/guides/docs-mcp) — docs server for your assistant.
+- [Skills](/guides/bench-skills) — installable skill packs.
+
+---
+
+[Start](/start) for the model. [Reference](/reference) for API shapes. [SDKs](/sdks) for framework integration.

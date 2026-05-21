@@ -80,7 +80,7 @@ export async function handleUsersRoute(): Promise<Response> {
 - JWT/session route protection: `authenticateRequest(request, { publishableKey })` + `auth.protect`.
 - API key/OAuth protected auth: `gateway.checkPrincipalAuthz(...)` before backend API calls.
 
-See [JWT and API Key/OAuth Protected Auth](/docs/sdks/node/runtimes/cloudflare-workers/auth-and-gateway) for full implementations.
+See [JWT and API Key/OAuth Protected Auth](/sdks/node/runtimes/cloudflare-workers/auth-and-gateway) for full implementations.
 
 ## 6. Runtime concerns
 

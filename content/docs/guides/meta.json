@@ -6,11 +6,12 @@
     "docs-mcp",
     "bench-skills",
     "integration-playbooks",
+    "agents",
+    "tasks",
     "api-auth",
     "webhook-apps",
     "oauth-apps",
     "notifications",
-    "deployment-events",
-    "agents"
+    "deployment-events"
   ]
 }

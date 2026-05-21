@@ -1,72 +1,396 @@
 ---
-title: Full-stack Auth Lifecycle (React + Rust)
-description: One concrete app flow from frontend sign-in through Rust backend enforcement and API access.
+title: React + backend auth lifecycle
+description: A React frontend that signs users in and calls a backend that verifies them. Both Node and Rust on the server. End to end with code.
 ---
 
-This guide connects frontend auth UX and backend authorization checks into one implementation path.
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
-## End-to-end diagram
+A working setup for the most common Wacht backend shape: React on the frontend, your backend verifying session tokens, protected handlers, tenancy-scoped data access. Backend examples are shown for both Node (`@wacht/backend`) and Rust (`wacht` with the `axum` feature).
 
-```text
-[Frontend React]
-  Sign in -> Session-aware UI -> Call protected backend
-                                     |
-                                     v
-                              [Rust + Axum]
-                              AuthLayer + extractors
-                                     |
-                                     v
-                          Scope checks (org/workspace)
-                                     |
-                                     v
-                             Protected data/actions
+## Prerequisites
+
+- A Wacht deployment with the publishable key and a backend secret
+- Node 20+ and pnpm for the frontend (and Node backend, if you pick that)
+- Rust 1.75+ and cargo (if you pick the Rust backend)
+
+## Frontend
+
+### Install
+
+```bash
+pnpm add @wacht/react-router @wacht/types
 ```
 
-## Architecture
+Use `@wacht/nextjs` instead if you're on Next.js, or `@wacht/tanstack-router` for TanStack. The patterns are the same.
 
-- Frontend: React app using a Wacht frontend adapter (or `@wacht/jsx`)
-- Backend: Rust service using `wacht` and Axum middleware
-- Contract surface: frontend routes and backend protected handlers
+### Wrap your app
 
-## Step 1: Frontend sign-in and session-aware UI
+```tsx
+// src/main.tsx
+import { WachtProvider } from "@wacht/react-router";
 
-Implement hosted sign-in and signed-in/signed-out controls in your app:
+function App() {
+  return (
+    <WachtProvider publicKey={import.meta.env.VITE_WACHT_PUBLIC_KEY}>
+      <Router />
+    </WachtProvider>
+  );
+}
+```
 
-- [React Router Quick Start](/docs/sdks/react-router/quickstart)
-- or [React (Router-Agnostic)](/docs/sdks/react)
+### Sign-in UI
 
-At this point, users can authenticate and return to your app with deployment-scoped session state.
+Drop in the prebuilt components or build your own with the hooks.
 
-## Step 2: Protect backend handlers in Rust
+```tsx
+import { SignIn, SignedIn, SignedOut, UserButton } from "@wacht/react-router";
 
-Apply Axum auth middleware and typed extractors:
+function Header() {
+  return (
+    <header>
+      <SignedOut>
+        <SignIn />
+      </SignedOut>
+      <SignedIn>
+        <UserButton />
+      </SignedIn>
+    </header>
+  );
+}
+```
 
-- [Rust Getting Started](/docs/sdks/rust/getting-started)
-- [Axum Auth Layer Setup](/docs/sdks/rust/frameworks/axum/auth-layer-setup)
-- [Extractors and Permissions](/docs/sdks/rust/frameworks/axum/extractors-and-permissions)
+### Call your backend
 
-This is the hard boundary: protected data and mutations are only served through authenticated backend routes.
+Get the session token from `useSession` and send it as a bearer.
 
-## Step 3: Bind frontend calls to protected backend routes
+```tsx
+import { useSession } from "@wacht/react-router";
 
-Your frontend should call backend endpoints that enforce auth on every protected operation. Avoid direct privileged operations from the browser.
+function useApi() {
+  const { getToken } = useSession();
 
-## Step 4: Add tenancy scope checks
+  return async function call(path: string, init?: RequestInit) {
+    const token = await getToken();
+    return fetch(`${import.meta.env.VITE_API_URL}${path}`, {
+      ...init,
+      headers: {
+        ...(init?.headers ?? {}),
+        authorization: `Bearer ${token}`,
+      },
+    });
+  };
+}
+```
 
-If your app is multi-tenant, enforce org/workspace scope server-side:
+`getToken()` returns a JWT signed by Wacht's keys. It refreshes automatically before expiry. Your backend verifies it; no shared session storage between frontend and backend.
 
-- [Organizations and Workspaces](/docs/sdks/rust/organizations-workspaces)
+## Backend
 
-## Step 5: Verify with contracts
+### Install
 
-Use API reference pages to confirm exact fields, request shapes, and response semantics:
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```bash
+pnpm add @wacht/backend
+```
+</Tab>
+<Tab>
+```toml
+# Cargo.toml
+[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+wacht = { version = "0.6", features = ["axum"] }
+```
 
-- [Frontend API](/docs/reference/frontend-api)
-- [Backend API](/docs/reference/backend-api)
+The `axum` feature enables `AuthLayer` and the extractors.
+</Tab>
+</Tabs>
+
+### Configure the client
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+// src/server.ts
+import { initBackend } from "@wacht/backend";
+
+initBackend({
+  publishableKey: process.env.WACHT_PUBLISHABLE_KEY!,
+  secretKey: process.env.WACHT_BACKEND_SECRET!,
+});
+```
+
+`initBackend()` configures the SDK once at startup. After that the helpers (`getAuth`, `authenticateRequest`, plus the `ai.*` and `users.*` clients) read from process state.
+</Tab>
+<Tab>
+```rust
+// src/main.rs
+use wacht::init_from_env;
+
+#[tokio::main]
+async fn main() {
+    init_from_env().await.expect("wacht init failed");
+
+    let app = axum::Router::new()
+        .route("/me", axum::routing::get(me))
+        .layer(wacht::middleware::AuthLayer::new());
+
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
+}
+```
+
+`init_from_env()` reads `WACHT_DEPLOYMENT_URL` and `WACHT_BACKEND_SECRET`. `AuthLayer` verifies the bearer token on every request and attaches an `AuthContext` to request extensions. If the token is missing or invalid, the layer doesn't reject — it leaves the extension empty. Reject in the handler via the extractor so optional-auth routes still work.
+</Tab>
+</Tabs>
+
+### A protected handler
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+import { getAuth } from "@wacht/backend";
+
+export async function me(request: Request): Promise<Response> {
+  const auth = await getAuth(request);
+  await auth.protect(); // throws 401 if not authenticated
+
+  return Response.json({
+    user_id: auth.userId,
+    organization_id: auth.organizationId,
+    workspace_id: auth.workspaceId,
+  });
+}
+```
+
+`getAuth` reads the `Authorization: Bearer ...` header, verifies the JWT against Wacht's JWKS, and returns a `WachtAuth` object. `auth.protect()` throws `WachtAuthError` if the user isn't signed in; map that to a 401 in your framework's error handler.
+</Tab>
+<Tab>
+```rust
+use axum::response::IntoResponse;
+use wacht::middleware::RequireAuth;
+
+async fn me(auth: RequireAuth) -> impl IntoResponse {
+    axum::Json(serde_json::json!({
+        "user_id": auth.user_id,
+        "organization_id": auth.organization_id,
+        "workspace_id": auth.workspace_id,
+    }))
+}
+```
+
+`RequireAuth` returns `401 Unauthorized` if `AuthLayer` didn't find a valid token. Inside the handler you have `auth.user_id`, `auth.organization_id`, `auth.workspace_id`, and the raw claims.
+</Tab>
+</Tabs>
+
+### Optional auth
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+import { getAuth } from "@wacht/backend";
+
+export async function publicOrPersonalized(request: Request): Promise<Response> {
+  const auth = await getAuth(request);
+  if (auth.userId) {
+    return new Response(`hello ${auth.userId}`);
+  }
+  return new Response("hello stranger");
+}
+```
+
+Don't call `auth.protect()` and the handler stays open. `auth.userId` is `null` when no valid token was provided.
+</Tab>
+<Tab>
+```rust
+use wacht::middleware::OptionalAuth;
+
+async fn public_or_personalized(auth: OptionalAuth) -> impl IntoResponse {
+    match auth.0 {
+        Some(ctx) => format!("hello {}", ctx.user_id),
+        None => "hello stranger".into(),
+    }
+}
+```
+</Tab>
+</Tabs>
+
+## Tenancy scoping
+
+Wacht's B2B model attaches the user's active organization and workspace IDs to the token. Protected handlers check them before touching tenant data.
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+import { getAuth } from "@wacht/backend";
+
+export async function listDocuments(request: Request) {
+  const auth = await getAuth(request);
+  await auth.protect();
+
+  const workspaceId = auth.workspaceId;
+  if (!workspaceId) {
+    return new Response("workspace required", { status: 403 });
+  }
+
+  const docs = await db
+    .selectFrom("documents")
+    .where("workspace_id", "=", workspaceId)
+    .selectAll()
+    .execute();
+
+  return Response.json(docs);
+}
+```
+</Tab>
+<Tab>
+```rust
+use wacht::middleware::RequireAuth;
+
+async fn list_documents(auth: RequireAuth) -> Result<Json<Vec<Document>>, Error> {
+    let workspace_id = auth
+        .workspace_id
+        .ok_or(Error::Forbidden("workspace required"))?;
+
+    let docs = sqlx::query_as!(
+        Document,
+        "SELECT * FROM documents WHERE workspace_id = $1",
+        workspace_id
+    )
+    .fetch_all(&pool)
+    .await?;
+
+    Ok(Json(docs))
+}
+```
+</Tab>
+</Tabs>
+
+The frontend switches active organization/workspace via `useActiveOrganization()` and `useActiveWorkspace()` from the SDK. The next token they get will carry the new IDs.
+
+## Permission checks
+
+If you have organization roles:
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+import { getAuth } from "@wacht/backend";
+
+export async function removeMember(request: Request, memberId: string) {
+  const auth = await getAuth(request);
+  await auth.protect({ permission: "members:manage" });
+
+  // permission check already passed when we got here
+  await deleteMember(db, auth.organizationId!, memberId);
+  return new Response(null, { status: 204 });
+}
+```
+
+`auth.protect({ permission })` throws when the user lacks the permission. Use `auth.has({ permission })` for non-throwing checks (e.g. to hide UI affordances).
+</Tab>
+<Tab>
+```rust
+use wacht::middleware::{Permission, RequirePermission, auth::PermissionScope};
+
+struct ManageMembers;
+impl Permission for ManageMembers {
+    const PERMISSION: &'static str = "members:manage";
+    const SCOPE: PermissionScope = PermissionScope::Organization;
+}
+
+async fn remove_member(
+    _perm: RequirePermission<ManageMembers>,
+    auth: RequireAuth,
+    Path(member_id): Path<String>,
+) -> Result<StatusCode, Error> {
+    delete_member(&pool, auth.organization_id.unwrap(), &member_id).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+```
+
+If the user doesn't have the permission, the request gets `403 Forbidden` before your handler runs. Permission types live in one module so reviewers can audit them.
+</Tab>
+</Tabs>
+
+## Calling Wacht's API from the backend
+
+Once authenticated, use the SDK to read or mutate Wacht state on the user's behalf.
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+import { getAuth, users } from "@wacht/backend";
+
+export async function whoami(request: Request) {
+  const auth = await getAuth(request);
+  await auth.protect();
+
+  const user = await users.getUser(auth.userId!);
+  return Response.json(user);
+}
+```
+</Tab>
+<Tab>
+```rust
+use wacht::middleware::RequireAuth;
+
+async fn whoami(auth: RequireAuth) -> Result<Json<User>, Error> {
+    let user = wacht::try_get_client()?
+        .users()
+        .get_user_by_id(&auth.user_id)
+        .send()
+        .await?;
+    Ok(Json(user))
+}
+```
+</Tab>
+</Tabs>
+
+For agent-runtime work (creating tasks, looking up actors), see the [Agents guide](/guides/agents).
+
+## Error handling
+
+Map backend auth failures to explicit frontend states so the user sees the right thing.
+
+| Backend response | Likely cause | Frontend action |
+| --- | --- | --- |
+| `401 Unauthorized` | Token missing, expired, or invalid signature | Trigger sign-in, then retry once |
+| `403 Forbidden` | Authenticated but lacks the required permission | Show "you don't have access" UI; do not retry |
+| `404 Not Found` on a tenant resource | Workspace switch happened mid-flight | Refetch with the new workspace context |
+
+Most apps wrap their fetch helper to handle 401 by silently refreshing the token via `getToken()` and retrying once before bouncing the user to sign-in.
+
+## Environment
+
+Frontend `.env`:
+
+```
+VITE_WACHT_PUBLIC_KEY=pk_...
+VITE_API_URL=http://localhost:3000
+```
+
+Backend `.env`:
+
+```
+WACHT_DEPLOYMENT_URL=https://your-deployment.wacht.dev
+WACHT_PUBLISHABLE_KEY=pk_...
+WACHT_BACKEND_SECRET=sk_...
+```
+
+The publishable key is only required on the Node side for `getAuth` to derive the JWKS endpoint. Rust reads JWKS from the deployment URL directly.
 
 ## Production checklist
 
-- Protected routes enforce auth in Rust handlers.
-- Frontend signed-out states never expose protected data.
-- Org/workspace IDs are validated against authenticated context.
-- Error handling maps backend auth failures into explicit UX states.
+- All protected routes call `auth.protect()` (Node) or use `RequireAuth` / `RequirePermission` (Rust). No reliance on frontend hiding to gate data.
+- All tenant queries filter by `auth.organizationId` / `auth.workspaceId`. No "current user's data" without an explicit scope check.
+- Rust: `AuthLayer` is mounted on the protected router, not the public one. Public routes (health checks, OAuth callbacks) bypass it.
+- The frontend never holds the backend secret. Only the publishable key ships to the browser.
+- The frontend retries 401 once after a fresh `getToken()` before bouncing to sign-in.
+- Permission strings (Node) or `Permission` types (Rust) live in one module so reviewers can audit them.
+
+## Next
+
+- [B2B org/workspace lifecycle](/guides/integration-playbooks/b2b-org-workspace-lifecycle) for the org/workspace UX patterns.
+- [Reference: Frontend API](/reference/frontend-api) and [Backend API](/reference/backend-api) for exact request/response shapes.

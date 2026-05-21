@@ -27920,16 +27920,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProjectTaskBoardItemRequest"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Success",
@@ -28823,16 +28813,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateProjectTaskBoardItemRequest"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Success",
@@ -29877,16 +29857,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCommentRequest"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Success",
@@ -41511,43 +41481,6 @@
           "mounts"
         ]
       },
-      "CreateProjectTaskBoardItemRequest": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "status": {
-            "type": "string",
-            "nullable": true
-          },
-          "schedule_kind": {
-            "type": "string",
-            "nullable": true
-          },
-          "next_run_at": {
-            "nullable": true
-          },
-          "interval_seconds": {
-            "type": "integer",
-            "nullable": true
-          },
-          "mounts": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ScheduleMount"
-            },
-            "nullable": true
-          }
-        },
-        "required": [
-          "title"
-        ]
-      },
       "ProjectTaskBoardItemAssignment": {
         "type": "object",
         "properties": {
@@ -41690,45 +41623,6 @@
           "content_base64"
         ]
       },
-      "UpdateProjectTaskBoardItemRequest": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "nullable": true
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "status": {
-            "type": "string",
-            "nullable": true
-          },
-          "schedule_kind": {
-            "type": "string",
-            "nullable": true
-          },
-          "next_run_at": {
-            "nullable": true
-          },
-          "interval_seconds": {
-            "type": "integer",
-            "nullable": true
-          },
-          "clear_schedule": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "mounts": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ScheduleMount"
-            },
-            "nullable": true
-          }
-        }
-      },
       "AnswerSubmission": {
         "type": "object",
         "properties": {
@@ -41817,17 +41711,6 @@
           "metadata",
           "created_at",
           "updated_at"
-        ]
-      },
-      "CreateCommentRequest": {
-        "type": "object",
-        "properties": {
-          "body": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "body"
         ]
       },
       "DelegateTaskRequest": {
@@ -43764,29 +43647,6 @@
               "accepted"
             ]
           }
-        ]
-      },
-      "ScheduleMount": {
-        "type": "object",
-        "properties": {
-          "mount_path": {
-            "type": "string"
-          },
-          "s3_relative_key": {
-            "type": "string"
-          },
-          "mode": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "mount_path",
-          "s3_relative_key",
-          "mode"
         ]
       },
       "TaskWorkspaceFileEntry": {
