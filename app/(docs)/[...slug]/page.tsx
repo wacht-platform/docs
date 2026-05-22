@@ -32,8 +32,27 @@ import {
 } from '@/components/rust-backend-pages';
 import type { Metadata } from 'next';
 import { createRelativeLink } from 'fumadocs-ui/mdx';
-import { gitConfig } from '@/lib/shared';
+import { gitConfig, siteUrl } from '@/lib/shared';
 import { buildDocsMetadata } from '@/lib/seo';
+
+function techArticleJsonLd(args: {
+  title: string;
+  description: string;
+  path: string;
+}) {
+  const url = `${siteUrl}${args.path}`;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'TechArticle',
+    headline: args.title,
+    description: args.description,
+    url,
+    inLanguage: 'en',
+    isPartOf: { '@id': `${siteUrl}/#website` },
+    publisher: { '@id': 'https://wacht.dev/#organization' },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+  };
+}
 
 function frameworkSeoLabel(framework: 'nextjs' | 'react-router' | 'tanstack-router' | 'node' | 'rust') {
   if (framework === 'nextjs') return 'Next.js SDK';
@@ -96,8 +115,22 @@ export default async function Page(props: PageProps<'/[...slug]'>) {
   if (!page && !sharedDoc && !sharedBackendDoc && !rustBackendDoc) notFound();
 
   if (!page && sharedDoc) {
+    const frameworkLabel = frameworkSeoLabel(sharedDoc.framework);
+    const path = `/docs/sdks/${sharedDoc.framework}/${sharedDoc.kind}/${sharedDoc.slug}`;
     return (
       <DocsPage toc={buildSharedSdkToc(sharedDoc, sharedDoc.kind)} className="pt-12 md:pt-12 xl:pt-12">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(
+              techArticleJsonLd({
+                title: `${sharedDoc.title} — ${frameworkLabel}`,
+                description: sharedDoc.description,
+                path,
+              }),
+            ),
+          }}
+        />
         <DocsBody>
           <SharedSdkDocPage
             framework={sharedDoc.framework}
@@ -111,8 +144,22 @@ export default async function Page(props: PageProps<'/[...slug]'>) {
   }
 
   if (!page && sharedBackendDoc) {
+    const frameworkLabel = frameworkSeoLabel(sharedBackendDoc.framework);
+    const path = `/docs/sdks/${sharedBackendDoc.framework}/backend/${sharedBackendDoc.slug}`;
     return (
       <DocsPage toc={buildSharedBackendToc(sharedBackendDoc)} className="pt-12 md:pt-12 xl:pt-12">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(
+              techArticleJsonLd({
+                title: `${sharedBackendDoc.title} — ${frameworkLabel}`,
+                description: sharedBackendDoc.description,
+                path,
+              }),
+            ),
+          }}
+        />
         <DocsBody>
           <SharedBackendDocPage
             framework={sharedBackendDoc.framework}
@@ -124,8 +171,22 @@ export default async function Page(props: PageProps<'/[...slug]'>) {
     );
   }
   if (!page && rustBackendDoc) {
+    const frameworkLabel = frameworkSeoLabel('rust');
+    const path = `/docs/sdks/rust/backend/${rustBackendDoc.slug}`;
     return (
       <DocsPage toc={buildRustBackendToc(rustBackendDoc)} className="pt-12 md:pt-12 xl:pt-12">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(
+              techArticleJsonLd({
+                title: `${rustBackendDoc.title} — ${frameworkLabel}`,
+                description: rustBackendDoc.description,
+                path,
+              }),
+            ),
+          }}
+        />
         <DocsBody>
           <RustBackendDocPage
             slug={rustBackendDoc.slug}
@@ -145,6 +206,18 @@ export default async function Page(props: PageProps<'/[...slug]'>) {
       full={page!.data.full}
       className="pt-6 md:pt-6 xl:pt-6"
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            techArticleJsonLd({
+              title: page!.data.title,
+              description: page!.data.description ?? '',
+              path: page!.url,
+            }),
+          ),
+        }}
+      />
       <DocsTitle className="text-2xl font-normal">{page!.data.title}</DocsTitle>
       <DocsDescription className="mb-0">{page!.data.description}</DocsDescription>
       <div className="flex flex-row items-center gap-2 pb-4">

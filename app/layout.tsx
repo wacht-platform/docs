@@ -12,11 +12,17 @@ export const metadata: Metadata = {
     template: `%s | ${appName}`,
   },
   description: siteDescription,
-  keywords: ['Wacht', 'Wacht Docs', 'SDK', 'API', 'backend API', 'frontend API', 'OAuth', 'webhooks'],
   category: 'developer documentation',
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
   icons: {
     icon: [
@@ -35,13 +41,13 @@ export const metadata: Metadata = {
     siteName: appName,
     title: appName,
     description: siteDescription,
-    images: [{ url: '/docs/Wacht.png' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: appName,
     description: siteDescription,
-    images: ['/docs/Wacht.png'],
+    creator: '@wacht_platform',
+    site: '@wacht_platform',
   },
 };
 
@@ -61,6 +67,47 @@ export default function Layout({ children }: LayoutProps<'/'>) {
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script
+          id="ld-json-organization"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              '@id': 'https://wacht.dev/#organization',
+              name: 'Wacht',
+              legalName: 'Intellinesia Labs (OPC) Private Limited',
+              url: 'https://wacht.dev',
+              logo: 'https://wacht.dev/logo.png',
+              sameAs: [
+                'https://github.com/wacht-platform',
+                'https://twitter.com/wacht_platform',
+              ],
+            }),
+          }}
+        />
+        <script
+          id="ld-json-website"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              '@id': `${siteUrl}/#website`,
+              name: appName,
+              url: siteUrl,
+              publisher: { '@id': 'https://wacht.dev/#organization' },
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: {
+                  '@type': 'EntryPoint',
+                  urlTemplate: `${siteUrl}/api/search?q={search_term_string}`,
+                },
+                'query-input': 'required name=search_term_string',
+              },
+            }),
+          }}
+        />
       </head>
       <body className="flex min-h-screen flex-col bg-background font-sans text-foreground antialiased">
         <style>{`:root { --fd-banner-height: 2.25rem; }`}</style>
