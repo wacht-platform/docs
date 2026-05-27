@@ -665,50 +665,30 @@ The payload sections below are representative examples to guide receiver impleme
 }
 ```
 
-## Execution Context Events
+## Agent Thread Events
 
-### execution_context.message
+### agent.thread.message
+Emitted for every conversation message produced in an agent execution thread. `data` is the conversation record.
 ```json
 {
-  "type": "execution_context.message",
-  "timestamp": "2026-03-04T10:00:00.000Z",
-  "data": {
-    "context_id": "1234567890123456789",
-    "message_type": "conversation_message",
-    "data": {},
-    "timestamp": "2026-03-04T10:00:00Z"
-  }
+  "thread_id": "1234567890123456789",
+  "message_type": "conversation_message",
+  "data": {},
+  "timestamp": "2026-03-04T10:00:00Z"
 }
 ```
 
-### execution_context.platform_event
+### agent.thread.platform_event
+Emitted for platform events raised during an agent execution thread (e.g. `conversation_compacted` or a platform-event tool's configured label).
 ```json
 {
-  "type": "execution_context.platform_event",
-  "timestamp": "2026-03-04T10:00:00.000Z",
+  "thread_id": "1234567890123456789",
+  "message_type": "platform_event",
   "data": {
-    "context_id": "1234567890123456789",
-    "message_type": "platform_event",
-    "data": {
-      "event_label": "tool.started",
-      "event_data": {}
-    },
-    "timestamp": "2026-03-04T10:00:00Z"
-  }
-}
-```
-
-### execution_context.user_input_request
-```json
-{
-  "type": "execution_context.user_input_request",
-  "timestamp": "2026-03-04T10:00:00.000Z",
-  "data": {
-    "context_id": "1234567890123456789",
-    "message_type": "user_input_request",
-    "data": {},
-    "timestamp": "2026-03-04T10:00:00Z"
-  }
+    "event_label": "conversation_compacted",
+    "event_data": {}
+  },
+  "timestamp": "2026-03-04T10:00:00Z"
 }
 ```
 
