@@ -668,15 +668,211 @@ The payload sections below are representative examples to guide receiver impleme
 ## Agent Thread Events
 
 ### agent.thread.message
-Emitted for every conversation message produced in an agent execution thread. `data` is the conversation record.
+Emitted for **every** conversation message produced in an agent execution thread — user input, the agent's own steers and tool results, clarification (ask-user) questions and their answers, tool-approval requests and decisions, execution summaries, and task/coordination markers.
+
+There is **no separate webhook per subtype**. They all arrive as `agent.thread.message`; the subtype is carried inside the payload. Switch on `data.message_type` (mirrored by `data.content.type`).
+
+**Envelope**
 ```json
 {
   "thread_id": "1234567890123456789",
   "message_type": "conversation_message",
-  "data": {},
+  "data": { /* ConversationRecord — see below */ },
   "timestamp": "2026-03-04T10:00:00Z"
 }
 ```
+
+`data` is the conversation record:
+
+| Field | Notes |
+| --- | --- |
+| `id` | Message id (string). |
+| `thread_id` | Agent thread id (string). |
+| `board_item_id` | Set when the thread runs against a task board item; otherwise omitted. |
+| `execution_run_id` | The execution run that produced the message. |
+| `message_type` | The subtype discriminator (table below). |
+| `content` | Typed body; `content.type` matches `message_type`. |
+| `timestamp` / `created_at` / `updated_at` | Timestamps. |
+| `metadata` | Optional free-form object; omitted when absent. |
+
+**`data.message_type` values**
+
+| `message_type` | Meaning |
+| --- | --- |
+| `user_message` | Message sent into the thread by a user/caller. |
+| `steer` | The agent's own narration / mid-run steering. |
+| `tool_result` | Result of a tool the agent ran. |
+| `system_decision` | Internal routing/guard decision. |
+| `clarification_request` | Agent asked the user a question (`ask_user`). Thread moves to `waiting_for_input`. |
+| `clarification_response` | The user's answer to a clarification request. |
+| `approval_request` | Agent requested approval to run approval-gated tool(s). Thread moves to `waiting_for_input`. |
+| `approval_response` | The user's allow/deny decision for an approval request. |
+| `execution_summary` | End-of-run summary. |
+| `task_subscription_notification` | A subscribed task changed status. |
+| `assignment_execution_trigger` / `task_routing_trigger` / `task_handoff_received` | Multi-agent task-board coordination markers. |
+
+#### message_type: `user_message`
+```json
+{
+  "thread_id": "1234567890123456789",
+  "message_type": "conversation_message",
+  "data": {
+    "id": "9000000000000000001",
+    "thread_id": "1234567890123456789",
+    "message_type": "user_message",
+    "content": {
+      "type": "user_message",
+      "message": "Summarize last week's signups and email it to me.",
+      "sender_name": "Jane Doe"
+    },
+    "timestamp": "2026-03-04T10:00:00Z",
+    "created_at": "2026-03-04T10:00:00Z",
+    "updated_at": "2026-03-04T10:00:00Z"
+  },
+  "timestamp": "2026-03-04T10:00:00Z"
+}
+```
+
+#### message_type: `clarification_request`
+The agent asked the user one or more questions via the `ask_user` tool. Each question's `answer_kind.kind` is one of `free_text`, `single_choice`, `multi_choice`, `yes_no`, `number`, `date`, `confirm`.
+```json
+{
+  "thread_id": "1234567890123456789",
+  "message_type": "conversation_message",
+  "data": {
+    "id": "9000000000000000002",
+    "thread_id": "1234567890123456789",
+    "message_type": "clarification_request",
+    "content": {
+      "type": "clarification_request",
+      "context": "I need a target before running the release.",
+      "questions": [
+        {
+          "id": "deploy_env",
+          "text": "Which environment should I deploy to?",
+          "answer_kind": {
+            "kind": "single_choice",
+            "choices": [
+              { "value": "prod", "label": "Production" },
+              { "value": "staging", "label": "Staging" }
+            ],
+            "allow_other": false
+          }
+        }
+      ]
+    },
+    "timestamp": "2026-03-04T10:00:05Z",
+    "created_at": "2026-03-04T10:00:05Z",
+    "updated_at": "2026-03-04T10:00:05Z"
+  },
+  "timestamp": "2026-03-04T10:00:05Z"
+}
+```
+
+#### message_type: `clarification_response`
+The user's answer. `answers[].value.kind` matches the question's `answer_kind.kind`. `request_message_id` points back to the `clarification_request` message id; `freeform_text` is present only when the user typed a free-form reply instead of structured answers.
+```json
+{
+  "thread_id": "1234567890123456789",
+  "message_type": "conversation_message",
+  "data": {
+    "id": "9000000000000000003",
+    "thread_id": "1234567890123456789",
+    "message_type": "clarification_response",
+    "content": {
+      "type": "clarification_response",
+      "request_message_id": "9000000000000000002",
+      "answers": [
+        { "question_id": "deploy_env", "value": { "kind": "single_choice", "value": "staging" } }
+      ]
+    },
+    "timestamp": "2026-03-04T10:01:00Z",
+    "created_at": "2026-03-04T10:01:00Z",
+    "updated_at": "2026-03-04T10:01:00Z"
+  },
+  "timestamp": "2026-03-04T10:01:00Z"
+}
+```
+
+#### message_type: `approval_request`
+The agent wants to run one or more approval-gated tools and is blocked until the user responds. The thread moves to `waiting_for_input`.
+```json
+{
+  "thread_id": "1234567890123456789",
+  "message_type": "conversation_message",
+  "data": {
+    "id": "9000000000000000004",
+    "thread_id": "1234567890123456789",
+    "message_type": "approval_request",
+    "content": {
+      "type": "approval_request",
+      "description": "Approval required to run: send_email.",
+      "tools": [
+        {
+          "tool_id": "5500000000000000001",
+          "tool_name": "send_email",
+          "tool_description": "Send an email to a recipient"
+        }
+      ]
+    },
+    "timestamp": "2026-03-04T10:02:00Z",
+    "created_at": "2026-03-04T10:02:00Z",
+    "updated_at": "2026-03-04T10:02:00Z"
+  },
+  "timestamp": "2026-03-04T10:02:00Z"
+}
+```
+
+#### message_type: `approval_response`
+The user's decision. Each `approvals[].mode` is `allow_once` or `allow_always`. `request_message_id` points back to the `approval_request` message id. A denial is represented by the absence of an entry for that tool.
+```json
+{
+  "thread_id": "1234567890123456789",
+  "message_type": "conversation_message",
+  "data": {
+    "id": "9000000000000000005",
+    "thread_id": "1234567890123456789",
+    "message_type": "approval_response",
+    "content": {
+      "type": "approval_response",
+      "request_message_id": "9000000000000000004",
+      "approvals": [
+        { "tool_name": "send_email", "mode": "allow_once" }
+      ]
+    },
+    "timestamp": "2026-03-04T10:02:30Z",
+    "created_at": "2026-03-04T10:02:30Z",
+    "updated_at": "2026-03-04T10:02:30Z"
+  },
+  "timestamp": "2026-03-04T10:02:30Z"
+}
+```
+
+#### message_type: `tool_result`
+```json
+{
+  "thread_id": "1234567890123456789",
+  "message_type": "conversation_message",
+  "data": {
+    "id": "9000000000000000006",
+    "thread_id": "1234567890123456789",
+    "message_type": "tool_result",
+    "content": {
+      "type": "tool_result",
+      "tool_name": "send_email",
+      "status": "success",
+      "input": { "to": "jane@example.com", "subject": "Weekly signups" },
+      "output": { "message_id": "msg_abc123" }
+    },
+    "timestamp": "2026-03-04T10:03:00Z",
+    "created_at": "2026-03-04T10:03:00Z",
+    "updated_at": "2026-03-04T10:03:00Z"
+  },
+  "timestamp": "2026-03-04T10:03:00Z"
+}
+```
+
+> Remaining subtypes (`steer`, `system_decision`, `execution_summary`, `task_subscription_notification`, `assignment_execution_trigger`, `task_routing_trigger`, `task_handoff_received`) follow the same envelope: `data.message_type` plus a `data.content` object whose `type` matches.
 
 ### agent.thread.platform_event
 Emitted for platform events raised during an agent execution thread (e.g. `conversation_compacted` or a platform-event tool's configured label).
