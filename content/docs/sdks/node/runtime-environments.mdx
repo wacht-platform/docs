@@ -68,16 +68,18 @@ const orgs = await organizations.listOrganizations({ limit: 25 });
 
 When `fetch` is globally available, you can use the SDK directly and pass through runtime headers:
 
+In request-isolated runtimes, env bindings are only available inside the handler, so call `initClient` there:
+
 ```ts
 import { authenticateRequest, initClient, users } from '@wacht/backend';
 
-initClient({
-  apiKey: env.WACHT_API_KEY,
-  baseUrl: env.WACHT_BACKEND_API_URL,
-});
-
 export default {
   async fetch(request: Request, env: Record<string, string>) {
+    initClient({
+      apiKey: env.WACHT_API_KEY,
+      baseUrl: env.WACHT_BACKEND_API_URL,
+    });
+
     const { auth } = await authenticateRequest(request, {
       publishableKey: env.WACHT_PUBLISHABLE_KEY,
     });

@@ -1,6 +1,6 @@
 ---
-title: "Agent sessions"
-description: "Share an agent chat URL with a teammate, customer, or background service."
+title: Agent sessions
+description: Share an agent chat URL with a teammate, customer, or background service.
 ---
 
 # Agent sessions
@@ -12,7 +12,7 @@ Agent sessions are one of Wacht's four vanity-page flows; the same `/session/tic
 ## API flow
 
 ```bash
-wacht api call createBackendSessionTicket --body @ticket.json
+wacht api call createSessionTicket --body @ticket.json
 ```
 
 `ticket.json` (minimum for an agent session):
@@ -37,16 +37,16 @@ URL:
 https://<deployment.backend_host>/vanity/agents?ticket=<ticket>
 ```
 
-`backend_host` comes from `wacht deployments current` or `getDeploymentWithSettings`. Run `wacht api describe createBackendSessionTicket` for the full request schema.
+`backend_host` comes from `wacht deployments current` or `getDeploymentWithSettings`. Run `wacht api describe createSessionTicket` for the full request schema.
 
-Useful optional fields:
+`agent_ids` is the only field `agent_access` always requires. The rest tune scope and lifetime:
 
 | Field | Effect |
 | --- | --- |
 | `user_id` | Bind the chat to a specific Wacht user; the session authenticates as them. |
-| `actor_id` | Bind to a service / non-user actor. |
-| `agent_session_identifier` | Resume a specific named session instead of opening a new one. |
-| `expires_in` | Seconds until the ticket can no longer be redeemed. |
+| `actor_id` | Bind to a service / non-user actor. Required when `agent_session_identifier` is `static` (the default). |
+| `agent_session_identifier` | `static` (default) resumes the persistent session bound to `actor_id`; `signin` opens a fresh signed-in session. |
+| `expires_in` | Seconds until the ticket can no longer be redeemed. Defaults to 43200 (12 hours). |
 
 Pick the narrowest scope your use case allows. A ticket bound to neither a `user_id` nor an `actor_id` is anonymous.
 
@@ -61,13 +61,13 @@ Pick the narrowest scope your use case allows. A ticket bound to neither a `user
 | `api_auth_access` | `https://{backend_host}/vanity/api-auth?ticket=…` | `api_auth_app_slug` | [API-auth vanity pages](/guides/api-auth/vanity-pages-implementation) |
 | `webhook_app_access` | `https://{backend_host}/vanity/webhook?ticket=…` | `webhook_app_slug` | [Webhook vanity pages](/guides/webhook-apps/vanity-pages-implementation) |
 
-Tickets are one-time-redeemable and expire per `expires_at`. There's no explicit revocation — set a short `expires_in` (seconds) when you need tight bounds.
+Tickets are one-time-redeemable and expire per `expires_at` (default 12 hours). There's no explicit revocation — set a short `expires_in` (seconds) when you need tight bounds.
 
 ## Backend vs console issuance
 
 Two endpoints with the same body shape:
 
-- `POST /session/tickets` on the **backend** host — `createBackendSessionTicket`. Authenticated with `WACHT_API_KEY`. Use from server code.
+- `POST /session/tickets` on the **backend** host — `createSessionTicket` in `@wacht/backend`. Authenticated with `WACHT_API_KEY`. Use from server code.
 - `POST /session/tickets` on the **console** host — `createSessionTicket`. Authenticated with an admin OAuth session. Used by the console UI.
 
 Both produce the same vanity URL.

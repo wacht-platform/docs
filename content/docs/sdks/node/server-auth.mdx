@@ -1,36 +1,52 @@
 ---
 title: Server Auth
-description: Authenticate requests and verify session tokens in backend JavaScript runtimes.
+description: Verify Wacht session tokens and enforce permissions in backend JavaScript runtimes.
 ---
 
-`@wacht/backend` exposes server auth helpers for non-framework runtimes.
+`@wacht/backend` verifies the session bearer token a Wacht frontend sends, turns it into a `WachtAuth` object, and lets you gate handlers on organization or workspace permissions. Use these helpers in any runtime with global `fetch` — Express, Bun, Workers, Deno, serverless. Token signatures are checked against your deployment's JWKS, which the SDK derives from your publishable key.
 
 ## Core helpers
 
-- `authenticateRequest(request, options?)`
-- `getAuth(request, options?)`
-- `authFromHeaders(headers, options?)`
-- `verifyAuthToken(token, options?)`
+- `getAuth(request, options?)` — read the `Authorization: Bearer` header off a `Request` and return a `WachtAuth`.
+- `getAuthFromToken(token, options?)` — same, when you already extracted the raw token.
+- `authenticateRequest(request, options?)` — `getAuth` plus a serialized `x-wacht-auth` header for forwarding to downstream handlers.
+- `verifyAuthToken(token, options?)` — verify a token and return the raw JWT payload, or `null`.
+- `authFromHeaders(headers)` — rebuild `WachtAuth` from a forwarded `x-wacht-auth` header without re-verifying.
+
+None of these throw on an unauthenticated request. They return a `WachtAuth` with `userId === null`; the failure surfaces only when you call `auth.protect()`, which throws `WachtAuthError`.
 
 ## Basic request auth
 
+`authenticateRequest` returns `{ auth, headers }` — destructure it. The `headers` carry the verified identity as `x-wacht-auth` for handing off to a downstream service; ignore them if you handle the request inline. `auth.protect({ permission })` throws `WachtAuthError` with `status` 401 (no valid token) or 403 (token present but missing the permission).
+
 ```ts
-import { authenticateRequest } from '@wacht/backend';
+import { authenticateRequest, WachtAuthError } from '@wacht/backend';
 
 export async function handler(request: Request) {
-  const auth = await authenticateRequest(request, {
-    signInUrl: 'https://app.example.com/sign-in',
-  });
+  try {
+    const { auth } = await authenticateRequest(request, {
+      signInUrl: 'https://app.example.com/sign-in',
+    });
 
-  await auth.protect({ permission: 'user:read' });
+    await auth.protect({ permission: 'user:read' });
 
-  return new Response(JSON.stringify({ userId: auth.userId }), {
-    headers: { 'content-type': 'application/json' },
-  });
+    return new Response(JSON.stringify({ userId: auth.userId }), {
+      headers: { 'content-type': 'application/json' },
+    });
+  } catch (error) {
+    if (error instanceof WachtAuthError) {
+      return new Response(error.message, { status: error.status });
+    }
+    throw error;
+  }
 }
 ```
 
+`auth.has({ permission })` is the non-throwing variant — it returns a boolean and never redirects, so use it for conditional UI logic rather than route guards.
+
 ## Token-only verification
+
+Use `verifyAuthToken` when you only need the claims and want to make the authorization decision yourself. It returns `null` for any verification failure — bad signature, wrong issuer, expired, malformed — so treat `null` as "reject" without trying to distinguish why.
 
 ```ts
 import { verifyAuthToken } from '@wacht/backend';
@@ -39,15 +55,24 @@ const payload = await verifyAuthToken(token);
 if (!payload) {
   throw new Error('Invalid token');
 }
+// payload.sub is the user id; payload.organization / payload.workspace carry scope.
 ```
 
 ## Publishable key resolution
 
-For Node.js runtimes, `publishableKey` is optional when env is configured.
+Token verification needs the frontend host, which the SDK decodes from your publishable key. In Node.js it reads the key from the environment automatically:
 
 - `WACHT_PUBLISHABLE_KEY`
 - `NEXT_PUBLIC_WACHT_PUBLISHABLE_KEY`
 
-In non-Node runtimes (for example Workers with `env` bindings), pass `publishableKey` explicitly in options.
+In runtimes without `process.env` (Workers, Deno with bindings), pass `publishableKey` explicitly in `options`; otherwise verification throws "Unable to derive frontend API URL from publishable key."
 
-For API-key and OAuth access-token gateway checks, use the `gateway` API group under backend methods.
+```ts
+const { auth } = await authenticateRequest(request, {
+  publishableKey: env.WACHT_PUBLISHABLE_KEY,
+});
+```
+
+## Machine credentials
+
+`getAuth` and friends only verify Wacht session tokens. For API keys and OAuth access tokens, use the `gateway` API group (`gateway.checkPrincipalAuthz`), which checks revocation, scopes, and rate limits in one call. See the runtime guides for the full pattern.

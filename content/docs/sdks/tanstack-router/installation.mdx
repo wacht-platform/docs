@@ -12,14 +12,10 @@ pnpm add @wacht/tanstack-router
 Set the client-facing key in your app environment:
 
 ```bash
-VITE_WACHT_PUBLISHABLE_KEY=...
+VITE_WACHT_PUBLISHABLE_KEY=pk_test_xxx
 ```
 
-If required, point the SDK at a custom frontend auth host:
-
-```bash
-VITE_WACHT_FRONTEND_API_URL=https://frontend.wacht.dev
-```
+This is the only client-side variable the provider needs. The frontend host is encoded inside the publishable key, so you do not configure it separately. If you also call the backend SDK from a server runtime, set `WACHT_API_KEY` there too, but keep it out of the client bundle.
 
 ## Provider setup
 
@@ -32,7 +28,7 @@ export function App() {
   return (
     <DeploymentProvider
       publicKey={import.meta.env.VITE_WACHT_PUBLISHABLE_KEY}
-      uiOverwrites={{
+      uiOverrides={{
         app_name: 'Wacht',
       }}
     >

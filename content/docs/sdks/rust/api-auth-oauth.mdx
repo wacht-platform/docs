@@ -48,20 +48,20 @@ Rust API surfaces:
 Rust example:
 
 ```rust
-use wacht_rs::{Result, WachtClient};
+use wacht::{Result, WachtClient};
 
 pub async fn api_auth_and_oauth_example(client: &WachtClient) -> Result<()> {
     let _scheme = client
         .api_keys()
-        .create_rate_limit_scheme(wacht_rs::api::api_keys::CreateRateLimitSchemeRequest {
+        .create_rate_limit_scheme(wacht::api::api_keys::CreateRateLimitSchemeRequest {
             slug: "internal-default".to_string(),
             name: "Internal Default".to_string(),
             description: Some("Default limits for internal services".to_string()),
-            rules: vec![wacht_rs::api::api_keys::RateLimit {
-                unit: wacht_rs::api::api_keys::RateLimitUnit::Minute,
+            rules: vec![wacht::api::api_keys::RateLimit {
+                unit: wacht::api::api_keys::RateLimitUnit::Minute,
                 duration: 1,
                 max_requests: 120,
-                mode: Some(wacht_rs::api::api_keys::RateLimitMode::PerKey),
+                mode: Some(wacht::api::api_keys::RateLimitMode::PerKey),
             }],
         })
         .send()
@@ -71,7 +71,7 @@ pub async fn api_auth_and_oauth_example(client: &WachtClient) -> Result<()> {
         .oauth()
         .update_oauth_app(
             "acme-oauth",
-            wacht_rs::models::UpdateOAuthAppRequest {
+            wacht::models::UpdateOAuthAppRequest {
                 name: Some("Acme OAuth v2".to_string()),
                 description: Some("Updated OAuth app config".to_string()),
                 supported_scopes: Some(vec!["openid".to_string(), "profile".to_string(), "email".to_string()]),

@@ -54,11 +54,11 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#ffffff',
+  themeColor: '#050507',
 };
 
 export default function Layout({ children }: LayoutProps<'/'>) {
-  const themeInitScript = `(function(){try{var stored=localStorage.getItem('wacht-docs-theme');var theme=(stored==='light'||stored==='dark'||stored==='system')?stored:'system';var resolved=theme==='system'?(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):theme;document.documentElement.classList.toggle('dark',resolved==='dark');}catch(e){}})();`;
+  const themeInitScript = `(function(){try{var stored=localStorage.getItem('wacht-docs-theme');var theme=(stored==='light'||stored==='dark'||stored==='system')?stored:'dark';var resolved=theme==='system'?(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):theme;document.documentElement.classList.toggle('dark',resolved==='dark');}catch(e){}})();`;
 
   return (
     <html
@@ -66,6 +66,12 @@ export default function Layout({ children }: LayoutProps<'/'>) {
       suppressHydrationWarning
     >
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Geist:wght@100..700&family=Geist+Mono:wght@300..600&display=swap"
+          rel="stylesheet"
+        />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script
           id="ld-json-organization"
@@ -118,17 +124,17 @@ export default function Layout({ children }: LayoutProps<'/'>) {
           >
             <div
               id="wacht-bench-launch"
-              className="sticky top-0 z-40 flex h-9 items-center justify-center border-b border-white/5 bg-[#0a0612] px-4 text-center"
+              className="sticky top-0 z-40 flex h-9 items-center justify-center border-b border-[#1a1a22] bg-[#0a0a0e] px-4 text-center"
             >
               <Link
                 href="/guides/wacht-bench"
-                className="group inline-flex items-center gap-3 text-[12px] text-white/80 hover:text-white"
+                className="group inline-flex items-center gap-2.5 text-[12px] text-[#a0a0aa] hover:text-[#e8e8ee]"
               >
-                <span className="rounded-full border border-violet-400/30 bg-violet-500/10 px-2 py-[2px] text-[10px] font-semibold uppercase tracking-wider text-violet-300">
+                <span className="rounded-full border border-violet-500/25 bg-violet-500/[0.08] px-2 py-[2px] text-[10px] font-medium uppercase tracking-wider text-violet-300">
                   New
                 </span>
                 <span>Wacht Bench is live — AI-assisted development for Wacht</span>
-                <span aria-hidden className="text-white/60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-white">
+                <span aria-hidden className="text-[#5a5a64] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-[#e8e8ee]">
                   →
                 </span>
               </Link>

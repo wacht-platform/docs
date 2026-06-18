@@ -1,27 +1,17 @@
 ---
 title: "Building API Auth Observability Screens"
-description: "Build production observability for API key traffic with logs, analytics, timeseries, and response workflows."
+description: "Build operator screens for API key traffic from the audit log, analytics, and timeseries hooks."
 ---
 
 # Building API Auth Observability Screens
 
-This page is for operator-facing API key observability, not generic charts.
+API Auth ships three read hooks over the audit data — a paginated log, an analytics rollup, and a timeseries. This page is how you turn them into operator screens that answer real questions: which key is being abused, why requests are getting blocked, and whether a rotate or revoke actually fixed it.
 
-## Core operator jobs
+The audience is your support and on-call engineers, not your customers. Design every screen against a question they'll ask under pressure, then wire the hook that answers it.
 
-1. Identify abusive/compromised keys quickly.
-2. Diagnose blocked requests and policy failures.
-3. Monitor key traffic and error trends.
-4. Take immediate action (rotate/revoke) with context.
+## The audit log
 
-## Recommended screen layout
-
-1. Logs table with filters and cursor pagination.
-2. Analytics summary cards with top keys/paths/reasons.
-3. Timeseries chart for trend and incident windows.
-4. Action rail for rotate/revoke and follow-up links.
-
-## Logs integration
+`useApiAuthAuditLogs` returns one row per request decision — `key_id`, `outcome` (`allowed`/`blocked`), `blocked_by_rule`, path, and timestamp — with cursor pagination via `next_cursor`.
 
 ```tsx
 const logs = useApiAuthAuditLogs({
@@ -34,13 +24,11 @@ const logs = useApiAuthAuditLogs({
 });
 ```
 
-Practical filters:
+The three filters that matter during an incident: `outcome` to pull just the blocked traffic, `key_id` to isolate one key, and `start_date`/`end_date` to bound the window. Cursor pagination is ordered — page forward with `next_cursor`, don't offset-paginate, or rows shift under you as new traffic lands.
 
-1. `outcome` for rapid blocked/allowed triage.
-2. `key_id` for per-key incident isolation.
-3. `start_date`/`end_date` for incident windows.
+## The analytics rollup
 
-## Analytics integration
+`useApiAuthAuditAnalytics` returns counts and the top-N breakdowns for a window. Request only the sections you render — each `include_*` flag is a separate aggregation.
 
 ```tsx
 const analytics = useApiAuthAuditAnalytics({
@@ -54,13 +42,11 @@ const analytics = useApiAuthAuditAnalytics({
 });
 ```
 
-Card suggestions:
+You always get `total_requests`, `allowed_requests`, `blocked_requests`, `success_rate`, and `keys_used_24h`. The flagged sections add `top_keys` (key id, name, count), `top_paths`, `blocked_reasons` (rule, count, percentage), and `rate_limit_stats`. The summary numbers are the headline cards; `blocked_reasons` is what turns "traffic is failing" into "this rule is firing." `top_keys` is your fastest path from a blocked-traffic spike to the key behind it.
 
-1. `total_requests`, `allowed_requests`, `blocked_requests`.
-2. `success_rate` and `keys_used_24h`.
-3. Top blocked reasons and top paths.
+## The timeseries
 
-## Timeseries integration
+`useApiAuthAuditTimeseries` returns per-bucket points (`timestamp`, total/allowed/blocked counts, `success_rate`) at `hour` or `day` granularity.
 
 ```tsx
 const timeseries = useApiAuthAuditTimeseries({
@@ -71,28 +57,19 @@ const timeseries = useApiAuthAuditTimeseries({
 });
 ```
 
-Interval guidance:
+Use `hour` for a 24–72h incident window — fine enough to see when a spike started and whether it's receding. Use `day` for week-over-week behavior. Pass `key_id` to chart a single suspect key against its own history. Keep the timeseries window aligned with the analytics window so the headline numbers and the chart describe the same span; a mismatched range is the most common reason these two screens disagree.
 
-1. `hour` for 24-72 hour incident windows.
-2. `day` for weekly/monthly behavior tracking.
+## Triage to action, on one screen
 
-## Action workflow integration
+The point of putting all three on one surface is that the operator never leaves it to act. The path is: a blocked spike shows in the timeseries, `top_keys` or `blocked_reasons` names the cause, the operator filters the log to that `key_id` to confirm the pattern, then rotates or revokes the key from the same view. After the action, the next timeseries window shows whether blocked traffic dropped. If it didn't, the key wasn't the source.
 
-1. Click suspicious key from logs/analytics.
-2. Open key details and recent event context.
-3. Execute rotate/revoke from same operator surface.
-4. Confirm trend recovery in logs + timeseries.
+So the action rail (rotate / revoke / open key detail) belongs next to the log and analytics, not on a separate page — context is lost the moment they navigate away.
 
-## Production requirements
+## Production notes
 
-1. Persist filters in URL query state.
-2. Handle 401/403 with explicit policy boundary UI.
-3. Refresh data on active incidents (manual or timed refetch).
-4. Record operator actions and rationale in internal audit systems.
+- **Persist filters in the URL.** `outcome`, `key_id`, and the date range belong in query state so an operator can paste a link to the exact view during an incident handoff.
+- **Handle 401/403 explicitly.** A ticket can expire or fail your RBAC mid-session. Render the policy boundary as its own state, not a generic error — the operator needs to know it's permission, not an outage.
+- **Refetch on active incidents.** The hooks don't poll. Add a manual refresh or a timer while an incident is open so the operator sees recovery without reloading.
+- **Log the action elsewhere.** Wacht records the key event; the operator's rationale ("revoked per ticket #4821") belongs in your own audit trail.
 
-## Validation checklist
-
-1. Logs/analytics/timeseries date windows stay aligned.
-2. Cursor pagination preserves deterministic ordering.
-3. Rotate/revoke updates are visible in subsequent audit windows.
-4. Unauthorized operators cannot access audit views.
+Before you ship, confirm the three windows stay aligned, that cursor paging holds order under live traffic, that a rotate/revoke shows up in the next audit window, and that a user without the ticket can't reach any of these views.

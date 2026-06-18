@@ -1,21 +1,15 @@
 ---
 title: "Deliveries, Replay, and Observability"
-description: "Operate webhook delivery at scale with filtered triage, replay workflows, and analytics."
+description: "Operate webhook delivery — filtered triage, bounded replay, and success-rate trends from the delivery hooks."
 ---
 
 # Deliveries, Replay, and Observability
 
-After endpoint setup, operational quality determines customer trust.
+Once endpoints are registered, the operational job is delivery: finding what failed, replaying it without making things worse, and confirming the success rate recovered. Three read hooks cover the view, and the session hook drives replay. Replay is an async batch job, not a per-row retry — that shapes the whole workflow below.
 
-## Core operator capabilities
+## The view: deliveries, analytics, timeseries
 
-1. Filter delivery stream by endpoint/status/event/time.
-2. Inspect individual delivery details.
-3. Replay failed deliveries safely.
-4. Track success rate and latency trends.
-5. Escalate and resolve incidents with clear runbooks.
-
-## Delivery and analytics hooks
+`useWebhookDeliveries` is the delivery stream, filterable by `status`, endpoint, event, and time. `useWebhookAnalytics` returns the rollup (`success_rate`, `failed`, `total_deliveries`, and `failed_deliveries_24h`). `useWebhookTimeseries` returns per-bucket points for trend lines.
 
 ```tsx
 import {
@@ -43,7 +37,11 @@ export function WebhookOpsSummary() {
 }
 ```
 
-## Replay workflow (session hook)
+Filter deliveries to `status: "failed"` before anything else — that's the queue you act on. Each delivery row carries the receiver's HTTP status code, so you can tell a 4xx (customer's endpoint rejected it — they need to fix it) from a 5xx or timeout (transient — replay may just work). `failed_deliveries_24h` from analytics is the number worth alerting on.
+
+## Replay, via the session hook
+
+Replay runs against the management session, not a public hook. It dispatches a batch job and hands back a `task_id` you poll.
 
 ```tsx
 const {
@@ -73,32 +71,23 @@ if (taskId) {
 }
 ```
 
-## Incident triage pattern
+`replayDelivery` takes either an explicit list of `delivery_ids` or a date range with optional `status` / `event_name` / `endpoint_id` filters — the range form is what you use during an incident, scoped to the impacted endpoint and window. It returns a `task_id`; `fetchReplayTaskStatus` reports `status`, `total_count`, `processed`, `replayed_count`, and `failed_count` as the batch runs. `cancelReplayTask` stops a job mid-flight — keep it reachable, because a replay over a wide window can hammer a receiver that's still recovering.
 
-1. Alert fires on failed-delivery threshold.
-2. Operator filters deliveries to impacted endpoint/event.
-3. Operator inspects error class and receiver response.
-4. Operator validates customer receiver fix.
-5. Operator executes bounded replay window.
-6. Operator confirms success-rate recovery in analytics.
+Two things to do here that the API won't do for you. Pass an `idempotency_key` so a replay that's retried doesn't double-dispatch. And scope the date range tight: replaying a week of failures at once is how you turn one customer's outage into a thundering-herd against their freshly-fixed endpoint.
 
-## Recommended dashboards
+## The incident path
 
-1. Failed deliveries by endpoint (1h, 24h, 7d).
-2. Success-rate trend by event group.
-3. P95/P99 response-time trend.
-4. Replay task volume, duration, and success/failure rate.
+An alert fires on `failed_deliveries_24h` crossing your threshold. Filter the delivery stream to the impacted endpoint and event, and read the receiver's status codes to classify the failure — a wall of 4xx means wait for the customer's fix before replaying, a wall of 5xx/timeout means the receiver was down and replay should land. Once the receiver is confirmed healthy, replay a bounded window and poll the `task_id` to completion. Then check the next timeseries bucket: success rate climbing back is the signal you're done; flat means the fix didn't take.
 
-## Production guardrails
+## What to watch and what to guard
 
-1. Require idempotent receiver processing in customer docs.
-2. Bound replay windows to avoid receiver overload.
-3. Audit all replay/cancel operations.
-4. Alert on sustained endpoint failure and auto-disable transitions.
+The trend lines worth a dashboard tile: failed deliveries by endpoint over 1h/24h/7d, success-rate by event group (one noisy event can mask an otherwise-healthy app), receiver response-time P95/P99, and replay task volume and failure rate (a rising replay failure rate means replays aren't fixing anything).
+
+The guardrails that keep replay from making incidents worse: idempotent receivers (state it in customer docs — replay re-delivers), bounded replay windows, and an audit record of every replay and cancel with who and why. If Wacht auto-disables an endpoint after sustained failure, alert on that transition — a silently disabled endpoint is a customer who stops getting events without knowing it.
 
 ## Related docs
 
-1. [Webhook Apps](/guides/webhook-apps)
-2. [Custom Hook Flow Implementation](/guides/webhook-apps/custom-hook-flow-implementation)
+1. [Webhook apps](/guides/webhook-apps)
+2. [Custom hook flow implementation](/guides/webhook-apps/custom-hook-flow-implementation)
 3. [Backend JS SDK](/sdks/node)
-4. [Backend API Reference](/reference/backend-api)
+4. [Backend API reference](/reference/backend-api)

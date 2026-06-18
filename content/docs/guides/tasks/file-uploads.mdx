@@ -1,13 +1,13 @@
 ---
-title: "File uploads"
-description: "Get user files into a task's workspace at three points: task creation, task update, and comments."
+title: File uploads
+description: Get user files into a task's workspace at three points — task creation, task update, and comments.
 ---
 
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
-Three endpoints accept file attachments. Each one accepts JSON (no files) OR multipart (with files) by content-type. Form field for files is `attachments`. Files land in S3 under the task's workspace at `/task/uploads/<id>_<safe-name>`. Attachment metadata gets merged into the board item's or comment's `metadata.attachments`.
+Three endpoints accept file attachments: task creation, task update, and comments. Each accepts either JSON (no files) or multipart (with files), chosen by content-type; the multipart form field for files is `attachments`. Uploaded files land under the task workspace at `/task/uploads/<id>_<safe-name>`, where `<id>` is a runtime-assigned identifier and `<safe-name>` is the sanitized original filename. The attachment metadata merges into the board item's or comment's `metadata.attachments`.
 
-Per-file size cap: **64 MB**.
+Per-file size cap: **64 MB**. For anything larger, mount it instead of uploading — see [S3 mounts](#s3-mounts-for-large-inputs).
 
 ## At task creation
 
@@ -65,16 +65,15 @@ let task = wacht::try_get_client()?
 </Tab>
 </Tabs>
 
-When the agent runs, files appear at `/task/uploads/<id>_<safe-name>`. The agent can read them with the filesystem tool or via `code_runner`. The attachment list is also in `task.metadata.attachments` so your UI can render it.
+When the agent runs, files appear at `/task/uploads/<id>_<safe-name>`. The agent reads them with `read_file` (or processes them in `code_runner`). The same list is in `task.metadata.attachments`, so your UI can render the attachments without listing the filesystem.
 
-### Agent prompt example
+The agent does not automatically know which uploads matter for the task — tell it in the prompt:
 
 ```
-Files attached to the task are under /task/uploads/. For each file:
-  1. Read it with read_file
-  2. Identify flagged clauses
-  3. Write findings to /task/artifacts/review-<filename>.md
-Mark the task completed when all inputs are reviewed.
+Files attached to the task are under /task/uploads/. Read each one with
+read_file, identify flagged clauses, and write findings to
+/task/artifacts/review-<filename>.md. Mark the task completed when every
+input is reviewed.
 ```
 
 ## At task update
@@ -164,9 +163,9 @@ wacht::try_get_client()?
 
 The comment is stored with attachments in its `metadata.attachments`. The agent's prompt on the next iteration includes the comment body and can see the new files at `/task/uploads/`.
 
-## S3 mounts (alternative for large inputs)
+## S3 mounts for large inputs
 
-When the file is huge (think hours of video) or already lives in your S3, don't upload — mount it. The runtime makes the S3 object visible to the agent as a regular file without copying it into the workspace.
+When the file is huge (hours of video, a large dataset) or already lives in your S3, don't upload — mount it. The runtime makes the S3 object visible to the agent as a regular file without copying it into the workspace. `mount_path` is where the agent sees it, `s3_relative_key` is the key in your configured bucket, and `mode` is `ro` or `rw`.
 
 <Tabs items={["Node SDK", "Rust SDK"]}>
 <Tab>

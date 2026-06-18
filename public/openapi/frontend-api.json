@@ -6596,6 +6596,14 @@
             }
           },
           {
+            "name": "board_item_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -36660,11 +36668,8 @@
           "signup_terms_statement_shown": {
             "type": "boolean"
           },
-          "light_mode_settings": {
-            "$ref": "#/components/schemas/LightModeSettings"
-          },
-          "dark_mode_settings": {
-            "$ref": "#/components/schemas/DarkModeSettings"
+          "theme_tokens": {
+            "$ref": "#/components/schemas/ThemeTokens"
           }
         },
         "required": [
@@ -36693,9 +36698,7 @@
           "use_initials_for_organization_profile_image",
           "logo_image_url",
           "signup_terms_statement",
-          "signup_terms_statement_shown",
-          "light_mode_settings",
-          "dark_mode_settings"
+          "signup_terms_statement_shown"
         ]
       },
       "DeploymentKeyPair": {
@@ -38916,336 +38919,93 @@
           }
         }
       },
-      "LightModeSettings": {
+      "ThemeTokens": {
         "type": "object",
         "properties": {
-          "primary_color": {
-            "type": "string"
+          "light": {
+            "$ref": "#/components/schemas/WaThemeTokens"
           },
-          "background_color": {
-            "type": "string"
-          },
-          "text_color": {
-            "type": "string"
-          },
-          "token_overrides": {
-            "$ref": "#/components/schemas/UITokenOverrides"
+          "dark": {
+            "$ref": "#/components/schemas/WaThemeTokens"
           }
-        },
-        "required": [
-          "primary_color",
-          "background_color",
-          "text_color"
-        ]
+        }
       },
-      "DarkModeSettings": {
+      "WaThemeTokens": {
         "type": "object",
         "properties": {
-          "primary_color": {
+          "surface": {
             "type": "string"
           },
-          "background_color": {
+          "surface_subtle": {
             "type": "string"
           },
-          "text_color": {
+          "background": {
             "type": "string"
           },
-          "token_overrides": {
-            "$ref": "#/components/schemas/UITokenOverrides"
-          }
-        },
-        "required": [
-          "primary_color",
-          "background_color",
-          "text_color"
-        ]
-      },
-      "UITokenOverrides": {
-        "type": "object",
-        "properties": {
-          "space_unit": {
+          "canvas": {
             "type": "string"
           },
-          "card": {
+          "text": {
             "type": "string"
           },
-          "card_foreground": {
+          "text_secondary": {
             "type": "string"
           },
-          "popover": {
+          "text_muted": {
             "type": "string"
           },
-          "popover_foreground": {
-            "type": "string"
-          },
-          "primary_foreground": {
-            "type": "string"
-          },
-          "secondary": {
-            "type": "string"
-          },
-          "secondary_foreground": {
-            "type": "string"
-          },
-          "accent": {
-            "type": "string"
-          },
-          "accent_foreground": {
-            "type": "string"
-          },
-          "ring": {
-            "type": "string"
-          },
-          "foreground": {
-            "type": "string"
-          },
-          "foreground_inverse": {
-            "type": "string"
-          },
-          "secondary_text": {
-            "type": "string"
-          },
-          "muted": {
+          "text_faint": {
             "type": "string"
           },
           "border": {
             "type": "string"
           },
-          "border_hover": {
+          "border_strong": {
             "type": "string"
           },
-          "divider": {
+          "primary": {
             "type": "string"
           },
-          "input_background": {
+          "primary_soft": {
             "type": "string"
           },
-          "input_border": {
-            "type": "string"
-          },
-          "input_focus_border": {
-            "type": "string"
-          },
-          "background_subtle": {
-            "type": "string"
-          },
-          "background_hover": {
-            "type": "string"
-          },
-          "primary_hover": {
-            "type": "string"
-          },
-          "error": {
-            "type": "string"
-          },
-          "error_background": {
-            "type": "string"
-          },
-          "error_border": {
-            "type": "string"
-          },
-          "warning": {
-            "type": "string"
-          },
-          "warning_background": {
-            "type": "string"
-          },
-          "warning_border": {
-            "type": "string"
-          },
-          "warning_text": {
+          "primary_foreground": {
             "type": "string"
           },
           "success": {
             "type": "string"
           },
-          "success_background": {
-            "type": "string"
-          },
-          "success_border": {
+          "success_soft": {
             "type": "string"
           },
           "info": {
             "type": "string"
           },
-          "info_background": {
+          "info_soft": {
             "type": "string"
           },
-          "radius_md": {
+          "warning": {
+            "type": "string"
+          },
+          "warning_soft": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          },
+          "error_soft": {
+            "type": "string"
+          },
+          "radius": {
             "type": "string"
           },
           "radius_lg": {
             "type": "string"
           },
-          "radius_xl": {
+          "font_sans": {
             "type": "string"
           },
-          "radius_2xl": {
-            "type": "string"
-          },
-          "radius_2xs": {
-            "type": "string"
-          },
-          "radius_xs": {
-            "type": "string"
-          },
-          "radius_full": {
-            "type": "string"
-          },
-          "border_width_thin": {
-            "type": "string"
-          },
-          "border_width_regular": {
-            "type": "string"
-          },
-          "scrollbar_track": {
-            "type": "string"
-          },
-          "scrollbar_thumb": {
-            "type": "string"
-          },
-          "scrollbar_thumb_hover": {
-            "type": "string"
-          },
-          "shadow_color": {
-            "type": "string"
-          },
-          "shadow_light_color": {
-            "type": "string"
-          },
-          "shadow_medium_color": {
-            "type": "string"
-          },
-          "success_shadow": {
-            "type": "string"
-          },
-          "success_background_light": {
-            "type": "string"
-          },
-          "button_ripple": {
-            "type": "string"
-          },
-          "dialog_backdrop": {
-            "type": "string"
-          },
-          "space_0u": {
-            "type": "string"
-          },
-          "space_1u": {
-            "type": "string"
-          },
-          "space_2u": {
-            "type": "string"
-          },
-          "space_3u": {
-            "type": "string"
-          },
-          "space_4u": {
-            "type": "string"
-          },
-          "space_5u": {
-            "type": "string"
-          },
-          "space_6u": {
-            "type": "string"
-          },
-          "space_7u": {
-            "type": "string"
-          },
-          "space_8u": {
-            "type": "string"
-          },
-          "space_10u": {
-            "type": "string"
-          },
-          "space_12u": {
-            "type": "string"
-          },
-          "space_14u": {
-            "type": "string"
-          },
-          "space_16u": {
-            "type": "string"
-          },
-          "space_24u": {
-            "type": "string"
-          },
-          "font_size_2xs": {
-            "type": "string"
-          },
-          "font_size_xs": {
-            "type": "string"
-          },
-          "font_size_sm": {
-            "type": "string"
-          },
-          "font_size_md": {
-            "type": "string"
-          },
-          "font_size_lg": {
-            "type": "string"
-          },
-          "font_size_xl": {
-            "type": "string"
-          },
-          "font_size_2xl": {
-            "type": "string"
-          },
-          "font_size_3xl": {
-            "type": "string"
-          },
-          "size_8u": {
-            "type": "string"
-          },
-          "size_10u": {
-            "type": "string"
-          },
-          "size_12u": {
-            "type": "string"
-          },
-          "size_18u": {
-            "type": "string"
-          },
-          "size_20u": {
-            "type": "string"
-          },
-          "size_24u": {
-            "type": "string"
-          },
-          "size_32u": {
-            "type": "string"
-          },
-          "size_36u": {
-            "type": "string"
-          },
-          "size_40u": {
-            "type": "string"
-          },
-          "size_45u": {
-            "type": "string"
-          },
-          "size_50u": {
-            "type": "string"
-          },
-          "shadow_sm": {
-            "type": "string"
-          },
-          "shadow_md": {
-            "type": "string"
-          },
-          "shadow_lg": {
-            "type": "string"
-          },
-          "shadow_xl": {
-            "type": "string"
-          },
-          "shadow_success": {
-            "type": "string"
-          },
-          "ring_primary": {
-            "type": "string"
-          },
-          "letter_spacing_tight": {
+          "font_mono": {
             "type": "string"
           }
         }
@@ -40371,6 +40131,21 @@
           },
           {
             "$ref": "#/components/schemas/ClarificationResponseContent"
+          },
+          {
+            "$ref": "#/components/schemas/TaskHandoffReceivedContent"
+          },
+          {
+            "$ref": "#/components/schemas/TaskSubscriptionNotificationContent"
+          },
+          {
+            "$ref": "#/components/schemas/TaskSubscriptionDeliveryContent"
+          },
+          {
+            "$ref": "#/components/schemas/AssignmentExecutionTriggerContent"
+          },
+          {
+            "$ref": "#/components/schemas/TaskRoutingTriggerContent"
           }
         ]
       },
@@ -40618,6 +40393,193 @@
           "type",
           "answers"
         ]
+      },
+      "TaskHandoffReceivedContent": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "task_handoff_received"
+            ]
+          },
+          "source_thread_id": {
+            "type": "string"
+          },
+          "board_item_id": {
+            "type": "string"
+          },
+          "source_role": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskHandoffArtifact"
+            },
+            "nullable": true
+          },
+          "blockers": {
+            "type": "array",
+            "items": {},
+            "nullable": true
+          },
+          "next_actions": {
+            "type": "array",
+            "items": {},
+            "nullable": true
+          },
+          "completed_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "source_thread_id",
+          "board_item_id",
+          "source_role",
+          "outcome",
+          "summary",
+          "completed_at"
+        ]
+      },
+      "TaskSubscriptionNotificationContent": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "task_subscription_notification"
+            ]
+          },
+          "board_item_id": {
+            "type": "string"
+          },
+          "task_key": {
+            "type": "string"
+          },
+          "task_title": {
+            "type": "string"
+          },
+          "from_status": {
+            "type": "string"
+          },
+          "to_status": {
+            "type": "string"
+          },
+          "transitioned_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "board_item_id",
+          "task_key",
+          "task_title",
+          "from_status",
+          "to_status",
+          "transitioned_at"
+        ]
+      },
+      "TaskSubscriptionDeliveryContent": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "task_subscription_delivery"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "summary"
+        ]
+      },
+      "AssignmentExecutionTriggerContent": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "assignment_execution_trigger"
+            ]
+          },
+          "assignment_id": {
+            "type": "string"
+          },
+          "board_item_id": {
+            "type": "string"
+          },
+          "task_key": {
+            "type": "string"
+          },
+          "routing_reason": {
+            "type": "string"
+          },
+          "triggered_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "assignment_id",
+          "board_item_id",
+          "task_key",
+          "triggered_at"
+        ]
+      },
+      "TaskRoutingTriggerContent": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "task_routing_trigger"
+            ]
+          },
+          "board_item_id": {
+            "type": "string"
+          },
+          "task_key": {
+            "type": "string"
+          },
+          "routing_reason": {
+            "type": "string"
+          },
+          "triggered_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "board_item_id",
+          "task_key",
+          "triggered_at"
+        ]
+      },
+      "TaskHandoffArtifact": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
       },
       "QuestionAnswer": {
         "type": "object",
@@ -41263,7 +41225,7 @@
           "artifacts": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/TaskHandoffArtifact"
             }
           },
           "findings": {

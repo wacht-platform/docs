@@ -1,60 +1,100 @@
 ---
 title: Authentication
-description: Authentication model across hosted UI, frontend sessions, and backend request validation.
+description: How Wacht authenticates end users — sign-in factors, sessions, the frontend-backend trust boundary, and server-side verification.
 ---
 
-Wacht authentication spans three layers that should be implemented together.
+Authentication in Wacht is the end-user identity layer: how a person proves who they are, how that proof becomes a session, and how your backend trusts a request that claims to carry one. This page covers what's available, what the defaults are, and where the trust boundary sits. The framework quick-starts and deeper guides handle the wiring.
 
-## Lifecycle diagram
+## Sign-in factors
+
+A deployment turns factors on and off in its auth settings, and picks a primary first factor. The defaults below are what a new deployment ships with — change them in Console under Authentication.
+
+**First factors** identify the user:
+
+- Email + password (the default first factor)
+- Username + password
+- Email OTP (a one-time code mailed to the address)
+- Email magic link (a tap-to-sign-in link; can require the same device that started the flow)
+- Phone OTP (a code over SMS, with WhatsApp available)
+- Passkey (WebAuthn; off by default — enable it to allow passwordless and add autofill)
+
+Password rules are deployment-level: minimum length (default 8) plus optional lowercase, uppercase, number, and special-character requirements. Email is enabled and required by default; phone and username are enabled but optional.
+
+**Second factors** are the MFA layer, governed by a single policy — `none`, `optional`, or `enforced` (default `optional`):
+
+- Authenticator app (TOTP)
+- Backup codes (issued once, regenerable; old codes are invalidated on regeneration)
+- Phone OTP
+
+When the policy is `enforced`, a user who hasn't enrolled a second factor is pushed through enrollment before the session completes.
+
+## Social and enterprise sign-in
+
+Social OAuth connects an external identity provider as a first factor. Wacht ships connectors for Google, GitHub, GitLab, Microsoft, LinkedIn, Discord, Facebook, Apple, and X. Each connection is per-deployment, carries your own OAuth client credentials, and has sensible default scopes (Google requests `openid email profile`, GitHub requests `read:user user:email`, and so on). A connection only participates in sign-in when it's enabled.
+
+Enterprise SSO is a per-organization connection bound to a verified domain. Two protocols: SAML (IdP entity ID, SSO URL, signing certificate) and OIDC (issuer, client ID/secret, scopes). With just-in-time provisioning on, a user signing in through the IdP for the first time is created and attached to the organization automatically, with IdP attributes mapped onto the Wacht user. This is the path for "log in with your company account." Enable it per deployment and see [B2B: organizations and workspaces](/product/b2b) for how connections bind to verified domains.
+
+## Sessions
+
+A successful sign-in produces a session scoped to one deployment. A session can hold more than one active sign-in — multi-session support is on by default, capped at five accounts per session and five sessions per account, so a user can switch between accounts without re-authenticating each one.
+
+Three lifetimes govern a session, all configurable per deployment:
+
+- **Token lifetime** (default 30 minutes) — how long a minted session token stays valid before it's refreshed.
+- **Validity period** (default 30 days) — the outer bound; past this the user signs in again.
+- **Inactive timeout** (default 7 days) — idle sessions past this are treated as ended.
+
+Logout, an admin revoke, or a failed step-up flips a soft-delete marker on the session. Once that marker is set, every downstream check — token refresh, new token minting, server-side verification — must treat the session as dead. That's how a logout on one device propagates: the next request that depends on the session fails its liveness check.
+
+You can list, revoke, and bulk-revoke a user's sign-ins from the backend. See [Rust user management](/sdks/rust/user-management) for the session API.
+
+## The trust boundary
+
+The single rule: the frontend reflects session state, the backend enforces it. Never the other way around.
+
+The frontend SDK keeps your UI in sync — `SignedIn` / `SignedOut`, a user button, session hooks — but a signed-in component is a UI convenience, not an authorization. A protected route, a data read, a mutation: each one re-verifies on the server, because the client is the one place an attacker controls. Treat the session token a request carries as a claim, and verify it before you act on it.
 
 ```text
-User Browser
-   |
-   | 1) hosted sign-in / sign-up
-   v
-Wacht Auth UI
-   |
-   | 2) redirect back with session context
-   v
-Frontend App (SDK provider + SignedIn/SignedOut)
-   |
-   | 3) request protected backend route
-   v
-Backend Service (Node/Rust auth enforcement)
-   |
-   | 4) authorize + scope check (org/workspace)
-   v
-Protected data / mutation
+Browser ── signs in at hosted UI ──▶ session minted (deployment-scoped)
+   │
+   │  request carries the session token
+   ▼
+Backend ── verify token ─▶ resolve user ─▶ check session liveness ─▶ scope/permission check
+   │                                                                         │
+   └────────────────── reject on any failure ◀──────────────────────────────┘
 ```
 
-## Layer 1: user-facing auth entry
+## Verifying a request server-side
 
-Users authenticate through hosted sign-in/sign-up pages and land back in your app with deployment-scoped session context.
+Server-side verification answers three questions in order: is the token authentic, is the user it names real, and is the session behind it still alive. Wacht's server SDKs do all three. In Node:
 
-- [Next.js Quick Start](/sdks/nextjs/quickstart)
-- [React Router Quick Start](/sdks/react-router/quickstart)
-- [TanStack Router Quick Start](/sdks/tanstack-router/quickstart)
-- [React (router-agnostic)](/sdks/react)
+```ts
+import { authenticateRequest } from '@wacht/backend';
 
-## Layer 2: frontend session-aware UX
+export async function handler(request: Request) {
+  const auth = await authenticateRequest(request, {
+    signInUrl: 'https://app.example.com/sign-in',
+  });
 
-Use SDK components/hooks (`SignedIn`, `SignedOut`, `UserButton`, session hooks) to keep client UX aligned with session state.
+  // Throws (with a redirect target) when the request isn't authenticated
+  // or the permission isn't held — handle that in your framework layer.
+  await auth.protect({ permission: 'user:read' });
 
-- [Next.js Client-side Auth](/sdks/nextjs/client-side-auth)
-- [React Router Client-side Auth](/sdks/react-router/client-side-auth)
-- [TanStack Router Client-side Auth](/sdks/tanstack-router/client-side-auth)
+  return Response.json({ userId: auth.userId });
+}
+```
 
-## Layer 3: backend enforcement
+`authenticateRequest` validates the session token, confirms the session is live, and gives you the user and their organization/workspace scope. `auth.protect` is where you assert a permission. A revoked or expired session fails here even if the token string still looks well-formed — that's the liveness check earning its keep.
 
-Always enforce auth server-side for protected data and mutations.
+The same shape exists in Rust as an Axum auth layer. For the full server story across both languages, see [Server SDKs](/sdks/server).
 
-- [Next.js Server-side Auth](/sdks/nextjs/server-side)
-- [React Router Server Auth](/sdks/react-router/server-auth)
-- [TanStack Router Server Auth](/sdks/tanstack-router/server-auth)
-- [Rust Axum Auth Layer](/sdks/rust/frameworks/axum/auth-layer-setup)
+## What this page is not
 
-## End-to-end track
+End-user identity is people signing into your product. It is not machine-to-machine credentials and it is not your customers' own API keys — those are [API authentication](/product/api-auth), a separate system with its own apps, keys, and gateway. If you're issuing a credential to a script or a partner rather than to a person, you're in the wrong document.
 
-If you want one full walkthrough across frontend and backend together, use:
+## Where to go next
 
-- [Full-stack auth lifecycle (React + Rust)](/guides/integration-playbooks/fullstack-auth-lifecycle-react-rust)
+- [Full-stack auth lifecycle (React + Rust)](/guides/integration-playbooks/fullstack-auth-lifecycle-react-rust) — one walkthrough, frontend to backend
+- [B2B: organizations and workspaces](/product/b2b) — enterprise SSO and verified domains
+- [Next.js Quick Start](/sdks/nextjs/quickstart) · [React Router Quick Start](/sdks/react-router/quickstart) · [TanStack Router Quick Start](/sdks/tanstack-router/quickstart)
+- [Server SDKs](/sdks/server) — verifying sessions in your backend

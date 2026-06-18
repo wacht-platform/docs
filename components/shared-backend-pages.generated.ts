@@ -33,6 +33,7 @@ export const generatedGroupLabels: Record<string, string> = {
   operations: 'Utility',
   settings: 'Settings',
   segments: 'Segments',
+  analytics: 'Analytics',
 };
 
 const MODEL_TYPE_SKIP_SYMBOLS = new Set([
@@ -1427,6 +1428,7 @@ export const allBackendGroups: BackendGroup[] = (() => {
     if (groupLabel === 'OAuth grants') return 'oauth';
     if (groupLabel === 'Settings') return 'settings';
     if (groupLabel === 'Segments') return 'segments';
+    if (groupLabel === 'Analytics') return 'analytics';
     if (groupLabel === 'Utility') {
       if (method === 'healthCheck') return 'health';
       if (method === 'createNotification') return 'notifications';
@@ -1462,6 +1464,7 @@ export const allBackendGroups: BackendGroup[] = (() => {
     if (groupLabel === 'Utility') return 'operations';
     if (groupLabel === 'Settings') return 'settings';
     if (groupLabel === 'Segments') return 'segments';
+    if (groupLabel === 'Analytics') return 'analytics';
     return 'operations';
   }
 

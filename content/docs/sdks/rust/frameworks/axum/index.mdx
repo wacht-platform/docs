@@ -15,7 +15,7 @@ Use this section when your Rust service is built on Axum and you want Wacht auth
 
 ```toml
 [dependencies]
-wacht = { version = "0.1.0-beta.4", features = ["axum"] }
+wacht = { version = "0.1.0-beta.7", features = ["axum"] }
 axum = "0.8"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
@@ -28,4 +28,4 @@ The `axum` feature is enabled by default in `wacht`, but keeping it explicit in 
 2. Use typed extractors (`RequireAuth`, `OptionalAuth`, `RequirePermission<T>`) in handlers.
 3. For API key or OAuth access-token gateways, call the gateway API from handlers or service layer.
 
-For backend management endpoints (users, orgs, webhooks, settings), continue with [Rust Backend Overview](../../backend/overview).
+For backend management endpoints, continue with [User Management](../../user-management), [Organizations and Workspaces](../../organizations-workspaces), [API Auth and OAuth](../../api-auth-oauth), [Webhooks](../../webhooks), and [AI Runtime and Configuration](../../ai-runtime).

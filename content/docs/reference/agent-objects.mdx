@@ -1,6 +1,6 @@
 ---
-title: "Agent runtime objects"
-description: "Object hierarchy and API verbs for driving the Wacht agent runtime from code."
+title: Agent runtime objects
+description: Object hierarchy and API verbs for driving the Wacht agent runtime from code.
 ---
 
 # Agent runtime objects
@@ -20,10 +20,10 @@ actor
 | --- | --- | --- |
 | Actor | `subject_type` + `external_key` | `createActor`, `listActors`, `lookupActor` |
 | Agent | `id` (per deployment) | `createAiAgent`, `getAiAgentById`, `updateAiAgent`, `deleteAiAgent` |
-| Actor project | `id` (per deployment); binds one actor + one agent | `createActorProjectFlat` (query: `actor_id`; body: `agent_id`, `name`) |
+| Actor project | `id` (per deployment); binds one actor + one agent | `createActorProject` (actor id + `{ agent_id, name }`) |
 | Board item | `id` (per project) | `createProjectTaskBoardItem`, `updateProjectTaskBoardItem`, `archiveProjectTaskBoardItem`, `cancelProjectTaskBoardItem`, `delegateProjectTask`, `downloadProjectTaskBoardItemFilesystemFile` |
 | Thread | `id` (per project) | `createAgentThread`, `executeAgentThreadAsync`, `getAgentThreadById`, `getAgentThreadMessages` |
-| Session ticket | one-time `ticket` string | `createBackendSessionTicket`, `createSessionTicket` |
+| Session ticket | one-time `ticket` string | `createSessionTicket` |
 
 The agent record has no `instructions` or schedule field. Task content lives on the board item; that's why a single agent can run many different tasks.
 
@@ -62,8 +62,8 @@ let actor = response.actor;
 
 `board_item.schedule_kind` (from `models::project_task_schedule::schedule_kind`):
 
-- `ONCE` — runs at `next_run_at`, then stops.
-- `INTERVAL` — runs at `next_run_at`, then repeats every `interval_seconds`.
+- `once` — runs at `next_run_at`, then stops.
+- `interval` — runs at `next_run_at`, then repeats every `interval_seconds` (minimum 600).
 
 ## Tool types
 
@@ -144,7 +144,7 @@ let file = client
 
 ## Sharing a session
 
-`POST /session/tickets` (`createBackendSessionTicket` server-side, `createSessionTicket` console-side) issues four ticket types — each redirects to a different vanity surface:
+`POST /session/tickets` (`createSessionTicket`) issues four ticket types — each redirects to a different vanity surface:
 
 | `ticket_type` | URL | Required fields |
 | --- | --- | --- |

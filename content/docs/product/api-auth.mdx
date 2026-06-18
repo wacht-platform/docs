@@ -1,11 +1,106 @@
 ---
 title: API Authentication
-description: Machine access, API keys, OAuth clients, and gateway policy.
+description: Machine and customer-facing credentials in Wacht — API auth apps, keys, scopes, rate-limit schemes, and gateway authorization.
 ---
 
-API authentication covers:
+API authentication is how non-human callers reach your product: a server-to-server integration, a CI job, a partner's backend, or a key your own customers create from their settings page. It's a separate system from end-user identity. End-user auth issues sessions to people; API auth issues long-lived credentials to machines, and it carries its own apps, keys, scopes, and audit.
 
-- API auth apps
-- keys and grants
-- audit trails
-- gateway authorization checks
+## API auth apps
+
+An API auth app is the control plane for one family of keys. You create one per deployment (the convention is `app_slug = aa_<deploymentId>`), give it a name and a key prefix, and it becomes the namespace every key under it inherits. The app holds the shared policy: the set of permissions and resources keys may carry, the default rate limits, and an optional named rate-limit scheme. A key can never grant more than its app allows.
+
+```ts
+import { WachtClient } from "@wacht/backend";
+
+const client = new WachtClient({ apiKey: process.env.WACHT_BACKEND_API_KEY! });
+
+// key_prefix is what your customers see on every key the app mints, e.g. "acme_live_…".
+await client.apiKeys.createApiAuthApp({
+  app_slug: "aa_42",
+  name: "Acme Public API",
+  key_prefix: "acme_live",
+  description: "Customer-facing API keys",
+});
+```
+
+Apps can be scoped to a user, an organization, or a workspace, which is how you model "this customer's keys" in a multi-tenant product. An inactive app stops authorizing every key beneath it at once.
+
+## Keys
+
+A key is a single credential. When you create one, Wacht returns the full secret exactly once — store it then, because the platform only keeps a hash plus a prefix and last-few-characters suffix for display. After that you can rename, set an expiry, and revoke (revocation records a reason and a timestamp), but you can never read the secret back.
+
+Each key carries:
+
+- **Permissions** — what the key is allowed to do, bounded by the app.
+- **Tenant binding** — optional owner user, organization, or workspace, plus the membership it acts as.
+- **Role permissions** — when bound to a membership, the org and workspace role permissions resolved at issue time, so a key inherits its owner's roles.
+- **Lifecycle** — `expires_at`, `last_used_at`, `is_active`, and the revoke fields.
+
+That last-used timestamp is your liveness signal: a key that hasn't been seen in months is a candidate for rotation or revocation.
+
+## Scopes and authorization
+
+A key's authority is the intersection of three things: the app's allowed permissions and resources, the permissions stamped on the key, and (if the key is membership-bound) the role permissions it inherited. Authorization isn't something you reimplement per service — you ask the gateway, and it returns a single allow/deny plus the resolved principal context.
+
+```ts
+import { WachtClient } from "@wacht/backend";
+
+const client = new WachtClient({ apiKey: process.env.WACHT_BACKEND_API_KEY! });
+
+export async function authorizeApiRequest(
+  apiKey: string,
+  method: string,
+  resource: string,
+) {
+  const authz = await client.gateway.checkPrincipalAuthz({
+    principalType: "api_key",
+    principalValue: apiKey,
+    method,
+    resource,
+    requiredPermissions: ["reports:read"],
+  });
+
+  if (!authz.allowed) throw new Error("Forbidden"); // 403 in your handler
+  return authz; // resolved tenant, permissions, and rate-limit verdict
+}
+```
+
+One call checks that the key exists and is active, isn't expired or revoked, covers the required permissions and resource, and is within its rate limit. The gateway speaks three principal types — `api_key`, `m2m_oauth` (machine-to-machine OAuth clients), and `user_oauth` (tokens minted on a user's behalf) — so the same authorization path serves raw keys and OAuth-issued tokens. For the OAuth token path, see [Verify OAuth access tokens](/guides/oauth-apps/access-token-verification).
+
+## Rate limits
+
+Rate limits live on the app and on individual keys, and a key's limits override the app's. A limit is a window (`max_requests` per `duration` of some `unit` — millisecond through calendar month) plus a **mode** that decides what shares the counter:
+
+| Mode | Counter is shared across |
+|---|---|
+| `per_app` | every key in the app |
+| `per_key` | each key independently |
+| `per_key_and_ip` | each key + source IP pair |
+| `per_app_and_ip` | the app + source IP pair |
+
+Limits can target specific endpoints (default `*`, all of them) and carry a priority so overlapping rules resolve deterministically. Windows are bounded — nothing longer than 30 days — and calendar units (`calendar_day`, `calendar_month`) reset on the UTC boundary rather than rolling. When a key has no limits configured, the app's apply; when the app has none, the default is 100 requests per minute per key.
+
+For repeated policy across many apps, define a **rate-limit scheme** once — a named, reusable set of rules — and reference it by slug from an app or key instead of copying limits around.
+
+## Audit
+
+Every authorization decision the gateway makes is recorded, which is what makes API keys operable rather than just issuable. Support can answer "is this key being used, and from where," security can trace a leaked credential's blast radius, and you can see blocked-request volume when a customer trips a rate limit. The [API Auth guide](/guides/api-auth/index) covers the customer-facing management surfaces — vanity pages and custom hooks — built on top of this.
+
+## How this differs from end-user identity
+
+| | End-user identity | API authentication |
+|---|---|---|
+| Credential | Session (short-lived, refreshed) | API key or OAuth token (long-lived) |
+| Subject | A person | A machine, integration, or customer key |
+| Verification | `authenticateRequest` / session liveness | `checkPrincipalAuthz` at the gateway |
+| Revocation | Logout, session kill | Key revoke, OAuth grant revoke |
+| Scope model | Roles + memberships | Key permissions ∩ app policy (+ inherited roles) |
+
+If the caller is a browser carrying a session, see [Authentication](/product/authentication). If the caller is a machine carrying a key, you're in the right place.
+
+## Where to go next
+
+- [API Auth guide](/guides/api-auth/index) — apps, customer key management, vanity vs custom UX
+- [Verify OAuth access tokens](/guides/oauth-apps/access-token-verification) — opaque vs JWT, gateway vs local verification
+- [Server SDKs](/sdks/server) — calling the gateway from Node and Rust
+- [Backend API Reference](/reference/backend-api)

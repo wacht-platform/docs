@@ -1,5 +1,5 @@
 ---
-title: Extress
+title: Express
 description: End-to-end Express integration with @wacht/backend server auth, guards, and typed backend API access.
 ---
 
@@ -168,7 +168,6 @@ export { machineRouter };
 - Keep `WACHT_API_KEY` and `WACHT_PUBLISHABLE_KEY` server-only.
 - In Node.js, `getAuthFromToken(token)` can read publishable key from env automatically.
 - Use API key/OAuth protected checks for machine-token routes and JWT/session checks for user routes.
-- Custom `gatewayUrl` host override is available on Enterprise plans.
 - Centralize permission strings so route guards and policy code stay aligned.
 - Use bounded pagination on list methods.
 - Return stable JSON error contracts for auth failures.

@@ -10,6 +10,7 @@ import { oauthBackendDocs } from '@/components/backend-docs/catalog/oauth';
 import { operationsBackendDocs } from '@/components/backend-docs/catalog/operations';
 import { settingsBackendDocs } from '@/components/backend-docs/catalog/settings';
 import { segmentsBackendDocs } from '@/components/backend-docs/catalog/segments';
+import { analyticsBackendDocs } from '@/components/backend-docs/catalog/analytics';
 
 export const backendMeta: Record<BackendFrameworkKey, BackendMeta> = {
   nextjs: {
@@ -46,4 +47,5 @@ export const backendGroups: BackendGroup[] = [
   { label: 'Utility', docs: operationsBackendDocs },
   { label: 'Settings', docs: settingsBackendDocs },
   { label: 'Segments', docs: segmentsBackendDocs },
+  { label: 'Analytics', docs: analyticsBackendDocs },
 ];

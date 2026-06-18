@@ -3,37 +3,11 @@ title: "Webhook Apps"
 description: "Customer-managed event delivery — endpoints, secrets, retries, replay."
 ---
 
-Webhook apps are the customer-facing control plane for outgoing event delivery.
+A webhook app is the customer-facing control plane for outgoing event delivery. One app per deployment lets your customers register endpoint URLs, subscribe to event names, rotate signing secrets, and inspect and replay deliveries. Use it for integration events (`invoice.paid`, `subscription.updated`), workflow callbacks, and partner delivery contracts where the customer needs diagnostics and replay on their own.
 
-Use webhook apps when customers need to:
+There are two halves to keep straight. The management surface — endpoint CRUD, subscriptions, test sends, secret rotation, replay initiation — is what this app exposes to customers. The delivery side — your backend emitting events, Wacht attempting delivery, retrying, and recording status — runs underneath. The split matters because the management UI is yours to build, but the delivery behavior is fixed by Wacht; your customers operate the former and observe the latter.
 
-1. Register one or more endpoint URLs.
-2. Subscribe to specific event names.
-3. Test endpoints and rotate secrets.
-4. Inspect delivery failures and replay events.
-
-## End-to-end architecture
-
-1. Provision one webhook app per deployment/tenant.
-2. Gate frontend access with backend-issued `webhook_app_access` tickets.
-3. Expose management UX via vanity pages or custom hooks.
-4. Emit domain events from backend systems.
-5. Operate retries, replay, and analytics from support/on-call workflows.
-
-## Control plane vs data plane
-
-1. Control plane: endpoint CRUD, subscriptions, testing, replay initiation, secrets.
-2. Data plane: event emission, delivery attempts, retries, status transitions, metrics.
-3. Keep ownership explicit so product and platform teams can evolve independently.
-
-## Common product use cases
-
-1. Integration events (`invoice.paid`, `subscription.updated`).
-2. Workflow automation callbacks for external systems.
-3. Partner-facing delivery contracts with diagnostics and replay.
-4. Tenant-specific event delivery policies and observability.
-
-## Provision webhook app
+## Provision the app
 
 ```ts
 import { WachtClient } from "@wacht/backend";
@@ -47,37 +21,39 @@ await client.webhooks.createWebhookApp({
 });
 ```
 
-Recommended naming convention: `wh_<deploymentId>`.
+Use `wh_<deploymentId>` for the slug so it's derivable. The app holds the endpoint registry and signing secrets; emitting events and management access both reference it by slug.
 
-## Access model
+## How the frontend gets in
 
-1. User signs in to your app.
-2. Backend enforces tenant ownership and RBAC.
-3. Backend issues short-lived `webhook_app_access` ticket.
-4. Frontend exchanges ticket and opens webhook management surface.
+Same trust boundary as [API Auth](/guides/api-auth) — your backend is the policy authority, the browser gets a short-lived app-scoped session. The webhook specifics: the ticket is `ticket_type=webhook_app_access` with `webhook_app_slug` set to this app (the request is rejected without the slug), and the session it exchanges into can reach `/webhooks/*` and the replay endpoints. Run your own RBAC and tenant-ownership check before issuing the ticket — Wacht doesn't decide who's allowed to manage a customer's endpoints. Tickets default to a 12-hour TTL; issue them on demand rather than minting long-lived ones.
 
-## Choose your implementation path
+## Vanity surface or your own UI
 
-### Vanity pages
+**Vanity pages** give you a hosted management surface you hand the user into with a ticket — endpoint CRUD, test sends, secret rotation, and the delivery/replay screens without building them. Reach for this to ship now or while the workflow is still settling. See [vanity pages implementation](/guides/webhook-apps/vanity-pages-implementation).
 
-Best for fastest rollout and lower frontend maintenance.
+**Custom hooks** build the same management inside your own product IA when webhook config is a first-class workflow. See [custom hook implementation](/guides/webhook-apps/custom-hook-flow-implementation).
 
-### Custom hooks
+Operating deliveries — filtered triage, bounded replay windows, success-rate and latency trends — is its own surface, covered in [deliveries, replay, and observability](/guides/webhook-apps/deliveries-replay-and-observability).
 
-Best when webhook UX must be deeply integrated in existing product IA and workflows.
+## What your customers' receivers must do
 
-## Go-live checklist
+Two things are on the receiving end, not on Wacht, and both belong in the docs you hand customers:
 
-1. Endpoint create/test/delete/rotate flows verified in staging.
-2. Failed-delivery and replay runbook exists for support/on-call.
-3. Customer receiver docs include signature verification + idempotency.
-4. Alerting exists for sustained endpoint failure.
-5. Ticket issuance has strict RBAC and tenant isolation checks.
+- **Verify the signature.** Every delivery carries a signature from the app's secret. A receiver that skips verification will accept spoofed events. Rotating the secret is a coordinated change — the receiver has to accept both old and new during the window.
+- **Process idempotently.** Retries and replay both re-deliver events. A receiver that isn't idempotent double-applies on every retry. This is the single most common cause of "the webhook charged me twice" reports.
+
+## Before go-live
+
+- Endpoint create / test / delete / rotate verified end to end on staging.
+- A runbook for failed deliveries and replay exists for whoever is on call.
+- Receiver docs published with signature verification and idempotency spelled out.
+- Alerting on sustained endpoint failure — a customer's endpoint going dark shouldn't surface first as a support ticket.
+- Ticket issuance gated by RBAC and tenant isolation, verified by trying to issue across tenants.
 
 ## Related docs
 
-1. [Vanity Pages Implementation](/guides/webhook-apps/vanity-pages-implementation)
-2. [Custom Hook Flow Implementation](/guides/webhook-apps/custom-hook-flow-implementation)
-3. [Deliveries, Replay, and Observability](/guides/webhook-apps/deliveries-replay-and-observability)
+1. [Vanity pages implementation](/guides/webhook-apps/vanity-pages-implementation)
+2. [Custom hook flow implementation](/guides/webhook-apps/custom-hook-flow-implementation)
+3. [Deliveries, replay, and observability](/guides/webhook-apps/deliveries-replay-and-observability)
 4. [Backend JS SDK](/sdks/node)
-5. [Backend API Reference](/reference/backend-api)
+5. [Backend API reference](/reference/backend-api)

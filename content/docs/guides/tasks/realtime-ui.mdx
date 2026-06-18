@@ -1,26 +1,25 @@
 ---
-title: "Realtime UI"
-description: "Surface in-flight task state, deliverables, pending questions, and comments in your UI as they happen."
+title: Realtime UI
+description: Surface in-flight task state, deliverables, pending questions, and approvals in your UI as they happen.
 ---
 
-A good Wacht UI doesn't make the user refresh to see what the agent is doing. The SDK gives you live-updating hooks for every kind of task state — status, deliverables, comments, pending questions, conversation messages. Wire them in and your UI tracks reality.
+A task runs without the user in the loop. Your UI's job is to reflect its state as it changes — status, deliverables, pending questions, approvals, comments — without making the user refresh. The React SDK gives you live hooks built on SWR; wire them in and the UI tracks reality.
+
+The hooks live in `@wacht/jsx` and are re-exported from `@wacht/nextjs`. They revalidate on a 15-second interval with focus revalidation off, so this is near-realtime, not push. For tighter latency, see [Polling and revalidation](#polling-and-revalidation).
 
 ## The hooks
 
-| Hook | What it returns | Updates when |
+| Hook | Returns | Reflects |
 |---|---|---|
-| `useProjectTaskBoardItem(projectId, taskId)` | the task object | status change, deliverables append, pending_question set/cleared |
-| `useProjectTaskBoardItemComments(projectId, taskId)` | comments array | comment added, edited, resolved |
-| `useTaskWorkspaceFiles(taskId, path)` | directory listing | files added/removed in the workspace |
-| `useTaskWorkspaceFile(taskId, path)` | file text | file content changed |
-| `useAgentThreadMessages(threadId)` | conversation messages | new message in the thread |
-| `useNotifications()` | user's notification inbox | new notification created |
+| `useProjectTaskBoardItem(projectId, taskId)` | the task object plus action methods | status, deliverables, `pending_question`, `pending_approval`, assignments, workspace |
+| `useProjectTaskBoardItemComments(projectId, taskId)` | comments array plus `createComment` | comments added or resolved |
+| `useNotifications()` | the notification inbox | new notifications |
 
-All built on SWR. Auto-revalidating, deduplicated, focus-aware.
+`useProjectTaskBoardItem` is the workhorse. It takes both `projectId` and `taskId` — both required — and returns the board item plus the methods you act on it with: `submitAnswer`, `submitApproval`, `updateItem`, `cancelItem`, and the workspace accessors (`taskWorkspace`, `getTaskWorkspaceFile`, `listTaskWorkspaceDirectory`, `downloadTaskWorkspaceFile`). There are no separate workspace-file hooks; file access is methods on this one.
 
 ## Showing a task end to end
 
-A complete task page that surfaces status, deliverables, pending questions, and comments:
+One hook drives status, deliverables, pending questions, and approvals; a second drives comments.
 
 ```tsx
 "use client";
@@ -30,8 +29,11 @@ import {
 } from "@wacht/nextjs";
 
 export function TaskPage({ projectId, taskId }: { projectId: string; taskId: string }) {
-  const { item, loading } = useProjectTaskBoardItem(projectId, taskId);
-  const { comments } = useProjectTaskBoardItemComments(projectId, taskId);
+  const { item, loading, submitAnswer, submitApproval } = useProjectTaskBoardItem(
+    projectId,
+    taskId,
+  );
+  const { comments, createComment } = useProjectTaskBoardItemComments(projectId, taskId);
 
   if (loading || !item) return <div>Loading…</div>;
 
@@ -43,32 +45,26 @@ export function TaskPage({ projectId, taskId }: { projectId: string; taskId: str
       </header>
 
       {item.pending_question && (
-        <PendingQuestionCard
-          question={item.pending_question}
-          onAnswer={(submission) => answerQuestion(taskId, submission)}
-        />
+        <PendingQuestionCard question={item.pending_question} onAnswer={submitAnswer} />
       )}
 
       {item.pending_approval && (
-        <ApprovalCard
-          approval={item.pending_approval}
-          onDecide={(decisions) => submitApproval(taskId, decisions)}
-        />
+        <ApprovalCard approval={item.pending_approval} onDecide={submitApproval} />
       )}
 
       <DeliverablesList deliverables={item.deliverables ?? []} taskId={taskId} />
 
-      <CommentsThread comments={comments ?? []} taskId={taskId} />
+      <CommentsThread comments={comments ?? []} onPost={createComment} />
     </article>
   );
 }
 ```
 
-Three SWR subscriptions; the UI updates as any of them changes.
+Two subscriptions, both revalidating on the 15-second interval. `submitAnswer` and `submitApproval` mutate the item after they resolve, so the card disappears as soon as the field clears.
 
 ## Status changes
 
-The simplest signal — `item.status` flips through the lifecycle. Render with a badge:
+`item.status` walks the [lifecycle](/guides/tasks). Render it with a badge:
 
 ```tsx
 function StatusBadge({ status }: { status: string }) {
@@ -80,18 +76,18 @@ function StatusBadge({ status }: { status: string }) {
     completed: "green",
     blocked: "red",
     needs_clarification: "yellow",
-    cancelled: "gray",
     rejected: "red",
+    cancelled: "gray",
   }[status] ?? "gray";
   return <span className={`badge badge-${color}`}>{status}</span>;
 }
 ```
 
-For long-running tasks, `in_progress` can sit for a while. Consider also showing the agent's most recent conversation message via `useAgentThreadMessages` to give the user something to watch.
+`in_progress` can sit for a long time on a substantial task. Give the user something to watch — the latest deliverable, or the assignments list from the same hook (`assignments`) showing which lane is active.
 
 ## Deliverables appearing
 
-When the coordinator marks a task `completed`, a new entry appends to `item.deliverables`. The hook fires, your list re-renders:
+When a coordinator marks a task `completed`, an entry appends to `item.deliverables`. The next revalidation picks it up and the list re-renders:
 
 ```tsx
 function DeliverablesList({ deliverables, taskId }) {
@@ -108,19 +104,22 @@ function DeliverablesList({ deliverables, taskId }) {
 }
 ```
 
-Animate new entries in (CSS transition on enter) so the user sees what just happened.
+Each entry's `artifacts` is a list of objects with a `path`. See [Deliverables and the journal](/guides/tasks/deliverables) for the full shape and how to link artifacts back to the workspace.
 
-## Pending questions (ask_user)
+## Pending questions
 
-When the agent calls `ask_user`, the board item gets a `pending_question` field. Surface it as a form:
+When the agent calls `ask_user`, the runtime sets `item.pending_question`. Render the questions as a form and submit through `submitAnswer`:
 
 ```tsx
 function PendingQuestionCard({ question, onAnswer }) {
-  // question.questions is an array of {id, text, answer_kind}
-  // your UI renders inputs for each
-  // also offer a freeform textarea (the AnswerSubmission supports freeform_text)
+  // question.questions is an array of { id, text, answer_kind }
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onAnswer(buildSubmission()); }}>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onAnswer({ answers: buildAnswers() }); // [{ question_id, value }]
+      }}
+    >
       {question.questions.map((q) => (
         <QuestionInput key={q.id} question={q} />
       ))}
@@ -134,11 +133,11 @@ function PendingQuestionCard({ question, onAnswer }) {
 }
 ```
 
-Submit via `answerProjectTaskBoardItemQuestion`. The agent resumes on the next iteration with your answer in context.
+`submitAnswer` takes an `AnswerSubmission`: either `answers` (a list of `{ question_id, value }`) or `freeform_text` — supply one. The agent resumes on its next iteration with your answer in context. Submitting clears `pending_question`, so the card unmounts on the following revalidation.
 
 ## Approvals
 
-When the agent calls a gated tool, the board item gets a `pending_approval` field. Render the requested actions, let the user approve/deny each:
+When the agent calls a gated tool, the runtime sets `item.pending_approval`. Render the requested tools and decide each through `submitApproval`:
 
 ```tsx
 function ApprovalCard({ approval, onDecide }) {
@@ -163,94 +162,70 @@ function ApprovalCard({ approval, onDecide }) {
 }
 ```
 
-Submit via `approveProjectTaskBoardItemTool`. The agent's tool call proceeds (or aborts) accordingly.
+`submitApproval` takes a list of `{ tool_name, mode }` decisions, where `mode` is `allow_once` or `allow_always`. It reads the `request_message_id` off the current `pending_approval` for you, and throws if there is no pending approval — only render the card while `item.pending_approval` is set. `allow_always` persists the grant for the thread, so the agent won't re-prompt for that tool.
 
-## Comments stream
+## Comments
 
-Comments are user/agent threads attached to the board item — useful for collaborative work where humans annotate the agent's output.
+Comments are a side channel on the board item — useful for humans annotating the agent's work. Posting one preempts any active assignment, so the agent's next iteration picks up the new context.
 
 ```tsx
-function CommentsThread({ comments, taskId }) {
+function CommentsThread({ comments, onPost }) {
   return (
     <section>
       {comments.map((c) => (
         <Comment key={c.id} comment={c} />
       ))}
-      <CommentForm onSubmit={(body) => postComment(taskId, body)} />
+      <CommentForm onSubmit={(body, files) => onPost(body, files)} />
     </section>
   );
 }
 ```
 
-Comments aren't part of the agent's conversation history by default — they're a side channel. If you want the agent to see them, your agent prompt can call a tool that reads comments via the API.
-
-## Live conversation messages
-
-If you want to surface the agent's chain of work as it happens (rather than just the final deliverable), subscribe to thread messages:
-
-```tsx
-import { useAgentThreadMessages } from "@wacht/nextjs";
-
-function LiveAgentLog({ threadId }: { threadId: string }) {
-  const { messages } = useAgentThreadMessages(threadId);
-  return (
-    <pre>
-      {messages?.map((m) => (
-        <Line key={m.id} message={m} />
-      ))}
-    </pre>
-  );
-}
-```
-
-Filter by `message_type` to show only what makes sense for users (e.g. hide `tool_result` blobs, show `steer` text).
+`createComment(body, files?)` accepts optional file attachments; they land in the workspace under `/task/uploads/` (see [File uploads](/guides/tasks/file-uploads)). Comments are not part of the agent's conversation history by default — to feed a comment into the agent, post it through the attachment endpoint that preempts the assignment, or have your agent prompt read comments through the API.
 
 ## Notifications
 
-For surfacing things that happen outside the current task — a scheduled task finished, an approval is waiting on the user, a sub-agent flagged something:
+For events outside the current task — a scheduled task finished, an approval is waiting, a sub-agent flagged something — use the notification inbox:
 
 ```tsx
 import { useNotifications } from "@wacht/nextjs";
 
 function NotificationBell() {
-  const { items, unreadCount, markAsRead } = useNotifications();
+  const { notifications, markAsRead, markAllAsRead } = useNotifications();
+  const unread = notifications.filter((n) => !n.is_read).length;
   return (
-    <button>
-      🔔 {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
-      <Dropdown>
-        {items.map((n) => (
-          <NotificationItem key={n.id} notification={n} onClick={() => markAsRead(n.id)} />
-        ))}
-      </Dropdown>
-    </button>
+    <Dropdown trigger={<Bell count={unread} />}>
+      {notifications.map((n) => (
+        <NotificationItem key={n.id} notification={n} onClick={() => markAsRead(n.id)} />
+      ))}
+      <button onClick={markAllAsRead}>Mark all read</button>
+    </Dropdown>
   );
 }
 ```
 
-The backend emits notifications via the platform-events tool or via your own backend call. See [Notifications guide](/guides/notifications).
+`useNotifications()` returns `{ notifications, hasMore, loadMore, markAsRead, markAllAsRead, refetch, ... }`. It paginates, so call `loadMore` for older entries; derive unread from the notifications rather than expecting an aggregate count on the hook. The backend emits notifications through the platform-events tool or your own backend call — see the [Notifications guide](/guides/notifications).
 
-## Polling vs. realtime
+## Polling and revalidation
 
-The current SDK uses SWR with periodic revalidation (focus + interval). This is "near-realtime" — typical latency 0.5–2 seconds.
+The task hooks revalidate on a 15-second interval with focus revalidation off. That bounds latency to roughly the interval; it is not server push. To tighten it:
 
-For a more aggressive realtime feel:
-
-- Lower the SWR `refreshInterval` for hot screens (1s during `in_progress`)
-- Cancel polling when the task is in a terminal state (`completed`, `failed`, etc.)
-- For server-pushed realtime, see the streaming endpoint on threads (`executeAgentThreadAsync` with `stream: true`)
+- Drop the SWR `refreshInterval` on hot screens (e.g. 2s while `in_progress`).
+- Stop revalidating once the task hits a terminal status — `completed`, `rejected`, `cancelled`, `blocked` — to avoid polling a settled task forever.
+- For genuine server-pushed updates of an agent's live reasoning, the conversation stream on threads is the channel, not the task hooks.
 
 ## Pitfalls
 
-Agents emit a lot of tool calls and intermediate results. Showing all conversation messages by default overwhelms the user. Filter to `Steer` text and the final deliverable.
+An agent emits a lot of intermediate tool calls. Surfacing them all overwhelms the user; show the deliverable and the status, not the raw tool stream.
 
-Polling at high frequency forever costs money. Cancel the SWR interval when the task hits a terminal status.
+Polling at high frequency forever costs money. Cancel the interval when the task settles.
 
-The journal is the agent's memory. Deliverables are the user's view. Different audiences; don't surface the journal in the place a user expects to see results.
+The journal is the agent's memory; deliverables are the user's view. Different audiences — don't render the journal where a user expects results.
 
-When a task is `pending` for the first few seconds, render "starting…" rather than an empty list.
+When a task is `pending` for its first few seconds, render "starting…" rather than an empty deliverables list.
 
 ## Where to go next
 
-- [Deliverables](/guides/tasks/deliverables) — what the agent reports when done
+- [Deliverables and the journal](/guides/tasks/deliverables) — what the agent reports when done
 - [Workspace and artifacts](/guides/tasks/workspace-and-artifacts) — surfacing files
 - [Notifications guide](/guides/notifications) — surfacing cross-task events

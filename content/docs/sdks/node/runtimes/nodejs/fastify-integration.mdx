@@ -1,5 +1,5 @@
 ---
-title: Fartify
+title: Fastify
 description: End-to-end Fastify integration with @wacht/backend auth guards and typed backend operations.
 ---
 
@@ -7,7 +7,7 @@ Use this setup to run a Fastify admin service with a reusable guard pipeline and
 
 ## Project structure
 
-<FileTree title="Fartify Service">
+<FileTree title="Fastify Service">
 {`src/
     server.ts
     plugins/
@@ -136,5 +136,4 @@ export const machineOrganizationRoutes: FastifyPluginAsync = async (app) => {
 - Keep one shared SDK client initialized for the process.
 - In Node.js, publishable key options can be omitted when env vars are configured.
 - Use API key/OAuth protected checks for machine-token endpoints.
-- Custom `gatewayUrl` host override is available on Enterprise plans.
 - Keep auth failures structured and machine-readable.

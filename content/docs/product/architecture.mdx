@@ -1,15 +1,86 @@
 ---
 title: Architecture
-description: How the main applications and services in the repository fit together.
+description: How Wacht presents one user and organization model across identity, B2B, machine auth, webhooks, notifications, and an agent runtime.
 ---
 
-## Core split
+Wacht is one product with one data model, not a bag of services you stitch together. A user who signs in through identity is the same user who holds an organization membership, owns an API key, receives a notification, and shows up as the actor an agent runs work for. You configure each capability separately, but they all read and write the same records under one deployment.
 
-- `console` is the admin UI
-- `platform-api` is the Rust backend control plane and worker stack
-- `frontend-api` is the Go runtime API for end-user flows
-- `react-sdk` exposes frontend integrations for supported frameworks
+That single model is the point. Other stacks make you reconcile a user in your auth provider against a member in your tenancy system against a principal in your authorization layer. Here they are one row, resolved once.
 
-## Documentation rule
+## The deployment is the top-level container
 
-When a concept belongs to one of those surfaces, it should be documented in that surface's context instead of being repeated across unrelated pages.
+Everything below lives inside a `deployment`. It is the isolation and configuration boundary for one of your products in one mode (production or staging). A deployment owns its hosts, its auth settings, its B2B catalog, its signing keys, its branding, its webhooks, its notifications, its agents. Two deployments share nothing at runtime.
+
+```text
+deployment  (production | staging)
+│
+├── identity            users, sessions, sign-in/sign-up, MFA, social, passkeys
+├── b2b                 organizations, workspaces, memberships, roles, invitations
+├── machine auth        API keys, OAuth apps + clients, SCIM tokens
+├── webhooks            event subscriptions + delivery to your endpoints
+├── notifications       per-user in-app inboxes
+└── agent runtime       agents, actors, projects, board items, threads
+```
+
+A user record is deployment-scoped. The same person signing into your production app and your staging app is two distinct user records, because they are two distinct deployments. This is what keeps test data out of production and lets you change auth rules in staging without touching live users.
+
+## Identity is the root
+
+A user exists once per deployment. Sign-in factors, sessions, MFA enrollment, social connections, and passkeys all hang off that one record. Identity defines *who* — every other capability references a user id rather than maintaining its own copy.
+
+When B2B is on, a user gains memberships. When you issue machine credentials, an OAuth grant resolves back to the same user that approved consent. When an agent runs work, the actor it runs as can be your own user id. There is no separate "tenancy user" or "service user" namespace to keep in sync.
+
+## B2B layers tenancy on top of identity
+
+Organizations, workspaces, and memberships are optional. A consumer app turns them off and works with users directly. A B2B app turns them on, and a user joins one or more organizations, optionally with workspaces inside them. Roles and permissions resolve through membership, not through the user record. See [B2B](/product/b2b) for the full hierarchy.
+
+The key fact for architecture: B2B does not replace identity, it references it. A membership points at a user id and an organization id. Remove the B2B layer and the users are still there.
+
+## Machine auth shares the same principals
+
+API keys, OAuth apps, and their clients live under the deployment. When a request arrives with a credential, Wacht resolves it to a principal and an authorization decision in one call — the gateway checks revocation, grant status, session liveness, scopes, and resource binding together. An OAuth access token resolves to the user who granted consent; an API key resolves to its configured scope. Your resource server asks one question ("is this principal allowed to do this?") and gets one answer. See [API auth](/product/api-auth) and [verifying OAuth access tokens](/guides/oauth-apps/access-token-verification).
+
+## Webhooks and notifications are the two ways out
+
+When something happens in a deployment — a user signs up, a membership changes, an agent finishes a task — Wacht emits it on two channels with different audiences:
+
+- **Webhooks** deliver events to *your* server-to-server endpoints. Signed, retried, replayable. Use them to react in your backend. See [webhooks](/product/webhooks).
+- **Notifications** land in a *user's* in-app inbox. Read state, unread counts, realtime streams. Use them to surface activity in your UI.
+
+Same event domain, two destinations. Don't poll for state changes you can subscribe to.
+
+## The agent runtime sits inside the same deployment
+
+Agents, actors, projects, board items, and threads run under the deployment alongside identity and B2B — not in a separate system. An `actor` is the principal agent work runs as, keyed by an `external_key` you choose (usually your own user id or tenant id). That means the user from identity, the tenant from B2B, and the actor in the runtime can all be the same entity, joined by an id you control. [Anatomy](/start/anatomy) covers these nouns in depth.
+
+## Control plane vs runtime
+
+Wacht is reached through two API surfaces, and the SDKs sit on top of them.
+
+**The control plane** is the management API — the console talks to it, and the Machine API exposes it programmatically. You use it to *configure* a deployment: set auth factors, toggle B2B, define roles, create agents, rotate keys. This is operator and provisioning work, not per-request work.
+
+**The runtime API** (the frontend API, `fapi.trywacht.xyz`-style host) serves end-user flows at request time: sign-in, session refresh, the current user's memberships, an org switch, a task creation. This is what your app hits on every page load.
+
+```text
+            console  ─┐                    ┌─ your operators
+  Machine API tools  ─┼─►  control plane ──┤
+                      ─┘   (configuration) └─ provisioning / CI
+
+  your app / SDKs    ───►  runtime API ─────► per-request: auth, sessions,
+                          (frontend API)      memberships, tasks
+```
+
+The split matters because the two have different trust models and different change cadence. Control-plane changes are rare and privileged. Runtime calls are constant and scoped to the signed-in user. Don't route per-request user traffic through the control plane, and don't expose control-plane configuration to end-user code.
+
+## Where the SDKs sit
+
+The SDKs are thin clients over those two surfaces. They do not add capabilities; they wrap the API.
+
+- **Frontend SDKs** (Next.js, React Router, TanStack Router, React) target the runtime API. You give them a publishable key, they manage the session, expose `SignedIn`/`SignedOut`, the current user, memberships, and the agent runtime hooks. This is the lower-left of the diagram.
+- **Backend SDKs** (Node, Rust) target the runtime and gateway from your server. You give them a backend API key, they verify tokens, run gateway authorization checks, and call backend routes.
+
+Both target *one* deployment per configuration. The publishable key picks which one. Switching from staging to production is a key change, not a code change — covered in [deployments](/product/deployments).
+
+## What this buys you
+
+One model means one mental load. You learn the user record once and it carries through identity, tenancy, authorization, and the agent runtime. You learn the deployment boundary once and it explains isolation, configuration, and SDK targeting. The capabilities are independent enough to adopt one at a time, and integrated enough that they never disagree about who a user is.

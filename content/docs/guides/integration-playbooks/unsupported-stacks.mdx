@@ -1,60 +1,141 @@
 ---
-title: Unsupported Stacks Playbook
-description: How to integrate Wacht when you are not on the first-class framework adapters.
+title: Unsupported stacks
+description: Integrate Wacht when there's no SDK for your stack — a custom React router via @wacht/jsx, or any other frontend by calling the Frontend API directly.
 ---
 
-If your stack is not Next.js, React Router, or TanStack Router, use this adaptation pattern.
+There are two cases where the framework adapters don't fit. You're on React but not Next.js, React Router, or TanStack Router — use `@wacht/jsx` with a navigation adapter you write. Or you're not on React at all — Vue, Svelte, a server-rendered template, a mobile shell — and there's no SDK, so you call the Frontend API over HTTP. This guide covers both, grounded in the same session flow the SDKs use under the hood.
 
-## Adaptation diagram
+The backend never changes. Whatever the frontend, protected routes verify session tokens with [`@wacht/backend`](/sdks/node) or the [Rust SDK](/sdks/rust/getting-started), exactly as in the [React + backend auth lifecycle](/guides/integration-playbooks/fullstack-auth-lifecycle-react-rust). The frontend's only job is to obtain a session token and send it as a bearer.
 
-```text
-Unsupported frontend stack
-        |
-        +--> @wacht/jsx + custom PlatformAdapter
-        |
-        +--> hosted auth entry + session-aware UI
-        |
-        +--> backend-protected API boundary
-                |
-                +--> @wacht/backend (Node) or wacht (Rust)
-                |
-                +--> auth + tenancy checks per request
+## React, custom router: `@wacht/jsx`
+
+`@wacht/jsx` is the shared core under every adapter. It ships the hooks and components but takes no opinion on routing — you supply a `PlatformAdapter` with a single `useNavigate()` method. That's the entire seam the adapter packages fill.
+
+```tsx
+import { DeploymentProvider, type PlatformAdapter } from "@wacht/jsx";
+
+const browserAdapter: PlatformAdapter = {
+  useNavigate() {
+    return (to, options) => {
+      if (options?.replace) {
+        window.location.replace(to);
+      } else {
+        window.location.assign(to);
+      }
+    };
+  },
+};
+
+export function AppRoot({ children }: { children: React.ReactNode }) {
+  return (
+    <DeploymentProvider
+      publicKey={import.meta.env.VITE_WACHT_PUBLISHABLE_KEY}
+      adapter={browserAdapter}
+    >
+      {children}
+    </DeploymentProvider>
+  );
+}
 ```
 
-## Pattern
+`useNavigate()` returns a function taking `(to, { replace, state })`. Honor `replace` — auth redirects use it so the sign-in page doesn't end up in history. If your router has its own navigate, wrap that instead of `window.location` to keep client-side transitions.
 
-- Frontend: `@wacht/jsx` with explicit platform adapter and hosted auth entry.
-- Backend: `@wacht/backend` (Node) or `wacht` (Rust) for protected operations.
-- Contracts: frontend and backend API references for exact request/response shapes.
+Past the adapter, everything is the same as a first-class stack: `SignedIn` / `SignedOut` / `UserButton` / `NavigateToSignIn` for UI, `useSession().getToken()` for the bearer token. Read the SDK-specific surface at [React (router-agnostic)](/sdks/react).
 
-## Frontend baseline
+## Any other frontend: call the Frontend API
 
-Start with [React (Router-Agnostic)](/sdks/react):
+With no SDK, you hold the session yourself and talk to the Frontend API directly. The base host is encoded in your publishable key: `pk_<mode>_<base64host>`. Split on `_`, base64-decode the third segment, and that's your API origin. A `mode` of `test` points at staging; anything else is production.
 
-- mount `DeploymentProvider` with a custom `PlatformAdapter`
-- use `SignedIn`, `SignedOut`, and auth navigation helpers
-- keep privileged operations on backend routes
+```ts
+function frontendApiOrigin(publishableKey: string): string {
+  const [, , encodedHost] = publishableKey.split("_");
+  return atob(encodedHost); // e.g. https://your-deployment.fapi.trywacht.xyz
+}
+```
 
-## Backend baseline
+### Hold the session
 
-- [Backend JS SDK](/sdks/node)
-- [Rust SDK](/sdks/rust/getting-started)
+In production, the session lives in a cookie (`__session`) set on the Frontend API host. If your app is same-site with that host, the browser carries it for you on requests made with credentials. In staging — and any cross-domain setup — there's no shared cookie. Wacht uses a development session token instead: the API returns it in the `x-development-session` response header, and you echo it back as a `__dev_session__` query parameter on every subsequent request. Persist it (cookie or local storage) keyed to the host.
 
-Protect all sensitive routes server-side and map auth failures into deterministic HTTP errors.
+This is the one piece the SDK does silently that you now own: capture `x-development-session`, store it, and append `?__dev_session__=<value>` (alongside `credentials: include` in production) on each call.
 
-## Adapter checklist
+### Read the current session and mint a token
 
-- Navigation semantics are explicit (`replace` vs `push`).
-- Redirect return URLs are preserved after auth.
-- Session headers/cookies are forwarded correctly through your runtime.
-- Tenant context (org/workspace) is resolved server-side before mutations.
+`GET /session` returns the active session, including which sign-ins exist and the active organization/workspace membership ids. `GET /session/token` mints a session JWT to forward to your backend.
 
-## When to migrate to a first-class adapter
+```ts
+const ORIGIN = frontendApiOrigin(PUBLISHABLE_KEY);
 
-If you are reimplementing route guards, auth callbacks, and session plumbing repeatedly, migration cost is usually lower than continued custom maintenance.
+async function fapi(path: string, init?: RequestInit) {
+  const url = new URL(`${ORIGIN}${path}`);
+  if (DEV_SESSION) url.searchParams.set("__dev_session__", DEV_SESSION);
 
-Use one of:
+  const res = await fetch(url, { ...init, credentials: "include" });
+
+  const devSession = res.headers.get("x-development-session");
+  if (devSession) persistDevSession(devSession); // staging / cross-domain
+
+  return res;
+}
+
+// Current session — null active_signin means the user isn't signed in.
+const session = await (await fapi("/session")).json();
+
+// Mint a JWT for your backend. ?template= selects a JWT template; the SDK uses "default".
+const { data } = await (await fapi("/session/token?template=default")).json();
+const bearer = data.token; // { token, expires } — send as Authorization: Bearer
+```
+
+Responses wrap the payload in `data`; errors come back as `{ error: { code, message, status } }`. The token from `/session/token` is short-lived — `expires` is a unix timestamp. Re-mint when it's close to expiry rather than caching indefinitely.
+
+### Sign in and switch tenancy
+
+Without an embedded sign-in component, send the user to the hosted sign-in page and pass `redirect_uri` so they come back. Read the page URL from `GET /deployment` (`ui_settings.sign_in_page_url`); don't hardcode it. In staging, append the stored `__dev_session__` to the sign-in URL too, so the dev session survives the round trip.
+
+```ts
+const params = new URLSearchParams({ redirect_uri: window.location.href });
+if (DEV_SESSION) params.set("__dev_session__", DEV_SESSION);
+window.location.assign(`${deployment.ui_settings.sign_in_page_url}?${params}`);
+```
+
+Switching the active organization or workspace is a POST against the session:
+
+```
+POST /session/switch-organization?organization_id=<id>
+POST /session/switch-workspace?workspace_id=<id>
+```
+
+Both invalidate any token you've cached — re-mint after switching so the new claims take effect.
+
+### Hand off auth between domains
+
+If you authenticate on one domain and need the session on another (a hosted portal redirecting back to your app), Wacht issues a one-time ticket. The receiving page exchanges it:
+
+```
+GET /session/ticket/exchange?ticket=<ticket>
+```
+
+The exchange establishes the session on the new domain. Strip the `ticket` parameter from the URL after exchanging it.
+
+## Failure modes to handle
+
+| Condition | Symptom | Handling |
+| --- | --- | --- |
+| Lost dev session (staging) | `/session` returns no active sign-in despite a prior login | Re-run the sign-in redirect; the dev session didn't persist across the hop |
+| `redirect_uri` rejected | Hosted page won't redirect back | In production the URI must be `https` on `frontend_host` or a subdomain; fix the registered host |
+| Stale token after a switch | Backend returns the old org/workspace scope | Re-mint via `/session/token` after every switch call |
+| Cross-domain cookie blocked | Session works same-site, fails embedded/cross-origin | Use the `__dev_session__` mechanism, not cookies, for cross-domain |
+
+## When to migrate to an adapter
+
+If you're reimplementing route guards, the dev-session dance, redirect plumbing, and token caching by hand, an adapter package does all of it. The custom path costs more to maintain than it saves once the integration is non-trivial. Move to a first-class adapter when one fits:
 
 - [Next.js](/sdks/nextjs)
 - [React Router](/sdks/react-router)
 - [TanStack Router](/sdks/tanstack-router)
+
+## Reference
+
+- [React (router-agnostic)](/sdks/react) for the `@wacht/jsx` surface and `PlatformAdapter` contract.
+- [Frontend API](/reference/frontend-api) for exact session endpoint shapes.
+- [React + backend auth lifecycle](/guides/integration-playbooks/fullstack-auth-lifecycle-react-rust) for the backend verification this hands off to.

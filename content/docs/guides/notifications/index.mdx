@@ -1,67 +1,92 @@
 ---
-title: "Notification System Architecture"
-description: "Design high-signal notification systems with clear scope, severity, and lifecycle contracts."
+title: Notification System Architecture
+description: How Wacht notifications are scoped, severity-tagged, and moved through the read/archive/expiry lifecycle, and where you create them.
 ---
 
 # Notification System Architecture
 
-Notification quality is mostly policy and information architecture, not UI widgets.
+A Wacht notification is a per-user row created server-side and delivered to that user's inbox. Every notification belongs to exactly one `deployment_id` and one recipient `user_id`. The org and workspace fields are context, not fan-out targets at storage time — you address an audience at create time, and Wacht expands it into one row per user before it writes anything.
 
-## Scope model
+## Scope by recipient at create time
 
-Use scope intentionally:
+The create request takes no scope enum. You scope a notification by who you address it to:
 
-1. `user`: personal/account/security events.
-2. `organization`: team-level operational updates.
-3. `workspace`: project/workstream updates.
-4. `all` / `current`: reader filters in inbox UIs, not event producer defaults.
+- `user_id` — one user. Personal, account, and security events.
+- `user_ids` — an explicit list of users.
+- `organization_id` — every member of that organization in this deployment.
+- `workspace_id` — every member of that workspace in this deployment.
 
-## Severity model
+You can combine these. The recipients collapse into a deduplicated set, so a user who is both named in `user_ids` and a member of the addressed organization still gets exactly one notification. Wacht resolves org and workspace membership at create time and inserts a separate row per resolved user. The stored row carries the originating `organization_id` / `workspace_id` so the inbox can label where a notification came from, but the row is owned by a single `user_id`. Reading is filtered separately: the inbox list API takes a `scope` parameter (`user`, `organization`, `workspace`, or `all`) that filters against those same fields — see [Frontend Inbox with Hooks](/guides/notifications/frontend-inbox-with-hooks).
 
-1. `info`: non-urgent state updates.
-2. `success`: completed operations.
-3. `warning`: attention needed soon.
-4. `error`: immediate action required.
+Address the narrowest audience that needs the event. A workspace deploy result goes to `workspace_id`, not `organization_id` — broadcasting to the whole org writes a row for every member who has no stake in that workspace, and those rows still count against unread badges and still cost a 90-day lifespan.
 
-Do not use severity as category taxonomy.
+If you address an organization or workspace with no resolvable members, the request fails with `400` — at least one recipient must resolve. An empty fan-out is a bug, not a no-op.
 
-## Lifecycle model
+## Severity is urgency, not category
 
-1. Notification created by backend domain event.
-2. Delivered to scoped inbox surfaces.
-3. User transitions state (`read`, `starred`, `archived`).
-4. Notification expires when stale.
+`severity` is the only enum on the model. Four values, lowercase, stored as `varchar`:
 
-## Producer contract
+- `info` — non-urgent state change. The default.
+- `success` — an operation completed.
+- `warning` — attention needed soon.
+- `error` — action needed now.
 
-Every notification template should define:
+Severity is parsed leniently on create: any unrecognized string falls back to `info`. So a typo'd severity does not error — it silently downgrades. Pass one of the four exact values.
 
-1. Trigger event and ownership.
-2. Target scope resolution rule.
-3. Severity rule.
-4. CTA behavior (what opens, where it routes).
-5. Expiry rule.
+Do not encode taxonomy in severity. "Billing" versus "deploy" versus "invite" is not severity — that belongs in `metadata`. Severity drives one thing: how loudly the inbox surfaces the row. Reserve `error` for notifications a user must act on, because that styling stops being a signal the moment it's used for routine updates.
 
-## Consumer contract
+## Content and actions
 
-Inbox UIs should always support:
+A notification carries `title` and `body`, both required strings. Beyond that:
 
-1. Scope-aware filtering.
-2. Read/unread transitions.
-3. Archive/star controls.
-4. Realtime updates with reconnect tolerance.
+- `ctas` — an array of call-to-action buttons. Each is `{ label, payload }`.
+- `metadata` — a free-form key-value map for anything the inbox or your own code needs to read back.
 
-## Anti-patterns to avoid
+The persisted action field is `ctas`. There are two ways to set it on create. Pass `ctas` directly for full control, or pass the convenience pair `action_url` + `action_label`, which Wacht folds into a single CTA `[{ "label": <action_label>, "payload": <action_url> }]`. When you omit `action_label`, the label defaults to `View`. If you pass both `ctas` and `action_url`, `ctas` wins and `action_url` is ignored.
 
-1. Broadcasting org-wide when workspace scope is enough.
-2. Triggering notifications directly from frontend clicks.
-3. Missing expiry for transient operational alerts.
-4. Unactionable `error` notifications without CTA/context.
+`payload` is whatever your inbox does with the click — a route, a URL, an identifier. Wacht stores it and hands it back; it does not interpret it.
+
+## The lifecycle
+
+A notification moves through three states, all driven by the recipient:
+
+1. **Unread.** Created with `is_read = false`, `is_archived = false`. This is what drives the unread badge.
+2. **Read.** Marking read sets `is_read = true` and stamps `read_at`. Marking read is idempotent and scoped to the owner — a user can only mark their own rows.
+3. **Archived.** Archiving sets `is_archived = true` and stamps `archived_at`. Archived rows drop out of the default inbox view. Deleting a notification archives it; there is no per-row hard delete.
+
+Read and archived are independent booleans. A row can be read-and-active, unread-and-active, or read-and-archived. Starring is a third, independent flag: the inbox's star action toggles a persisted `is_starred` on the user's own row, and the list API can filter by it.
+
+## Expiry
+
+Every notification has an `expires_at`. You set it indirectly with `expires_hours` on create — Wacht computes `now + expires_hours`. Omit it and the row defaults to `now + 90 days` at the database level. So `expires_at` is effectively always set; the question is only how soon.
+
+Set a short `expires_hours` for anything transient: a transient warning, a "deploy finished" success, an operational alert that is meaningless a day later. Let the 90-day default stand for durable account and security events the user may want to find weeks later. Expiry keeps the inbox honest without making the user do cleanup.
+
+## Where notifications come from
+
+Notifications are created server-side, against a backend or machine credential. Two routes, same request body:
+
+- `POST /notifications` on the backend router. The `deployment_id` comes from the backend API key's context.
+- `POST /deployments/{deployment_id}/notifications` on the machine router, where the deployment is in the path.
+
+Both require a deployment-scoped credential. There is no frontend route that lets a browser create a notification — a click in your UI calls your server, and your server calls Wacht. Keep it that way. A notification's authority comes from the backend deciding the event happened, not from a client asserting it.
+
+The create response returns the rows that were written:
+
+```json
+{
+  "data": [
+    { "id": "...", "user_id": "...", "title": "...", "severity": "warning", "is_read": false, "expires_at": "..." }
+  ]
+}
+```
+
+One entry per resolved recipient. Addressing a 50-member organization returns 50 rows. Use the count to confirm your fan-out matched what you expected, and watch it — a create that returns far more rows than intended is the broadcast-too-wide bug showing up before your users see it.
 
 ## Related docs
 
 1. [Backend Sending Patterns](/guides/notifications/backend-sending-patterns)
-2. [Frontend Inbox with Hooks](/guides/notifications/frontend-inbox-with-hooks)
-3. [Realtime Stream Handling](/guides/notifications/realtime-stream-handling)
-4. [React Router Notifications Hooks](/sdks/react-router/hooks/notifications)
+2. [Designing Actionable Notification UX](/guides/notifications/actionable-notification-ux)
+3. [Frontend Inbox with Hooks](/guides/notifications/frontend-inbox-with-hooks)
+4. [Realtime Stream Handling](/guides/notifications/realtime-stream-handling)
 5. [Backend API Reference](/reference/backend-api)

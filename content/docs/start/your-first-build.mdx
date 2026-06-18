@@ -26,8 +26,8 @@ In the console, create a new project, then create a deployment under it (product
 
 You'll get:
 - A frontend API URL (e.g. `https://your-deployment.wacht.dev`)
-- A publishable key (for the frontend SDK)
-- A backend secret key (for server-side / Node SDK)
+- A publishable key (for the frontend SDK), prefixed `pk_`
+- A backend API key (for server-side / Node SDK), prefixed `wk_`
 - A console URL for managing the deployment
 
 Stash these in your environment.
@@ -45,17 +45,17 @@ pnpm add @wacht/nextjs @wacht/types
 Add the Wacht provider to `app/layout.tsx`:
 
 ```tsx
-import { WachtProvider } from "@wacht/nextjs";
+import { DeploymentProvider } from "@wacht/nextjs";
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <WachtProvider
-          publicKey={process.env.NEXT_PUBLIC_WACHT_PUBLIC_KEY!}
+        <DeploymentProvider
+          publicKey={process.env.NEXT_PUBLIC_WACHT_PUBLISHABLE_KEY!}
         >
           {children}
-        </WachtProvider>
+        </DeploymentProvider>
       </body>
     </html>
   );
@@ -65,11 +65,11 @@ export default function RootLayout({ children }) {
 Set environment variables in `.env.local`:
 
 ```
-NEXT_PUBLIC_WACHT_PUBLIC_KEY=pk_...
-WACHT_BACKEND_SECRET=sk_...
+NEXT_PUBLIC_WACHT_PUBLISHABLE_KEY=pk_test_xxx
+WACHT_API_KEY=wk_live_xxx
 ```
 
-You now have auth working. Drop the `<SignIn />` and `<UserButton />` components anywhere in your tree; you can sign in immediately.
+The publishable key is read in the browser; the API key stays server-side. You now have auth working. Drop the `<SignInForm />` and `<UserButton />` components anywhere in your tree; you can sign in immediately.
 
 ## Step 3: Configure an agent
 
@@ -116,10 +116,10 @@ export async function POST(req: Request) {
     })).id;
 
   // Create (or reuse) a project pairing this actor with the agent
-  const project = await ai.createActorProjectFlat(
-    { actor_id: actorId },
-    { agent_id: "agent_id_from_console", name: "Notes" }
-  );
+  const project = await ai.createActorProject(actorId, {
+    agent_id: "agent_id_from_console",
+    name: "Notes",
+  });
 
   // Create a task on that project
   const task = await ai.createProjectTaskBoardItem(project.id, {
@@ -131,14 +131,16 @@ export async function POST(req: Request) {
 }
 ```
 
-Initialize the backend client with your secret key in your bootstrap:
+Initialize the backend client with your API key in your bootstrap:
 
 ```ts
 // instrumentation.ts (or wherever your server boots)
-import { initBackend } from "@wacht/backend";
+import { initClient } from "@wacht/backend";
 
-initBackend({ secretKey: process.env.WACHT_BACKEND_SECRET! });
+initClient({ apiKey: process.env.WACHT_API_KEY! });
 ```
+
+You can skip this call entirely if `WACHT_API_KEY` is set in the environment — the client self-initializes from it on first use.
 </Tab>
 <Tab>
 ```rust
@@ -247,7 +249,10 @@ export default function TaskPage({ params }) {
           <h2>{d.by_agent_name} finished</h2>
           <p>{d.result_summary}</p>
           {d.artifacts.map((path) => (
-            <a key={path} href={`/api/task/${item.id}/file?path=${path}`}>
+            <a
+              key={path}
+              href={`/api/task/${item.id}/file?projectId=${params.projectId}&path=${encodeURIComponent(path)}`}
+            >
               {path}
             </a>
           ))}
@@ -272,13 +277,15 @@ import { ai } from "@wacht/backend";
 
 export async function GET(req: Request, { params }) {
   const url = new URL(req.url);
+  const projectId = url.searchParams.get("projectId")!;
   const path = url.searchParams.get("path")!;
   const file = await ai.downloadProjectTaskBoardItemFilesystemFile(
+    projectId,
     params.taskId,
-    { path },
+    path,
   );
-  return new Response(file.body, {
-    headers: { "content-type": file.contentType },
+  return new Response(file.data, {
+    headers: { "content-type": file.mime_type ?? "application/octet-stream" },
   });
 }
 ```

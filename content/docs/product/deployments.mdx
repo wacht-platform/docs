@@ -1,14 +1,95 @@
 ---
 title: Deployments
-description: The isolation boundary used by the frontend SDK and runtime services.
+description: The isolation and configuration boundary for one of your products — what it owns, how staging and production differ, and how SDKs target one.
 ---
 
-A deployment is the unit that binds together:
+A deployment is your tenant of Wacht. It is the boundary that everything else lives inside: identity, B2B, machine credentials, webhooks, notifications, and the agent runtime all belong to exactly one deployment. Two deployments share nothing at runtime — separate users, separate orgs, separate keys, separate data.
 
-- frontend host
-- backend host
-- auth settings
-- organization and workspace behavior
-- webhook, notification, and API auth configuration
+You typically run two per product. One in `production` mode for live users, one in `staging` mode for development and testing. They have the same shape and different data.
 
-In practice, deployment configuration is the bridge between console configuration and runtime behavior in frontend integrations.
+## What a deployment owns
+
+A deployment is mostly a bundle of configuration plus the data created against it. The configuration lives in distinct settings records, each editable in the console or through the Machine API.
+
+| Setting | What it controls |
+|---|---|
+| Hosts | `frontend_host` (the runtime API your app calls) and `backend_host`. Plus `mail_from_host` for outbound email. |
+| Auth settings | First/second factor policy, which factors are enabled (email/password, OTP, magic link, phone, passkey, SSO, authenticator, backup codes), password rules, verification policy, session lifetimes. |
+| Restrictions | Sign-up mode (`public`, `restricted`, `waitlist`), email/IP allowlists and blocklists, country restrictions, disposable-email and VOIP blocking. |
+| B2B settings | Whether organizations and workspaces are enabled, member caps, who may create orgs, custom-role toggles, default roles. The org/workspace catalog. See [B2B](/product/b2b). |
+| UI settings | App name, logo, favicon, sign-in/sign-up/redirect URLs, terms statement, and the `--wa-*` theme tokens (light and dark) that style the SDK components. |
+| Keys | A signing key pair (and a separate SAML key pair) used to sign session tokens and JWT-template output. |
+| JWT templates | Named claim templates with their own lifetime, clock skew, and optional custom signing key. |
+| Machine auth | API keys, OAuth apps and clients, SCIM tokens — all scoped to this deployment. See [API auth](/product/api-auth). |
+| Email delivery | `postmark` (default) or your own `custom_smtp` config, with DKIM and return-path verification records. |
+
+Everything in that table is per-deployment. Change a password rule in staging and production is untouched.
+
+## Hosts and domains
+
+A new deployment gets Wacht-provided hosts — a frontend host on a `fapi.trywacht.xyz`-style domain and a matching backend host. Your app talks to the frontend host for every runtime call: sign-in, session refresh, the current user, membership lookups, task creation.
+
+For production you point your own domain at the deployment. Wacht issues the DNS records you need to verify — CNAME-style hostname records for the frontend and backend, plus DKIM and return-path records if you send email from your domain. Each record carries a `verified` flag and verification is tracked per record, so a partially-configured domain tells you exactly which record is missing.
+
+> The frontend host is the contract your SDK config depends on. If you move a deployment to a custom domain, the publishable key follows the deployment, so app code doesn't change — but cached hosts and any hardcoded URLs do.
+
+## Staging vs production
+
+`mode` is a field on the deployment, either `staging` or `production`. It is not a feature flag you toggle per request — it is a property of the whole tenant, fixed at creation.
+
+The practical differences:
+
+- **Publishable key prefix.** Staging deployments hand out `pk_test_…` keys; production hands out `pk_live_…`. The prefix tells you at a glance which deployment a build is wired to, and prevents accidentally shipping a staging key to production.
+- **Separate everything.** Users, organizations, agents, keys, and webhook subscriptions created in staging do not exist in production. You promote *configuration* between them by re-applying settings, not by copying data.
+- **Same code path.** Both modes run the same runtime. Staging is not a mock — it is a real deployment with real auth and a real agent runtime, just isolated from your live users.
+
+Use staging to change auth factors, rewrite roles, or test an agent before it touches production traffic.
+
+## How SDKs target a deployment
+
+A deployment is selected by its publishable key, and one SDK configuration targets exactly one deployment. Switching deployments is a key change, not a code change.
+
+### Frontend
+
+The frontend SDKs take the publishable key and resolve the deployment's runtime host from it. Set it once in your environment.
+
+```bash
+# .env.local — staging build
+NEXT_PUBLIC_WACHT_PUBLISHABLE_KEY=pk_test_xxx
+```
+
+```tsx
+// layout.tsx — the provider reads the key and connects to that deployment
+import { DeploymentProvider, DeploymentInitialized } from "@wacht/nextjs";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <body>
+        <DeploymentProvider publicKey={process.env.NEXT_PUBLIC_WACHT_PUBLISHABLE_KEY!}>
+          <DeploymentInitialized>{children}</DeploymentInitialized>
+        </DeploymentProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+To point the same app at production, swap `pk_test_…` for `pk_live_…` in the environment. Nothing in the component tree changes. Use the same env-var name across builds and let your deploy pipeline supply the right key.
+
+### Backend
+
+The backend SDKs target a deployment with a backend API key, and resolve the host from the publishable key when present.
+
+```bash
+WACHT_API_KEY=wk_live_xxx
+WACHT_PUBLISHABLE_KEY=pk_live_xxx   # preferred; resolves the frontend host
+# or, instead of the publishable key:
+WACHT_FRONTEND_HOST=https://your-deployment.fapi.trywacht.xyz
+```
+
+`WACHT_PUBLISHABLE_KEY` is preferred over `WACHT_FRONTEND_HOST` because the key carries the host — set the key and you don't maintain the URL separately. Pass `publishableKey` explicitly in runtimes that don't expose process env (Cloudflare Workers, Deno). See [Rust getting started](/sdks/rust/getting-started) and [Node server auth](/sdks/node/server-auth).
+
+## A common mistake
+
+Treating staging and production as the same deployment with a flag. They are two tenants. A user who exists in staging does not exist in production; an agent you configured in staging is not live until you recreate or promote it to production. Plan your release process around copying *configuration*, and let data stay isolated — that isolation is the whole reason the boundary exists.

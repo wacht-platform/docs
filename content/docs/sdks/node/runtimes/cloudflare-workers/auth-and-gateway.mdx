@@ -62,4 +62,3 @@ if (!machineDecision.allowed) return new Response('Forbidden', { status: 403 });
 - Run `authenticateRequest()` for session-token flows.
 - Run API key/OAuth protected checks for machine-token flows.
 - Log `request_id` from authorization responses for support traceability.
-- `gatewayUrl` is optional; custom host overrides are available on Enterprise plans.

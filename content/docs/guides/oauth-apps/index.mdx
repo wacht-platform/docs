@@ -5,68 +5,55 @@ description: "End-to-end guide for creating OAuth apps, managing clients, handli
 
 # OAuth Apps for SaaS
 
-If your SaaS needs third-party integrations or protected API resources, OAuth apps should be treated as first-class product infrastructure.
+An OAuth app in Wacht is a self-contained authorization server: its own FQDN, its own RSA signing keys, its own client registry and consent flow. You create one when your SaaS needs to let third parties integrate against your API, or when you want to protect your own resource servers with OAuth tokens. Every OAuth app is also an OpenID Connect provider — same FQDN serves discovery, JWKS, and UserInfo — so "sign in with your product" comes for free.
 
-This guide set covers the full lifecycle:
+Unlike API Auth and webhook apps, there's no ticket-and-vanity-UI model here. You define the app and its clients in Console (or the SDK), Wacht runs the authorize/token/consent flow on the app's FQDN, and your resource server verifies the tokens that come out. The work splits into four guides, read in order:
 
-1. Create OAuth apps and clients
-2. Configure scopes and consent behavior
-3. Handle consent UX and approvals
-4. Verify and introspect tokens in your backend
-5. Rotate secrets and revoke grants
+1. [Create OAuth apps and clients](/guides/oauth-apps/create-oauth-app-and-clients)
+2. [Implement the OAuth consent flow](/guides/oauth-apps/implement-consent-flow)
+3. [Verify tokens and operate OAuth clients](/guides/oauth-apps/verify-access-tokens-and-operate-clients)
+4. [Use Wacht as an OpenID Connect provider](/guides/oauth-apps/use-as-openid-connect-provider)
 
-## Recommended rollout model
+Verify tokens in your resource server with the gateway — `gateway.checkPrincipalAuthz` in Node, `gateway().check_authz_with_principal_type` in Rust. Secret rotation and grant revocation are scriptable through the same SDK OAuth operations, so you can run scheduled rotation or incident response without the Console.
 
-1. Start with Console to define app, clients, and scopes.
-2. Automate app/client lifecycle through SDK OAuth operations.
-3. Use gateway authorization checks in your resource server (`gateway.checkPrincipalAuthz` in Node, `gateway().check_authz_with_principal_type` in Rust).
-4. Add operational controls for secret rotation and grant revocation.
+## Two redirects, two owners
 
-## Redirect and consent behavior (important)
+The flow has two redirects, and confusing them is the most common setup mistake.
 
-Two redirects exist in this OAuth flow:
+The **consent UI redirect is platform-managed.** `/oauth/authorize` redirects to `/oauth/consent/init`, which lands the user on `https://<deployment.frontend_host>/oauth/consent`. This path is fixed by your deployment's frontend host. It is not client-configurable — you can't point consent at your own page.
 
-1. **Consent UI redirect (platform-managed)**
-The runtime `/oauth/authorize` flow redirects to `/oauth/consent/init`, which redirects users to `https://<deployment.frontend_host>/oauth/consent`.
-This path is platform-defined and is not client-configurable.
+The **callback redirect is client-controlled.** After the user approves or denies, Wacht redirects back to the OAuth client's `redirect_uri`, which has to match one of the client's registered `redirect_uris` exactly. Each client owns its own callback targets.
 
-2. **OAuth callback redirect (client-controlled)**
-After approve/deny, Wacht redirects back to the OAuth client `redirect_uri`.
-This is controlled by the client registration (`redirect_uris`) and must match an allowlisted URI exactly.
+So: the consent screen is the same for every client on the app (your deployment's frontend host), but where the user lands afterward is per-client.
 
-So the consent UI route is fixed by deployment frontend host, but the final callback target is controlled by each OAuth client.
+## What you configure
 
-## What users can configure
+From Console or the backend management API:
 
-From Console or backend management APIs:
+- **OAuth app:** `slug`, `name`, `description`, `logo`, `supported_scopes`, `scope_definitions`, `allow_dynamic_client_registration`, `is_active`.
+- **App domain/FQDN:** set at creation. Production requires an explicit FQDN; non-production gets an auto-generated `<random>.oapi.trywacht.xyz`. The slug is baked into the FQDN, so don't rename it after clients are configured.
+- **OAuth client:** `client_auth_method`, `grant_types`, `redirect_uris`, metadata (`client_name`, `client_uri`, `logo_uri`, `tos_uri`, `policy_uri`, `contacts`, `software_id`, `software_version`), key material (`jwks_uri`, `jwks`, `public_key_pem`), `token_endpoint_auth_signing_alg`.
+- **Client lifecycle:** deactivate, rotate secret.
+- **Grants:** list per client, revoke.
 
-1. OAuth app: `slug`, `name`, `description`, `logo`, `supported_scopes`, `scope_definitions`, `allow_dynamic_client_registration`, `is_active`.
-2. OAuth app domain/FQDN: set at creation time (production requires explicit FQDN; non-production gets an auto-generated domain).
-3. OAuth client: `client_auth_method`, `grant_types`, `redirect_uris`, metadata fields (`client_name`, `client_uri`, `logo_uri`, `tos_uri`, `policy_uri`, `contacts`, `software_id`, `software_version`), key material (`jwks_uri`, `jwks`, `public_key_pem`), `token_endpoint_auth_signing_alg`.
-4. OAuth client lifecycle: deactivate, rotate secret.
-5. OAuth grants: list per client and revoke.
+## Runtime endpoints on each app FQDN
 
-## Runtime endpoints exposed by each OAuth app domain
+Every OAuth app FQDN serves:
 
 1. `GET /oauth/authorize`
 2. `POST /oauth/token`
 3. `POST /oauth/revoke`
 4. `POST /oauth/introspect`
-5. `POST /oauth/register` and `GET|PUT|DELETE /oauth/register/{client_id}` (when dynamic registration is enabled)
+5. `POST /oauth/register` and `GET|PUT|DELETE /oauth/register/{client_id}` — only when dynamic client registration is enabled
 6. `GET /.well-known/oauth-authorization-server`
 7. `GET /.well-known/oauth-protected-resource`
 
-## Read in this order
-
-1. [Create OAuth Apps and Clients](/guides/oauth-apps/create-oauth-app-and-clients)
-2. [Implement OAuth Consent Flow](/guides/oauth-apps/implement-consent-flow)
-3. [Verify Tokens and Operate OAuth Clients](/guides/oauth-apps/verify-access-tokens-and-operate-clients)
-4. [Use Wacht as an OpenID Connect Provider](/guides/oauth-apps/use-as-openid-connect-provider)
+Point standards-compliant OAuth and OIDC libraries at the discovery endpoints rather than hardcoding these — they self-configure from `.well-known`.
 
 ## Related references
 
-1. [Node SDK OAuth Apps API](/sdks/node)
-2. [Rust SDK OAuth Apps Guide](/sdks/rust/api-auth-oauth)
-3. [Node SDK Gateway Authz](/sdks/node/server-auth)
-4. [Frontend OAuth Consent API Reference](/reference/frontend-api)
-5. [Backend API Reference](/reference/backend-api)
+1. [Node SDK OAuth apps API](/sdks/node)
+2. [Rust SDK OAuth apps guide](/sdks/rust/api-auth-oauth)
+3. [Node SDK gateway authz](/sdks/node/server-auth)
+4. [Frontend OAuth consent API reference](/reference/frontend-api)
+5. [Backend API reference](/reference/backend-api)

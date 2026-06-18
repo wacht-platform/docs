@@ -158,9 +158,9 @@ cd my-app
 wacht env pull
 ```
 
-Each call issues a new key under the deployment's reserved `aa_<deployment_id>` system app. Existing keys keep working — re-pulling on a teammate's machine doesn't invalidate yours. Pass `--file <path>` to override the destination or `--print` to dump credentials to stdout without writing.
+Each call issues a new key under a deployment-scoped system app. Existing keys keep working — re-pulling on a teammate's machine doesn't invalidate yours. Pass `--file <path>` to override the destination or `--print` to dump credentials to stdout without writing.
 
-The minted `WACHT_API_KEY` is `sk_test_…` on staging deployments and `sk_live_…` on production. The underlying endpoint (`POST /deployments/{id}/credentials`) is exposed only on the machine API and authenticated with the CLI's machine session — there is no backend-SDK or REST way to mint a key from application code. If your automation needs a backend key, run `wacht env pull` from the same machine, or rotate keys manually from the API-Auth UI in the console.
+The key prefix and live/test mode are set by the server when the key is minted; the CLI writes whatever the credentials endpoint returns. The underlying endpoint (`POST /deployments/{id}/credentials`) is exposed only on the machine API and authenticated with the CLI's machine session — there is no backend-SDK or REST way to mint a key from application code. If your automation needs a backend key, run `wacht env pull` from the same machine, or rotate keys manually from the API-Auth UI in the console.
 
 ## Manage deployment settings as code
 

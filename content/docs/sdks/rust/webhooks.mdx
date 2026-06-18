@@ -1,76 +1,191 @@
 ---
 title: Webhooks
-description: Webhook apps, endpoints, deliveries, analytics, and replay APIs.
+description: Manage webhook apps, event catalogs, endpoints, deliveries, replay, and analytics from the Rust SDK.
 ---
 
-Validated route domains:
+Webhooks are managed through one flat surface, `client.webhooks()` — there are no sub-groups. The model is layered: an app owns a signing secret and an event catalog, the catalog defines which events exist, endpoints subscribe to events and receive deliveries, and deliveries can be inspected, replayed, and measured. Each method is a builder; call `.send().await?` to execute. Most list builders take `.limit()` and `.offset()`; the request bodies for catalog and endpoint mutations live under `wacht::api::webhooks`.
 
-- `/webhooks/apps*`
-- `/webhooks/event-catalogs*`
-- `/webhooks/apps/{app_slug}/endpoints*`
-- `/webhooks/apps/{app_slug}/deliveries*`
-- `/webhooks/apps/{app_slug}/analytics`
-- `/webhooks/apps/{app_slug}/timeseries`
-- `/webhooks/endpoints/{endpoint_id}/reactivate`
+## Apps
 
-Rust API surfaces:
-
-- `client.webhooks().list_webhook_apps()`
-- `client.webhooks().get_webhook_app(app_slug)`
-- `client.webhooks().create_webhook_app(name)`
-- `client.webhooks().update_webhook_app(app_slug)`
-- `client.webhooks().delete_webhook_app(app_slug)`
-- `client.webhooks().rotate_webhook_secret(app_slug)`
-- `client.webhooks().list_webhook_event_catalogs()`
-- `client.webhooks().create_webhook_event_catalog(request)`
-- `client.webhooks().append_webhook_event_catalog_events(slug, request)`
-- `client.webhooks().archive_webhook_event_in_catalog(slug, request)`
-- `client.webhooks().list_webhook_endpoints(app_slug)`
-- `client.webhooks().create_webhook_endpoint(app_slug, url)`
-- `client.webhooks().update_webhook_endpoint(app_slug, endpoint_id)`
-- `client.webhooks().delete_webhook_endpoint(app_slug, endpoint_id)`
-- `client.webhooks().trigger_webhook_event(app_slug, event_name, payload)`
-- `client.webhooks().list_webhook_deliveries(app_slug)`
-- `client.webhooks().replay_webhook_deliveries(app_slug)`
-- `client.webhooks().list_webhook_replay_tasks(app_slug)`
-- `client.webhooks().get_webhook_replay_task_status(app_slug, task_id)`
-- `client.webhooks().cancel_webhook_replay_task(app_slug, task_id)`
-- `client.webhooks().reactivate_webhook_endpoint(endpoint_id)`
-- `client.webhooks().test_webhook_endpoint(app_slug, endpoint_id, event_name)`
-- `client.webhooks().get_webhook_analytics(app_slug)`
-- `client.webhooks().get_webhook_stats(app_slug)`
-- `client.webhooks().get_webhook_timeseries(app_slug, interval)`
-
-Rust example:
+An app is the top-level container. `create_webhook_app` takes a name and returns a `WebhookApp` carrying its `app_slug` (the identifier every other call uses) and `signing_secret`. `list_webhook_apps` returns `Vec<WebhookApp>`; `get_webhook_app` fetches one by slug; `update_webhook_app` and `delete_webhook_app` manage it. `rotate_webhook_secret` issues a new signing secret and returns the updated app — the old secret stops verifying immediately, so deployments still using it will reject deliveries until they pick up the new value.
 
 ```rust
-use wacht_rs::{Result, WachtClient};
+// Returns the created WebhookApp, including app_slug and signing_secret.
+// Capture the secret now; it is what you verify delivery signatures with.
+let app = client
+    .webhooks()
+    .create_webhook_app("billing-events")
+    .description("Billing lifecycle events")
+    .failure_notification_emails(vec!["oncall@example.com".into()])
+    .send()
+    .await?;
+println!("slug={} secret={}", app.app_slug, app.signing_secret);
+```
 
-pub async fn webhook_example(client: &WachtClient) -> Result<()> {
-    let _catalog = client
+The signing secret is how receivers confirm a delivery came from Wacht. Store it server-side and verify each incoming request against it; never expose it to a browser.
+
+## Event catalogs
+
+A catalog is the schema layer — the set of events an app can emit, each with a name, description, JSON schema, and example payload. `create_webhook_event_catalog` takes a full `CreateWebhookEventCatalogRequest`. To add events to an existing catalog, use `append_webhook_event_catalog_events`, which merges new `WebhookEventDefinition` entries by slug and returns the updated `WebhookEventCatalog`. Retire an event with `archive_webhook_event_in_catalog` — archiving keeps the definition but stops it being offered for new subscriptions. Read catalogs with `list_webhook_event_catalogs` and `get_webhook_event_catalog`; `get_webhook_catalog` and `get_webhook_events` read the catalog resolved for a specific app.
+
+```rust
+use wacht::api::webhooks::{AppendWebhookEventCatalogEventsRequest, WebhookEventDefinition};
+
+// Adds an event definition to an existing catalog. Returns the full catalog.
+let catalog = client
+    .webhooks()
+    .append_webhook_event_catalog_events(
+        "core-events",
+        AppendWebhookEventCatalogEventsRequest {
+            events: vec![WebhookEventDefinition {
+                name: "user.created".into(),
+                description: "Emitted when a user is created.".into(),
+                group: Some("users".into()),
+                schema: Some(serde_json::json!({ "type": "object" })),
+                example_payload: Some(serde_json::json!({ "user_id": "user_123" })),
+                is_archived: Some(false),
+            }],
+        },
+    )
+    .send()
+    .await?;
+```
+
+## Endpoints
+
+An endpoint is a URL that receives deliveries for the events it subscribes to. `create_webhook_endpoint` takes the app slug and URL; chain `.add_event(name, filter_rules)` (or `.subscriptions(...)`) to subscribe, and `.max_retries()`, `.timeout_seconds()`, `.headers()`, and `.rate_limit_config()` to tune delivery. It returns the stored `WebhookEndpoint`. List with `list_webhook_endpoints` (pass `.include_inactive(true)` to see disabled ones), or `get_webhook_endpoints_with_subscriptions` to get each endpoint paired with its subscribed event names. `update_webhook_endpoint` is a PATCH; `delete_webhook_endpoint` removes it.
+
+```rust
+// Subscribes to one event with no filter. Returns the created WebhookEndpoint.
+let endpoint = client
+    .webhooks()
+    .create_webhook_endpoint("billing-events", "https://api.example.com/hooks")
+    .description("Primary receiver")
+    .add_event("user.created", serde_json::json!({}))
+    .max_retries(5)
+    .timeout_seconds(10)
+    .send()
+    .await?;
+```
+
+Endpoints auto-disable after repeated delivery failures — `WebhookEndpoint` exposes `failure_count`, `auto_disabled`, and `auto_disabled_at`. A disabled endpoint receives nothing until you bring it back. `reactivate_webhook_endpoint` takes the endpoint id (not the app slug), clears the disabled state, and returns a `ReactivateEndpointResponse`. Before reactivating, fix whatever was failing, then confirm with `test_webhook_endpoint`: it sends a synthetic event to the endpoint and returns a `TestWebhookEndpointResponse` with `success`, `status_code`, `response_time_ms`, and any `error` — without recording a real delivery.
+
+```rust
+// Send a test event. success=false with a status_code/error tells you why.
+let result = client
+    .webhooks()
+    .test_webhook_endpoint("billing-events", &endpoint.id, "user.created")
+    .send()
+    .await?;
+if !result.success {
+    eprintln!("test failed: {:?}", result.error);
+}
+
+// Re-enable an auto-disabled endpoint by id once the cause is resolved.
+client
+    .webhooks()
+    .reactivate_webhook_endpoint(&endpoint.id)
+    .send()
+    .await?;
+```
+
+## Triggering events
+
+`trigger_webhook_event` emits an event into an app and fans it out to the matching subscribed endpoints. It takes the app slug, event name, and a JSON payload, and returns a `TriggerWebhookEventResponse` with `delivery_ids`, `delivered_count`, and `filtered_count`. `filtered_count` is the number of subscriptions whose filter rules excluded this payload — a non-zero value there is expected, not an error. Chain `.filter_context(...)` to supply extra data the endpoint filter rules evaluate against.
+
+```rust
+let dispatch = client
+    .webhooks()
+    .trigger_webhook_event(
+        "billing-events",
+        "user.created",
+        serde_json::json!({ "user_id": "user_123" }),
+    )
+    .send()
+    .await?;
+println!(
+    "delivered {} / filtered {}",
+    dispatch.delivered_count, dispatch.filtered_count
+);
+```
+
+## Deliveries
+
+A delivery is one attempt to send an event to one endpoint. `list_webhook_deliveries` returns a page of `WebhookDelivery` rows and accepts `.endpoint_id()`, `.event_name()`, `.status()`, `.since()`, `.until()`, `.limit()`, and `.offset()` filters. Each row carries `status`, `http_status_code`, `attempt_number`, and `max_attempts`. `get_webhook_delivery_details` returns the heavier `WebhookDeliveryDetails`, which adds the request `payload` and the endpoint's `response_body` and `response_headers` — use it to diagnose a specific failure.
+
+```rust
+// Only failed deliveries for one endpoint, most recent first.
+let failures = client
+    .webhooks()
+    .list_webhook_deliveries("billing-events")
+    .status("failed")
+    .limit(50)
+    .send()
+    .await?;
+
+for d in &failures.data {
+    let details = client
         .webhooks()
-        .append_webhook_event_catalog_events(
-            "core-events",
-            wacht_rs::api::webhooks::AppendWebhookEventCatalogEventsRequest {
-                events: vec![wacht_rs::api::webhooks::WebhookEventDefinition {
-                    name: "user.created".to_string(),
-                    description: "User created event".to_string(),
-                    group: Some("users".to_string()),
-                    schema: Some(serde_json::json!({ "type": "object" })),
-                    example_payload: Some(serde_json::json!({ "user_id": "user_123" })),
-                    is_archived: Some(false),
-                }],
-            },
-        )
+        .get_webhook_delivery_details("billing-events", &d.delivery_id)
         .send()
         .await?;
-
-    let _replay_status = client
-        .webhooks()
-        .get_webhook_replay_task_status("app_slug", "task_id")
-        .send()
-        .await?;
-
-    Ok(())
+    eprintln!("{} -> {:?}", d.delivery_id, details.response_body);
 }
 ```
+
+A delivery row with `attempt_number = 0` and `status = "pending"` is a marker for a queued delivery, not a real attempt — exclude it when you compute attempt counts or success ratios yourself, since it would otherwise inflate the denominator.
+
+## Replay
+
+Replay re-sends past deliveries — useful after fixing a broken endpoint or recovering from an outage. `replay_webhook_deliveries` runs in one of two modes: `.by_ids(vec![...])` for an explicit set of delivery ids, or `.by_date_range(start, end)` for everything in a window (further narrowed with `.status()`, `.event_name()`, `.endpoint_id()`). Pass `.idempotency_key(...)` so a retried replay request does not enqueue the work twice. It returns a `ReplayWebhookDeliveriesResponse` with a `task_id`, because replay is asynchronous.
+
+```rust
+let replay = client
+    .webhooks()
+    .replay_webhook_deliveries("billing-events")
+    .by_ids(vec!["del_1".into(), "del_2".into()])
+    .idempotency_key("incident-4821-replay")
+    .send()
+    .await?;
+
+// Replay runs in the background; poll the task to follow progress.
+if let Some(task_id) = replay.task_id {
+    let status = client
+        .webhooks()
+        .get_webhook_replay_task_status("billing-events", &task_id)
+        .send()
+        .await?;
+    println!(
+        "{} / {} replayed, {} failed",
+        status.replayed_count, status.total_count, status.failed_count
+    );
+}
+```
+
+Track replays with `list_webhook_replay_tasks` and `get_webhook_replay_task_status` (which reports `total_count`, `processed`, `replayed_count`, and `failed_count`), and stop an in-flight one with `cancel_webhook_replay_task`.
+
+## Analytics
+
+Three read-only views measure delivery health. `get_webhook_stats` returns a compact `WebhookStats` — total deliveries, success rate, active endpoints, and failed deliveries in the last 24 hours — suited to a dashboard tile. `get_webhook_analytics` returns the full `AnalyticsResult`: success rate, response-time percentiles (p50/p95/p99), top events, per-endpoint performance, and failure-reason breakdowns, scoped by optional `.start_date()`, `.end_date()`, and `.endpoint_id()`. `get_webhook_timeseries` returns the same metrics bucketed over time; it requires an `interval` (such as `"hour"` or `"day"`).
+
+```rust
+let stats = client.webhooks().get_webhook_stats("billing-events").send().await?;
+println!("success rate {:.1}%", stats.success_rate * 100.0);
+
+let series = client
+    .webhooks()
+    .get_webhook_timeseries("billing-events", "day")
+    .start_date("2026-06-01")
+    .send()
+    .await?;
+println!("{} buckets", series.data.len());
+```
+
+## Method group summary
+
+- Apps — `list_webhook_apps` / `get_webhook_app` / `create_webhook_app` / `update_webhook_app` / `delete_webhook_app` / `rotate_webhook_secret`
+- Catalogs — `list_webhook_event_catalogs` / `get_webhook_event_catalog` / `create_webhook_event_catalog` / `update_webhook_event_catalog` / `append_webhook_event_catalog_events` / `archive_webhook_event_in_catalog` / `get_webhook_catalog` / `get_webhook_events`
+- Endpoints — `list_webhook_endpoints` / `get_webhook_endpoints_with_subscriptions` / `create_webhook_endpoint` / `update_webhook_endpoint` / `delete_webhook_endpoint` / `reactivate_webhook_endpoint` / `test_webhook_endpoint`
+- Events and deliveries — `trigger_webhook_event` / `list_webhook_deliveries` / `get_webhook_delivery_details`
+- Replay — `replay_webhook_deliveries` / `list_webhook_replay_tasks` / `get_webhook_replay_task_status` / `cancel_webhook_replay_task`
+- Analytics — `get_webhook_stats` / `get_webhook_analytics` / `get_webhook_timeseries`

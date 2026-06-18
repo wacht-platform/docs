@@ -1,11 +1,82 @@
 ---
 title: B2B Access Model
-description: Organizations, workspaces, memberships, roles, and scoped permissions.
+description: How organizations, workspaces, memberships, roles, invitations, and domain auto-join compose into Wacht's tenancy model.
 ---
 
-Wacht’s B2B model is built around:
+Wacht's B2B model adds two layers of tenancy on top of identity: organizations and, optionally, workspaces inside them. A user joins an organization through a membership, the membership carries roles, and roles carry permissions. Authorization resolves through the membership, not through the user record — so the same user can be an admin in one org and a read-only member in another.
 
-- organizations
-- workspaces
-- memberships
-- roles and permission catalogs
+B2B is optional and off by default. A consumer app leaves `organizations_enabled` false and works with users directly. A B2B app turns it on per deployment and gets the hierarchy below.
+
+## The hierarchy
+
+```text
+deployment
+└── organization              a tenant (a customer company)
+    ├── memberships           user ↔ org, each carrying org roles
+    ├── domains               verified email domains for auto-join / SSO
+    ├── invitations           pending email invites, optionally pre-scoped
+    └── workspaces            sub-tenants inside the org (teams, projects)
+        └── memberships       user ↔ workspace, each carrying workspace roles
+```
+
+Organizations are the primary tenant boundary — one per customer company. Workspaces are a finer split inside an organization, for teams or projects that need their own membership and permissions. A workspace always belongs to exactly one organization, and a workspace membership presupposes an organization membership (the record links both the `organization_membership_id` and the `workspace_id`).
+
+You can run organizations without workspaces. Turn `workspaces_enabled` off and the model is a single tenancy layer. Turn it on when one org needs internal sub-tenancy.
+
+## Memberships are where roles live
+
+A user is not "in" an organization by reference from the user record. A membership row joins the user id and the organization id, and that row holds the user's roles for that org. The same applies one level down: a workspace membership joins the user to a workspace and holds workspace roles.
+
+This is why a user's access is always resolved through a membership. To know what a user can do in org A, you read their org-A membership and its roles. Their org-B membership is a separate row with separate roles. There is no global "user is an admin" flag.
+
+Memberships also carry `public_metadata` — arbitrary JSON you attach for your own use (a seat type, a plan tier, an internal id). It travels with the membership, scoped to that org or workspace.
+
+## Roles and permissions
+
+A role is a name plus a list of permission strings, like `organization:admin` or `workspace:member`. Permissions are plain strings you check against in your app and that the SDKs expose on the resolved membership.
+
+Roles come in two flavors:
+
+- **Deployment-level roles** are defined once on the deployment and available to every organization. The role carries `is_deployment_level: true`. These are your standard roles — the same Admin and Member everywhere.
+- **Organization-level (custom) roles** are defined by a specific org for its own use, when you enable `custom_org_role_enabled`. They exist only inside that org. Workspaces have the equivalent toggle, `custom_workspace_role_enabled`, for org-scoped custom workspace roles.
+
+Out of the box a deployment ships standard roles: org `Admin` (`organization:admin`) and `Member` (`organization:member`), workspace `Admin` (`workspace:admin`) and `Member` (`workspace:member`). The B2B settings pin which of these is the **default creator role** and **default member role** at each level. When a user creates an org they get the default org creator role; when they're added as a member they get the default org member role. Same split for workspaces.
+
+The permission **catalog** is the deployment's master list of valid permission strings, split into an organization catalog and a workspace catalog. Entries can be `archived` so an old permission stops being assignable without breaking roles that still reference it. Custom roles draw their permissions from the catalog.
+
+## Invitations
+
+You bring a user into an organization by inviting their email. The invitation can be pre-scoped: set `initial_organization_role_id` and, when you're inviting straight into a workspace, `workspace_id` plus `initial_workspace_role_id`. When the invite is accepted, the membership is created with exactly those roles — no second step to grant access.
+
+Invitations carry an `expiry` and an `expired` flag, and a `token` used to build the accept URL. The token is returned to admin tooling so you can render or share the link out of band when email delivery isn't the path you want.
+
+## Domain auto-join
+
+An organization can claim email domains. Each `organization_domain` carries an `fqdn`, a `verified` flag, and the DNS record you must publish to prove ownership (record type, name, and data, with a `verification_attempts` count).
+
+Once a domain is verified, users signing up with an email on that domain can be routed into the organization automatically — no per-user invite. This is how you onboard a whole company by their domain rather than one invitation at a time. Verified domains are also the anchor for enterprise SSO: an `enterprise_connection` binds a SAML or OIDC identity provider to a specific verified domain, with just-in-time provisioning (`jit_enabled`) and attribute mapping. Enable it per deployment with `enterprise_sso_enabled`.
+
+## Per-org and per-deployment configuration
+
+Most tenancy limits and toggles live in the deployment's B2B settings and apply across all orgs:
+
+- `organizations_enabled`, `workspaces_enabled` — turn each layer on.
+- `allow_users_to_create_orgs`, `max_orgs_per_user` — who may create orgs and how many.
+- `max_allowed_org_members`, `max_allowed_workspace_members` — seat caps.
+- `limit_workspace_creation_per_org`, `workspaces_per_org_count` — cap workspaces per org.
+- `allow_org_deletion`, `allow_workspace_deletion` — whether tenants can delete themselves.
+- `custom_org_role_enabled`, `custom_workspace_role_enabled` — whether tenants define their own roles.
+- the four default role ids (org creator, org member, workspace creator, workspace member).
+
+A few controls are per-org rather than deployment-wide, gated by a deployment toggle that lets orgs set their own value:
+
+- `ip_allowlist_per_org_enabled` / `ip_allowlist_per_workspace_enabled` — let a tenant restrict access to its own IP ranges.
+- `enforce_mfa_per_org_enabled` / `enforce_mfa_per_workspace_enabled` — let a tenant require MFA for its own members regardless of the deployment-wide policy.
+
+The pattern is consistent: the deployment decides whether a capability is available; the organization decides how to use it within those bounds.
+
+## How resolution works in your app
+
+When you check access, resolve in this order: which organization (and workspace) is active, the user's membership in it, that membership's roles, and the permissions those roles carry. The frontend SDKs surface the active org/workspace and the resolved roles; the backend SDKs let you assert a permission server-side on a protected route. Always enforce on the backend — the client view is for UX, not the authorization decision.
+
+For the implementation track, see [Organizations and Workspaces (Rust)](/sdks/rust/organizations-workspaces) and the [B2B org/workspace lifecycle guide](/guides/integration-playbooks/b2b-org-workspace-lifecycle).

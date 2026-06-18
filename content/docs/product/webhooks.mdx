@@ -1,11 +1,101 @@
 ---
 title: Webhooks
-description: Event delivery, replay, endpoint management, and operational sync patterns.
+description: Outbound event delivery in Wacht — webhook apps, endpoints, signed payloads, at-least-once delivery, retries, and replay.
 ---
 
-Webhook docs should explain:
+Webhooks are how your product pushes events out — to your own services, to customers' backends, to partners. Wacht runs the delivery side: it signs each payload, retries failed attempts on a schedule, auto-disables endpoints that stay broken, and lets you replay history. The consumer's job is small but mandatory: verify the signature and dedupe by event ID.
 
-- event catalogs
-- endpoint configuration
-- delivery and replay
-- receiver and idempotency expectations
+## Webhook apps
+
+A webhook app is the control plane for one stream of outbound events. You create one per deployment (the convention is `app_slug = wh_<deploymentId>`), and it owns three things: the **signing secret** every payload under it is signed with, the set of **endpoints** that receive deliveries, and an optional **event catalog** describing the events you emit. An inactive app stops all delivery beneath it.
+
+```ts
+import { WachtClient } from "@wacht/backend";
+
+const client = new WachtClient({ apiKey: process.env.WACHT_BACKEND_API_KEY! });
+
+await client.webhooks.createWebhookApp({
+  app_slug: "wh_42",
+  name: "Billing Webhooks",
+  description: "Outbound billing events",
+});
+```
+
+The signing secret can be rotated. Rotation hands consumers a window to accept both old and new signatures, so plan it as a coordinated change, not a surprise.
+
+## Endpoints
+
+An endpoint is a destination URL plus its delivery policy: how many times to retry (`max_retries`), how long to wait per attempt (`timeout_seconds`), optional custom headers, and an optional per-endpoint rate limit. Each endpoint subscribes to specific event names — it only receives what it asks for — and a subscription can carry filter rules to narrow further within an event.
+
+Endpoints carry their own health. Wacht tracks a `failure_count` and the last failure time, and an endpoint that keeps failing is **auto-disabled** with a timestamp, so one broken consumer doesn't drain your delivery queue indefinitely. You reactivate it once the receiver is fixed. Use the endpoint test action to send a synthetic event before trusting a new URL in production.
+
+## Triggering events
+
+Your backend emits a domain event by name with a JSON payload. Wacht fans it out to every active endpoint subscribed to that event, applying each subscription's filter rules.
+
+```ts
+await client.webhooks.triggerWebhookEvent("wh_42", "invoice.paid", {
+  invoice_id: "inv_123",
+  amount_cents: 4200,
+  currency: "usd",
+});
+```
+
+Event catalogs are optional but worth keeping: a catalog documents each event's name, group, JSON schema, and an example payload, which is what your customers read when wiring up their receiver.
+
+## Signed payloads
+
+Wacht signs every delivery following the Standard Webhooks spec, so any Standard Webhooks verification library works out of the box. Three headers ride with each request:
+
+| Header | What it is |
+|---|---|
+| `webhook-id` | The unique ID of this event. Also your idempotency key. |
+| `webhook-timestamp` | Unix seconds when the delivery was created. |
+| `webhook-signature` | One or more space-separated `v1,<base64>` signatures. |
+
+The signature is an HMAC-SHA256 over the exact string `{webhook-id}.{webhook-timestamp}.{raw-body}`, base64-encoded, prefixed with `v1,`. The key is your app's signing secret — the `whsec_` prefix is stripped and the remainder base64-decoded before use. Verify against the **raw request body**, byte for byte; re-serializing parsed JSON will change the bytes and break the comparison. Compare in constant time, and reject deliveries whose timestamp is too far from now to blunt replay attacks.
+
+```ts
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+export function verify(secret: string, headers: Headers, rawBody: string): boolean {
+  const id = headers.get("webhook-id")!;
+  const ts = headers.get("webhook-timestamp")!;
+  const sent = headers.get("webhook-signature")!; // "v1,<base64> [v1,<base64> …]"
+
+  const key = Buffer.from(secret.replace(/^whsec_/, ""), "base64");
+  const expected =
+    "v1," +
+    createHmac("sha256", key).update(`${id}.${ts}.${rawBody}`).digest("base64");
+
+  return sent.split(" ").some((sig) => {
+    const a = Buffer.from(sig);
+    const b = Buffer.from(expected);
+    return a.length === b.length && timingSafeEqual(a, b);
+  });
+}
+```
+
+Rotation is why `webhook-signature` can hold more than one value: during a rotation window a delivery is signed with both secrets, and the consumer accepts a match against either. Iterating the space-separated list is not optional if you ever rotate.
+
+## Delivery guarantees
+
+Delivery is **at-least-once**. Wacht considers a delivery successful when your endpoint returns a 2xx within the timeout; anything else — non-2xx, timeout, connection error — is a failure and is retried up to the endpoint's `max_attempts`, with the next attempt scheduled at `next_retry_at` on a backoff. A delivery moves through `pending`, `delivering`, `delivered`, `failed`, and `expired`; it expires once retries are exhausted.
+
+At-least-once has a direct consequence for the consumer: **the same event can arrive more than once.** A retry after a slow-but-successful response, a network blip on the ack, a manual replay — all produce duplicates. The `webhook-id` is stable across every delivery of one event, so dedupe on it: record processed IDs and treat a repeat as a no-op. Make your handler idempotent and ordering-tolerant; Wacht does not guarantee delivery order.
+
+What the consumer owes, in short: return 2xx only after the event is durably handled, verify the signature on the raw body, and dedupe by `webhook-id`.
+
+## Replay and observability
+
+When deliveries fail in bulk — a customer's receiver was down, a bad deploy on their side — you don't re-emit the source events. You **replay** a window: filter by status, event, and time range, and Wacht re-delivers the matching history as a background task you can poll, list, and cancel. Bound the window so you don't overwhelm a receiver that just came back. Replays produce the same `webhook-id` values as the originals, which is exactly why consumer-side dedupe is load-bearing.
+
+The delivery stream, per-attempt detail (status code, response time, error), success-rate analytics, and timeseries are all queryable for triage and dashboards. The [deliveries, replay, and observability guide](/guides/webhook-apps/deliveries-replay-and-observability) covers the operator workflow and the hooks behind it.
+
+## Where to go next
+
+- [Webhook apps guide](/guides/webhook-apps/index) — provisioning, endpoint management, vanity vs custom UX
+- [Deliveries, replay, and observability](/guides/webhook-apps/deliveries-replay-and-observability)
+- [Rust SDK webhooks](/sdks/rust/webhooks) — the full webhook method surface
+- [Backend API Reference](/reference/backend-api)
+- [Standard Webhooks](https://www.standardwebhooks.com/)

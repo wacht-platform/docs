@@ -1,60 +1,97 @@
 ---
-title: "Designing Actionable Notification UX"
-description: "Design notification UX that drives remediation and measurable outcomes, not feed noise."
+title: Designing Actionable Notification UX
+description: Write Wacht notifications that name the event, carry one CTA that routes to the fix, and expire when they stop mattering.
 ---
 
 # Designing Actionable Notification UX
 
-Actionable notification UX means each item helps the user decide and do the next step quickly.
+An actionable notification answers two questions before the user has to think: what happened, and what do I do about it. Wacht gives you four fields to answer them — `title`, `body`, `severity`, and `ctas` — plus `expires_hours` to decide how long the row stays around. Use them deliberately and the inbox stays a place users act in, not a feed they mute.
 
-## Outcome-driven design rules
+## Title names the event, body names the impact
 
-1. Title describes the event, not the UI action.
-2. Body explains impact and affected entity.
-3. CTA opens the exact remediation target.
-4. Severity reflects urgency and expected response.
+The `title` is the event in the user's terms, not your UI's. "Webhook endpoint disabled" — not "Action required" and not "Open settings". The `body` adds the part the title can't: which entity, and what it means now.
 
-## Suggested information architecture
+> The test: a user reading only the title should already know whether they care. The body earns the click; the title earns the glance.
 
-1. Primary inbox list (default unarchived).
-2. Fast filters: unread, severity, scope, starred.
-3. Detail drawer/panel for context and CTA actions.
-4. Bulk actions for cleanup (`markAllAsRead`, `archiveAllRead`).
+Both are required strings. Keep the title to one clause. Put the affected entity — the endpoint name, the key, the workspace — in the body, where it has room and where it survives a narrow inbox column.
 
-## Practical template examples
+## One CTA that lands on the fix
 
-1. `warning`: "Webhook endpoint disabled" -> CTA: `Review endpoint`.
-2. `error`: "API key blocked by rate limit" -> CTA: `Inspect key analytics`.
-3. `success`: "Organization invite accepted" -> CTA: `Open members`.
-4. `info`: "Workspace role updated" -> CTA: `Review permissions`.
+Actionability lives in `ctas`. Each CTA is `{ label, payload }`. The `label` is verb-first and specific — "Review endpoint", not "Open". The `payload` is whatever your inbox does on click; Wacht stores it and hands it back untouched, so a route works as well as a full URL or an identifier.
 
-## UX implementation checklist
+Set a single high-value CTA. The convenience pair `action_url` + `action_label` builds exactly one for you:
 
-1. Keep action labels verb-first and specific.
-2. Provide meaningful empty state copy by filter context.
-3. Preserve filter state when navigating away/back.
-4. Avoid overusing red/error styling for non-urgent updates.
-5. Prefer one high-value CTA over multiple weak actions.
+```json
+{
+  "title": "Webhook endpoint disabled",
+  "body": "deploy-events stopped after 12 consecutive 5xx responses.",
+  "severity": "warning",
+  "action_url": "/settings/webhooks/deploy-events",
+  "action_label": "Review endpoint"
+}
+```
 
-## Measurement model
+That folds into `ctas: [{ "label": "Review endpoint", "payload": "/settings/webhooks/deploy-events" }]`. Omit `action_label` and the label defaults to `View` — fine for an `info` row, weak for anything that needs a decision, so name the verb yourself.
 
-Track:
+When you need more than one action, pass `ctas` directly. But prefer one CTA that lands on the remediation target over two that each land near it. A user who has to choose between buttons hasn't been helped — they've been handed your decision.
 
-1. Notification open/read rate by template.
-2. CTA click-through by severity and scope.
-3. Time-to-remediation after warning/error notifications.
-4. Archive/star behavior to identify noisy templates.
+```json
+{
+  "title": "Organization invite accepted",
+  "body": "priya@acme.com joined Engineering.",
+  "severity": "success",
+  "ctas": [{ "label": "Open members", "payload": "/org/members" }]
+}
+```
 
-## Governance model
+If a notification has no fix to route to, it has no CTA — and that is the signal to question whether it should be a notification at all. An `error` with no CTA and no affected entity is noise wearing an alarm color.
 
-1. Assign template ownership by domain team.
-2. Version template copy and metadata schemas.
-3. Review top noisy templates each release cycle.
-4. Add expiry to transient operational alerts.
+## Severity is the volume knob
+
+The four severities — `info`, `success`, `warning`, `error` — set how loudly the inbox surfaces a row. Match them to the response you expect:
+
+- `error` — the user must act now. An API key blocked, a grant revoked, a billing failure that stops service. Route the CTA at the exact thing to inspect.
+- `warning` — act soon. An endpoint disabled, a quota at 90%, a token expiring this week.
+- `success` — confirmation, no action needed beyond an optional look. An invite accepted, a job finished.
+- `info` — state changed, FYI. A role updated, a setting synced.
+
+`error` styling only works as a signal if it stays rare. Spend it on routine updates and users learn to dismiss red, which is the one outcome you can't afford the day something is actually on fire. Severity also parses leniently on create — an unrecognized value silently becomes `info` — so a notification that should shout but quietly downgraded is usually a typo'd severity string.
+
+## Expiry keeps the inbox honest
+
+Set `expires_hours` to match how long the notification stays true. A "deploy finished" success is stale by the next deploy — a few hours. A warning about a token expiring next week should outlive the warning window but not linger past it. Omit `expires_hours` and the row lives 90 days, which is right for durable account and security events the user may hunt for later and wrong for transient operational chatter.
+
+Expiry is the cleanup the user never has to do. A `success` that auto-expires is a `success` nobody has to archive.
+
+## Scope to who can act
+
+A notification is only actionable for someone who can do the thing the CTA points at. Address `workspace_id` for a workspace event, `user_id` for a personal one, `organization_id` only when every member genuinely needs to act. Broadcasting a workspace problem to the whole organization hands a "Review endpoint" button to dozens of people who can't review it and shouldn't see it — every one of those rows is an unactionable alert by construction.
+
+## Read and archive are the user's, not yours
+
+The recipient drives state. Marking read clears the unread badge; archiving removes the row from the default view. Both are scoped to the owner — a user only ever transitions their own notifications. Design the inbox so marking read happens on a real open, not on hover, so the unread count means "you haven't looked at this" rather than "this scrolled past". Starring is persisted and user-driven — the inbox's star action toggles `is_starred` on the user's own row.
+
+## A worked template
+
+Putting the pieces together — event-named title, impact in the body, urgency-matched severity, one CTA on the fix, expiry tuned to relevance, scoped to who can act:
+
+```json
+{
+  "workspace_id": "...",
+  "title": "API key blocked by rate limit",
+  "body": "key live_prod_4f hit its per-minute ceiling and is throttled for 10 minutes.",
+  "severity": "error",
+  "action_url": "/settings/api-keys/live_prod_4f/analytics",
+  "action_label": "Inspect key analytics",
+  "expires_hours": 24
+}
+```
+
+This returns one notification row per resolved workspace member. Each lands as an unread `error` with a single button pointing at the analytics for the exact key. It expires in a day, because a throttle from this morning is not worth a badge tomorrow.
 
 ## Related docs
 
-1. [Backend Sending Patterns](/guides/notifications/backend-sending-patterns)
-2. [Frontend Inbox with Hooks](/guides/notifications/frontend-inbox-with-hooks)
-3. [Realtime Stream Handling](/guides/notifications/realtime-stream-handling)
-4. [React Router Notifications Hooks](/sdks/react-router/hooks/notifications)
+1. [Notification System Architecture](/guides/notifications)
+2. [Backend Sending Patterns](/guides/notifications/backend-sending-patterns)
+3. [Frontend Inbox with Hooks](/guides/notifications/frontend-inbox-with-hooks)
+4. [Realtime Stream Handling](/guides/notifications/realtime-stream-handling)

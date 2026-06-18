@@ -156,5 +156,4 @@ export class MachineController {
 - Avoid backend API calls directly in controllers; use services.
 - In Node.js, `getAuthFromToken(token)` can rely on publishable key env fallback.
 - Keep API key/OAuth protected checks separate from session-token guards.
-- Custom `gatewayUrl` host override is available on Enterprise plans.
 - Return structured 401/403 responses via Nest exception filters if needed.

@@ -1,6 +1,6 @@
 ---
 title: Getting Started
-description: Install wacht-rs, initialize a client, and make your first backend call.
+description: Install the wacht crate, initialize a client, and make your first backend call.
 ---
 
 Use the Rust SDK to connect backend services to Wacht with typed request builders, async execution, and framework integrations such as Axum.
@@ -9,15 +9,15 @@ Use the Rust SDK to connect backend services to Wacht with typed request builder
 
 ```toml
 [dependencies]
-wacht = "0.1.0-beta.4"
+wacht = "0.1.0-beta.7"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
-For Axum middleware support:
+The `axum` feature is on by default, so the dependency above already pulls in the Axum middleware. Disable it with `default-features = false` if you only want the backend client:
 
 ```toml
 [dependencies]
-wacht = { version = "0.1.0-beta.4", features = ["axum"] }
+wacht = { version = "0.1.0-beta.7", default-features = false }
 ```
 
 ## Environment variables
@@ -30,6 +30,8 @@ Set the values used by `WachtClient::from_env()`:
 
 ## Create a client and call the API
 
+`from_env()` reads `WACHT_API_KEY` and the frontend host, then fetches the deployment's public signing material so Axum auth works without extra setup. It fails if `WACHT_API_KEY` is missing or the host is unreachable. Every list call returns a `PaginatedResponse<T>` whose items live on `.data`.
+
 ```rust
 use wacht::{Result, WachtClient};
 
@@ -37,14 +39,16 @@ use wacht::{Result, WachtClient};
 async fn main() -> Result<()> {
     let client = WachtClient::from_env().await?;
 
-    let users = client.users().list_users().send().await?;
-    println!("fetched {} users", users.len());
+    let users = client.users().fetch_users().send().await?;
+    println!("fetched {} users", users.data.len());
 
     Ok(())
 }
 ```
 
 ## Explicit configuration
+
+Build a `WachtConfig` by hand when you can't rely on environment variables. The first argument is the backend API key; the second is the deployment frontend host, which the SDK uses to derive the JWKS issuer for token verification. `WachtClient::new` errors only if the API key contains bytes that can't go in an HTTP header.
 
 ```rust
 use wacht::{Result, WachtClient, WachtConfig};
@@ -57,7 +61,7 @@ async fn main() -> Result<()> {
     );
     let client = WachtClient::new(config)?;
 
-    let health = client.operations().health_check().send().await?;
+    let health = client.health().check().send().await?;
     println!("status={}", health.status);
 
     Ok(())
@@ -66,16 +70,18 @@ async fn main() -> Result<()> {
 
 ## Request pattern
 
-Backend methods use request builders and execute with `.send().await`.
+Every backend method returns a builder; nothing hits the network until you call `.send().await`. List builders expose `.limit()`, `.offset()`, `.search()`, `.sort_key()`, and `.sort_order()`. Listing methods are named `fetch_*` (for example `fetch_organizations`, `fetch_users`, `fetch_workspaces`), so reach for `fetch_` rather than `list_` when you want a page of resources.
 
 ```rust
 let result = client
     .organizations()
-    .list_organizations()
+    .fetch_organizations()
     .limit(20)
     .offset(0)
     .send()
     .await?;
+
+println!("page of {} of {} organizations", result.data.len(), result.total);
 ```
 
-Use [Backend Overview](./backend/overview) for the full Rust method surface.
+For the full Rust method surface, see [User Management](./user-management), [Organizations and Workspaces](./organizations-workspaces), [API Auth and OAuth](./api-auth-oauth), [Webhooks](./webhooks), and [AI Runtime and Configuration](./ai-runtime).

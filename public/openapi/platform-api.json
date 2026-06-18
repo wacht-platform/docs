@@ -13787,6 +13787,658 @@
         }
       }
     },
+    "/analytics/token-usage": {
+      "get": {
+        "operationId": "getTokenUsageStats",
+        "summary": "Get Token Usage Stats",
+        "tags": [
+          "Analytics"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "granularity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "tz",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenUsageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/token-usage-by-model": {
+      "get": {
+        "operationId": "getTokenUsageByModel",
+        "summary": "Get Token Usage By Model",
+        "tags": [
+          "Analytics"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "granularity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "tz",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenUsageByModelResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/webhook-usage": {
+      "get": {
+        "operationId": "getWebhookUsageStats",
+        "summary": "Get Webhook Usage Stats",
+        "tags": [
+          "Analytics"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "granularity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "tz",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookUsageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/gateway-usage": {
+      "get": {
+        "operationId": "getGatewayUsageStats",
+        "summary": "Get Gateway Usage Stats",
+        "tags": [
+          "Analytics"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "granularity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "tz",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayUsageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api-auth/apps": {
       "get": {
         "operationId": "listApiAuthApps",
@@ -13803,6 +14455,33 @@
               "type": "boolean",
               "nullable": true
             }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
           }
         ],
         "responses": {
@@ -13811,7 +14490,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListApiAuthAppsResponse"
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ApiAuthApp"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    }
+                  }
                 }
               }
             }
@@ -20920,6 +21616,151 @@
         }
       }
     },
+    "/ai/agents/{agent_id}/role-agent": {
+      "put": {
+        "operationId": "setAgentRoleAgent",
+        "summary": "Set Agent Role Agent",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "agent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetAgentRoleAgentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiAgentWithDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/ai/tools": {
       "get": {
         "operationId": "getAiTools",
@@ -26148,6 +26989,998 @@
         }
       }
     },
+    "/ai/settings/provider-profiles": {
+      "get": {
+        "operationId": "listAiProviderProfiles",
+        "summary": "List Ai Provider Profiles",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DeploymentAiProviderProfileResponse"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createAiProviderProfile",
+        "summary": "Create Ai Provider Profile",
+        "tags": [
+          "AI"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDeploymentAiProviderProfileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeploymentAiProviderProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/settings/provider-profiles/{profile_id}": {
+      "get": {
+        "operationId": "getAiProviderProfile",
+        "summary": "Get Ai Provider Profile",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "profile_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeploymentAiProviderProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateAiProviderProfile",
+        "summary": "Update Ai Provider Profile",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "profile_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDeploymentAiProviderProfileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeploymentAiProviderProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAiProviderProfile",
+        "summary": "Delete Ai Provider Profile",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "profile_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/actors": {
+      "get": {
+        "operationId": "listActors",
+        "summary": "List Actors",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "include_archived",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Actor"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createActor",
+        "summary": "Create Actor",
+        "tags": [
+          "AI"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateActorRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Actor"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/ai/actor-projects": {
       "get": {
         "operationId": "listActorProjectsFlat",
@@ -29360,6 +31193,151 @@
         }
       }
     },
+    "/ai/threads/{thread_id}/messages/answer": {
+      "post": {
+        "operationId": "answerThreadQuestion",
+        "summary": "Answer Thread Question",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "thread_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerSubmission"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecuteAgentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/ai/actor-projects/{project_id}/board/items/{item_id}/answer": {
       "post": {
         "operationId": "answerProjectTaskBoardItemQuestion",
@@ -31484,6 +33462,15 @@
               "type": "integer",
               "nullable": true
             }
+          },
+          {
+            "name": "board_item_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "nullable": true
+            }
           }
         ],
         "responses": {
@@ -32163,141 +34150,6 @@
         }
       }
     },
-    "/ai/actors": {
-      "post": {
-        "operationId": "createActor",
-        "summary": "Create Actor",
-        "tags": [
-          "AI"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateActorRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Actor"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "message": {
-                            "type": "string"
-                          },
-                          "code": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/ai/actors/lookup": {
       "get": {
         "operationId": "lookupActor",
@@ -32473,6 +34325,15 @@
             "required": false,
             "schema": {
               "type": "integer",
+              "nullable": true
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
               "nullable": true
             }
           }
@@ -38128,7 +39989,10 @@
             "type": "string"
           },
           "role_ids": {
-            "type": "string"
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -38140,7 +40004,10 @@
         "type": "object",
         "properties": {
           "role_ids": {
-            "type": "string",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
             "nullable": true
           },
           "public_metadata": {
@@ -38321,7 +40188,10 @@
             "type": "string"
           },
           "role_ids": {
-            "type": "string"
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -38333,7 +40203,10 @@
         "type": "object",
         "properties": {
           "role_ids": {
-            "type": "string",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
             "nullable": true
           },
           "public_metadata": {
@@ -38815,12 +40688,8 @@
             "type": "boolean",
             "nullable": true
           },
-          "light_mode_settings": {
-            "$ref": "#/components/schemas/LightModeSettings",
-            "nullable": true
-          },
-          "dark_mode_settings": {
-            "$ref": "#/components/schemas/DarkModeSettings",
+          "theme_tokens": {
+            "$ref": "#/components/schemas/ThemeTokens",
             "nullable": true
           },
           "after_logo_click_url": {
@@ -39493,6 +41362,24 @@
             "items": {
               "$ref": "#/components/schemas/RecentSignup"
             }
+          },
+          "methods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BreakdownItem"
+            }
+          },
+          "top_countries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BreakdownItem"
+            }
+          },
+          "devices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BreakdownItem"
+            }
           }
         },
         "required": [
@@ -39503,78 +41390,66 @@
           "total_signups",
           "daily_metrics",
           "recent_signups",
-          "recent_signins"
+          "recent_signins",
+          "methods",
+          "top_countries",
+          "devices"
         ]
       },
-      "ListApiAuthAppsResponse": {
+      "TokenUsageResponse": {
         "type": "object",
         "properties": {
-          "apps": {
+          "buckets": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ApiAuthApp"
+              "$ref": "#/components/schemas/TokenUsageBucketJson"
             }
-          },
-          "total": {
-            "type": "integer"
           }
         },
         "required": [
-          "apps",
-          "total"
+          "buckets"
         ]
       },
-      "CreateApiAuthAppRequest": {
+      "TokenUsageByModelResponse": {
         "type": "object",
         "properties": {
-          "user_id": {
-            "type": "integer",
-            "nullable": true
-          },
-          "organization_id": {
-            "type": "integer",
-            "nullable": true
-          },
-          "workspace_id": {
-            "type": "integer",
-            "nullable": true
-          },
-          "app_slug": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "key_prefix": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "rate_limit_scheme_slug": {
-            "type": "string",
-            "nullable": true
-          },
-          "permissions": {
+          "models": {
             "type": "array",
             "items": {
-              "type": "string"
-            },
-            "nullable": true
-          },
-          "resources": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "nullable": true
+              "$ref": "#/components/schemas/TokenUsageByModelJson"
+            }
           }
         },
         "required": [
-          "app_slug",
-          "name",
-          "key_prefix"
+          "models"
+        ]
+      },
+      "WebhookUsageResponse": {
+        "type": "object",
+        "properties": {
+          "buckets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookUsageBucketJson"
+            }
+          }
+        },
+        "required": [
+          "buckets"
+        ]
+      },
+      "GatewayUsageResponse": {
+        "type": "object",
+        "properties": {
+          "buckets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GatewayUsageBucketJson"
+            }
+          }
+        },
+        "required": [
+          "buckets"
         ]
       },
       "ApiAuthApp": {
@@ -39658,6 +41533,59 @@
           "rate_limits",
           "created_at",
           "updated_at"
+        ]
+      },
+      "CreateApiAuthAppRequest": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "organization_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "workspace_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "app_slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "key_prefix": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "rate_limit_scheme_slug": {
+            "type": "string",
+            "nullable": true
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "required": [
+          "app_slug",
+          "name",
+          "key_prefix"
         ]
       },
       "UpdateApiAuthAppRequest": {
@@ -40069,6 +41997,17 @@
             "type": "integer"
           },
           "sub_agents": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "reviewer_agent_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "conversation_agent_id": {
             "type": "string",
             "nullable": true
           },
@@ -40093,6 +42032,15 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AgentToolApprovalRule"
+            }
+          },
+          "limits": {
+            "$ref": "#/components/schemas/AgentLimits"
+          },
+          "disabled_internal_tools": {
+            "type": "array",
+            "items": {
+              "type": "string"
             }
           }
         },
@@ -40149,6 +42097,10 @@
             "$ref": "#/components/schemas/AgentHooksConfig",
             "nullable": true
           },
+          "limits": {
+            "$ref": "#/components/schemas/AgentLimits",
+            "nullable": true
+          },
           "require_approval_mcp": {
             "type": "boolean",
             "nullable": true
@@ -40161,6 +42113,13 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AgentToolApprovalRule"
+            },
+            "nullable": true
+          },
+          "disabled_internal_tools": {
+            "type": "array",
+            "items": {
+              "type": "string"
             },
             "nullable": true
           }
@@ -40194,7 +42153,10 @@
             "type": "string"
           },
           "sub_agents": {
-            "type": "string",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
             "nullable": true
           },
           "strong_model": {
@@ -40218,6 +42180,15 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AgentToolApprovalRule"
+            }
+          },
+          "limits": {
+            "$ref": "#/components/schemas/AgentLimits"
+          },
+          "disabled_internal_tools": {
+            "type": "array",
+            "items": {
+              "type": "string"
             }
           }
         },
@@ -40276,6 +42247,10 @@
             "$ref": "#/components/schemas/AgentHooksConfig",
             "nullable": true
           },
+          "limits": {
+            "$ref": "#/components/schemas/AgentLimits",
+            "nullable": true
+          },
           "require_approval_mcp": {
             "type": "boolean",
             "nullable": true
@@ -40290,6 +42265,13 @@
               "$ref": "#/components/schemas/AgentToolApprovalRule"
             },
             "nullable": true
+          },
+          "disabled_internal_tools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
           }
         }
       },
@@ -40299,8 +42281,14 @@
           "id": {
             "type": "string"
           },
-          "created_at": {},
-          "updated_at": {},
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
           "deployment_id": {
             "type": "string"
           },
@@ -40328,8 +42316,16 @@
           "sub_agents": {
             "type": "array",
             "items": {
-              "type": "integer"
+              "type": "string"
             },
+            "nullable": true
+          },
+          "reviewer_agent_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "conversation_agent_id": {
+            "type": "string",
             "nullable": true
           },
           "strong_model": {
@@ -40354,6 +42350,15 @@
           },
           "hooks": {
             "$ref": "#/components/schemas/AgentHooksConfig"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/AgentLimits"
+          },
+          "disabled_internal_tools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -40365,7 +42370,8 @@
           "tools_count",
           "knowledge_bases_count",
           "tools",
-          "knowledge_bases"
+          "knowledge_bases",
+          "limits"
         ]
       },
       "SkillTreeResponse": {
@@ -40440,6 +42446,21 @@
           "path",
           "is_text",
           "size_bytes"
+        ]
+      },
+      "SetAgentRoleAgentRequest": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string"
+          },
+          "agent_id": {
+            "type": "integer",
+            "nullable": true
+          }
+        },
+        "required": [
+          "role"
         ]
       },
       "AiToolWithDetails": {
@@ -41198,6 +43219,237 @@
           }
         }
       },
+      "DeploymentAiProviderProfileResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "deployment_id": {
+            "type": "string"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/DeploymentLlmProvider"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "api_key_set": {
+            "type": "boolean"
+          },
+          "base_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "organization": {
+            "type": "string",
+            "nullable": true
+          },
+          "project": {
+            "type": "string",
+            "nullable": true
+          },
+          "default_model": {
+            "type": "string",
+            "nullable": true
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "disable_prompt_caching": {
+            "type": "boolean"
+          },
+          "disable_reasoning_effort": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "deployment_id",
+          "provider",
+          "name",
+          "slug",
+          "api_key_set",
+          "enabled",
+          "disable_prompt_caching",
+          "disable_reasoning_effort",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "CreateDeploymentAiProviderProfileRequest": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/DeploymentLlmProvider"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "api_key": {
+            "type": "string"
+          },
+          "base_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "organization": {
+            "type": "string",
+            "nullable": true
+          },
+          "project": {
+            "type": "string",
+            "nullable": true
+          },
+          "default_model": {
+            "type": "string",
+            "nullable": true
+          },
+          "enabled": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "disable_prompt_caching": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "disable_reasoning_effort": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "required": [
+          "provider",
+          "name",
+          "slug",
+          "api_key"
+        ]
+      },
+      "UpdateDeploymentAiProviderProfileRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "slug": {
+            "type": "string",
+            "nullable": true
+          },
+          "api_key": {
+            "type": "string",
+            "nullable": true
+          },
+          "base_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "organization": {
+            "type": "string",
+            "nullable": true
+          },
+          "project": {
+            "type": "string",
+            "nullable": true
+          },
+          "default_model": {
+            "type": "string",
+            "nullable": true
+          },
+          "enabled": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "disable_prompt_caching": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "disable_reasoning_effort": {
+            "type": "boolean",
+            "nullable": true
+          }
+        }
+      },
+      "Actor": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "deployment_id": {
+            "type": "string"
+          },
+          "subject_type": {
+            "type": "string"
+          },
+          "external_key": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "metadata": {},
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "archived_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "deployment_id",
+          "subject_type",
+          "external_key",
+          "metadata",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "CreateActorRequest": {
+        "type": "object",
+        "properties": {
+          "subject_type": {
+            "type": "string"
+          },
+          "external_key": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "metadata": {
+            "nullable": true
+          }
+        },
+        "required": [
+          "subject_type",
+          "external_key"
+        ]
+      },
       "ActorProject": {
         "type": "object",
         "properties": {
@@ -41302,9 +43554,13 @@
             "type": "string"
           },
           "connected_at": {
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           },
           "expires_at": {
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           }
         },
@@ -41637,6 +43893,21 @@
             "nullable": true
           }
         }
+      },
+      "ExecuteAgentResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "conversation_id": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "status"
+        ]
       },
       "ApprovalSubmission": {
         "type": "object",
@@ -42000,21 +44271,6 @@
           "execution_type"
         ]
       },
-      "ExecuteAgentResponse": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string"
-          },
-          "conversation_id": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "status"
-        ]
-      },
       "CreateSessionTicketRequest": {
         "type": "object",
         "properties": {
@@ -42074,72 +44330,6 @@
           "ticket",
           "expires_at",
           "url"
-        ]
-      },
-      "CreateActorRequest": {
-        "type": "object",
-        "properties": {
-          "subject_type": {
-            "type": "string"
-          },
-          "external_key": {
-            "type": "string"
-          },
-          "display_name": {
-            "type": "string",
-            "nullable": true
-          },
-          "metadata": {
-            "nullable": true
-          }
-        },
-        "required": [
-          "subject_type",
-          "external_key"
-        ]
-      },
-      "Actor": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "deployment_id": {
-            "type": "string"
-          },
-          "subject_type": {
-            "type": "string"
-          },
-          "external_key": {
-            "type": "string"
-          },
-          "display_name": {
-            "type": "string",
-            "nullable": true
-          },
-          "metadata": {},
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "archived_at": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          }
-        },
-        "required": [
-          "id",
-          "deployment_id",
-          "subject_type",
-          "external_key",
-          "metadata",
-          "created_at",
-          "updated_at"
         ]
       },
       "LookupActorResponse": {
@@ -42666,7 +44856,10 @@
         "type": "object",
         "properties": {
           "delivery_ids": {
-            "type": "string"
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "filtered_count": {
             "type": "integer"
@@ -43487,7 +45680,8 @@
           "task_subscription_notification",
           "task_subscription_delivery",
           "assignment_execution_trigger",
-          "task_routing_trigger"
+          "task_routing_trigger",
+          "task_handoff_received"
         ]
       },
       "ConversationMessageType": {
@@ -43504,7 +45698,8 @@
           "clarification_response",
           "task_subscription_notification",
           "assignment_execution_trigger",
-          "task_routing_trigger"
+          "task_routing_trigger",
+          "task_handoff_received"
         ]
       },
       "ApprovalSubmissionItem": {
@@ -43666,6 +45861,8 @@
             "nullable": true
           },
           "modified_at": {
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           }
         },
@@ -44591,16 +46788,18 @@
         "type": "object",
         "properties": {
           "provider": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "model": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
+          },
+          "profile_id": {
+            "type": "string",
+            "nullable": true
           }
-        },
-        "required": [
-          "provider",
-          "model"
-        ]
+        }
       },
       "AgentToolApprovalRule": {
         "type": "object",
@@ -44661,6 +46860,19 @@
             "items": {
               "$ref": "#/components/schemas/AgentHookStep"
             }
+          }
+        }
+      },
+      "AgentLimits": {
+        "type": "object",
+        "properties": {
+          "context_window_tokens": {
+            "type": "integer",
+            "nullable": true
+          },
+          "run_token_budget": {
+            "type": "integer",
+            "nullable": true
           }
         }
       },
@@ -45063,6 +47275,122 @@
           "per_app_and_ip"
         ]
       },
+      "GatewayUsageBucketJson": {
+        "type": "object",
+        "properties": {
+          "bucket": {
+            "type": "string"
+          },
+          "total_requests": {
+            "type": "integer"
+          },
+          "allowed_requests": {
+            "type": "integer"
+          },
+          "blocked_requests": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bucket",
+          "total_requests",
+          "allowed_requests",
+          "blocked_requests"
+        ]
+      },
+      "WebhookUsageBucketJson": {
+        "type": "object",
+        "properties": {
+          "bucket": {
+            "type": "string"
+          },
+          "total_deliveries": {
+            "type": "integer"
+          },
+          "successful_deliveries": {
+            "type": "integer"
+          },
+          "failed_deliveries": {
+            "type": "integer"
+          },
+          "filtered_deliveries": {
+            "type": "integer"
+          },
+          "success_rate": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "bucket",
+          "total_deliveries",
+          "successful_deliveries",
+          "failed_deliveries",
+          "filtered_deliveries",
+          "success_rate"
+        ]
+      },
+      "TokenUsageByModelJson": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "input_tokens": {
+            "type": "integer"
+          },
+          "cached_tokens": {
+            "type": "integer"
+          },
+          "output_tokens": {
+            "type": "integer"
+          },
+          "total_tokens": {
+            "type": "integer"
+          },
+          "request_count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model",
+          "input_tokens",
+          "cached_tokens",
+          "output_tokens",
+          "total_tokens",
+          "request_count"
+        ]
+      },
+      "TokenUsageBucketJson": {
+        "type": "object",
+        "properties": {
+          "bucket": {
+            "type": "string"
+          },
+          "input_tokens": {
+            "type": "integer"
+          },
+          "cached_tokens": {
+            "type": "integer"
+          },
+          "output_tokens": {
+            "type": "integer"
+          },
+          "total_tokens": {
+            "type": "integer"
+          },
+          "request_count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bucket",
+          "input_tokens",
+          "cached_tokens",
+          "output_tokens",
+          "total_tokens",
+          "request_count"
+        ]
+      },
       "DailyAuthMetric": {
         "type": "object",
         "properties": {
@@ -45104,6 +47432,21 @@
         },
         "required": [
           "date"
+        ]
+      },
+      "BreakdownItem": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label",
+          "count"
         ]
       },
       "SegmentDataFilters": {
@@ -45261,108 +47604,51 @@
           "max_sessions_per_account"
         ]
       },
-      "LightModeSettings": {
+      "ThemeTokens": {
         "type": "object",
         "properties": {
-          "primary_color": {
-            "type": "string",
+          "light": {
+            "$ref": "#/components/schemas/WaThemeTokens",
             "nullable": true
           },
-          "background_color": {
-            "type": "string",
-            "nullable": true
-          },
-          "text_color": {
-            "type": "string",
-            "nullable": true
-          },
-          "token_overrides": {
-            "$ref": "#/components/schemas/TokenOverrides",
+          "dark": {
+            "$ref": "#/components/schemas/WaThemeTokens",
             "nullable": true
           }
         }
       },
-      "DarkModeSettings": {
+      "WaThemeTokens": {
         "type": "object",
         "properties": {
-          "primary_color": {
+          "surface": {
             "type": "string",
             "nullable": true
           },
-          "background_color": {
+          "surface_subtle": {
             "type": "string",
             "nullable": true
           },
-          "text_color": {
+          "background": {
             "type": "string",
             "nullable": true
           },
-          "token_overrides": {
-            "$ref": "#/components/schemas/TokenOverrides",
-            "nullable": true
-          }
-        }
-      },
-      "TokenOverrides": {
-        "type": "object",
-        "properties": {
-          "space_unit": {
+          "canvas": {
             "type": "string",
             "nullable": true
           },
-          "card": {
+          "text": {
             "type": "string",
             "nullable": true
           },
-          "card_foreground": {
+          "text_secondary": {
             "type": "string",
             "nullable": true
           },
-          "popover": {
+          "text_muted": {
             "type": "string",
             "nullable": true
           },
-          "popover_foreground": {
-            "type": "string",
-            "nullable": true
-          },
-          "primary_foreground": {
-            "type": "string",
-            "nullable": true
-          },
-          "secondary": {
-            "type": "string",
-            "nullable": true
-          },
-          "secondary_foreground": {
-            "type": "string",
-            "nullable": true
-          },
-          "accent": {
-            "type": "string",
-            "nullable": true
-          },
-          "accent_foreground": {
-            "type": "string",
-            "nullable": true
-          },
-          "ring": {
-            "type": "string",
-            "nullable": true
-          },
-          "foreground": {
-            "type": "string",
-            "nullable": true
-          },
-          "foreground_inverse": {
-            "type": "string",
-            "nullable": true
-          },
-          "secondary_text": {
-            "type": "string",
-            "nullable": true
-          },
-          "muted": {
+          "text_faint": {
             "type": "string",
             "nullable": true
           },
@@ -45370,63 +47656,19 @@
             "type": "string",
             "nullable": true
           },
-          "border_hover": {
+          "border_strong": {
             "type": "string",
             "nullable": true
           },
-          "divider": {
+          "primary": {
             "type": "string",
             "nullable": true
           },
-          "input_background": {
+          "primary_soft": {
             "type": "string",
             "nullable": true
           },
-          "input_border": {
-            "type": "string",
-            "nullable": true
-          },
-          "input_focus_border": {
-            "type": "string",
-            "nullable": true
-          },
-          "background_subtle": {
-            "type": "string",
-            "nullable": true
-          },
-          "background_hover": {
-            "type": "string",
-            "nullable": true
-          },
-          "primary_hover": {
-            "type": "string",
-            "nullable": true
-          },
-          "error": {
-            "type": "string",
-            "nullable": true
-          },
-          "error_background": {
-            "type": "string",
-            "nullable": true
-          },
-          "error_border": {
-            "type": "string",
-            "nullable": true
-          },
-          "warning": {
-            "type": "string",
-            "nullable": true
-          },
-          "warning_background": {
-            "type": "string",
-            "nullable": true
-          },
-          "warning_border": {
-            "type": "string",
-            "nullable": true
-          },
-          "warning_text": {
+          "primary_foreground": {
             "type": "string",
             "nullable": true
           },
@@ -45434,11 +47676,7 @@
             "type": "string",
             "nullable": true
           },
-          "success_background": {
-            "type": "string",
-            "nullable": true
-          },
-          "success_border": {
+          "success_soft": {
             "type": "string",
             "nullable": true
           },
@@ -45446,11 +47684,27 @@
             "type": "string",
             "nullable": true
           },
-          "info_background": {
+          "info_soft": {
             "type": "string",
             "nullable": true
           },
-          "radius_md": {
+          "warning": {
+            "type": "string",
+            "nullable": true
+          },
+          "warning_soft": {
+            "type": "string",
+            "nullable": true
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          },
+          "error_soft": {
+            "type": "string",
+            "nullable": true
+          },
+          "radius": {
             "type": "string",
             "nullable": true
           },
@@ -45458,231 +47712,11 @@
             "type": "string",
             "nullable": true
           },
-          "radius_xl": {
+          "font_sans": {
             "type": "string",
             "nullable": true
           },
-          "radius_2xl": {
-            "type": "string",
-            "nullable": true
-          },
-          "radius_2xs": {
-            "type": "string",
-            "nullable": true
-          },
-          "radius_xs": {
-            "type": "string",
-            "nullable": true
-          },
-          "radius_full": {
-            "type": "string",
-            "nullable": true
-          },
-          "border_width_thin": {
-            "type": "string",
-            "nullable": true
-          },
-          "border_width_regular": {
-            "type": "string",
-            "nullable": true
-          },
-          "scrollbar_track": {
-            "type": "string",
-            "nullable": true
-          },
-          "scrollbar_thumb": {
-            "type": "string",
-            "nullable": true
-          },
-          "scrollbar_thumb_hover": {
-            "type": "string",
-            "nullable": true
-          },
-          "shadow_color": {
-            "type": "string",
-            "nullable": true
-          },
-          "shadow_light_color": {
-            "type": "string",
-            "nullable": true
-          },
-          "shadow_medium_color": {
-            "type": "string",
-            "nullable": true
-          },
-          "success_shadow": {
-            "type": "string",
-            "nullable": true
-          },
-          "success_background_light": {
-            "type": "string",
-            "nullable": true
-          },
-          "button_ripple": {
-            "type": "string",
-            "nullable": true
-          },
-          "dialog_backdrop": {
-            "type": "string",
-            "nullable": true
-          },
-          "space_0u": {
-            "type": "string",
-            "nullable": true
-          },
-          "space_1u": {
-            "type": "string",
-            "nullable": true
-          },
-          "space_2u": {
-            "type": "string",
-            "nullable": true
-          },
-          "space_3u": {
-            "type": "string",
-            "nullable": true
-          },
-          "space_4u": {
-            "type": "string",
-            "nullable": true
-          },
-          "space_5u": {
-            "type": "string",
-            "nullable": true
-          },
-          "space_6u": {
-            "type": "string",
-            "nullable": true
-          },
-          "space_7u": {
-            "type": "string",
-            "nullable": true
-          },
-          "space_8u": {
-            "type": "string",
-            "nullable": true
-          },
-          "space_10u": {
-            "type": "string",
-            "nullable": true
-          },
-          "space_12u": {
-            "type": "string",
-            "nullable": true
-          },
-          "space_14u": {
-            "type": "string",
-            "nullable": true
-          },
-          "space_16u": {
-            "type": "string",
-            "nullable": true
-          },
-          "space_24u": {
-            "type": "string",
-            "nullable": true
-          },
-          "font_size_2xs": {
-            "type": "string",
-            "nullable": true
-          },
-          "font_size_xs": {
-            "type": "string",
-            "nullable": true
-          },
-          "font_size_sm": {
-            "type": "string",
-            "nullable": true
-          },
-          "font_size_md": {
-            "type": "string",
-            "nullable": true
-          },
-          "font_size_lg": {
-            "type": "string",
-            "nullable": true
-          },
-          "font_size_xl": {
-            "type": "string",
-            "nullable": true
-          },
-          "font_size_2xl": {
-            "type": "string",
-            "nullable": true
-          },
-          "font_size_3xl": {
-            "type": "string",
-            "nullable": true
-          },
-          "size_8u": {
-            "type": "string",
-            "nullable": true
-          },
-          "size_10u": {
-            "type": "string",
-            "nullable": true
-          },
-          "size_12u": {
-            "type": "string",
-            "nullable": true
-          },
-          "size_18u": {
-            "type": "string",
-            "nullable": true
-          },
-          "size_20u": {
-            "type": "string",
-            "nullable": true
-          },
-          "size_24u": {
-            "type": "string",
-            "nullable": true
-          },
-          "size_32u": {
-            "type": "string",
-            "nullable": true
-          },
-          "size_36u": {
-            "type": "string",
-            "nullable": true
-          },
-          "size_40u": {
-            "type": "string",
-            "nullable": true
-          },
-          "size_45u": {
-            "type": "string",
-            "nullable": true
-          },
-          "size_50u": {
-            "type": "string",
-            "nullable": true
-          },
-          "shadow_sm": {
-            "type": "string",
-            "nullable": true
-          },
-          "shadow_md": {
-            "type": "string",
-            "nullable": true
-          },
-          "shadow_lg": {
-            "type": "string",
-            "nullable": true
-          },
-          "shadow_xl": {
-            "type": "string",
-            "nullable": true
-          },
-          "shadow_success": {
-            "type": "string",
-            "nullable": true
-          },
-          "ring_primary": {
-            "type": "string",
-            "nullable": true
-          },
-          "letter_spacing_tight": {
+          "font_mono": {
             "type": "string",
             "nullable": true
           }
@@ -46082,11 +48116,9 @@
           "signup_terms_statement_shown": {
             "type": "boolean"
           },
-          "light_mode_settings": {
-            "$ref": "#/components/schemas/LightModeSettings"
-          },
-          "dark_mode_settings": {
-            "$ref": "#/components/schemas/DarkModeSettings"
+          "theme_tokens": {
+            "$ref": "#/components/schemas/ThemeTokens",
+            "nullable": true
           },
           "after_logo_click_url": {
             "type": "string"
@@ -46145,8 +48177,6 @@
           "privacy_policy_url",
           "signup_terms_statement",
           "signup_terms_statement_shown",
-          "light_mode_settings",
-          "dark_mode_settings",
           "after_logo_click_url",
           "organization_profile_url",
           "create_organization_url",

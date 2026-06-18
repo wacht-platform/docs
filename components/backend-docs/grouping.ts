@@ -29,6 +29,7 @@ export const backendCoverageGroupOrder: string[] = [
   'OAuth grants',
   'Settings',
   'Segments',
+  'Analytics',
   'Utility',
 ];
 
@@ -115,6 +116,9 @@ export function classifyBackendCoverageDoc(entry: GeneratedBackendCoverageDoc): 
 
   if (endpointPath.startsWith('/segments')) {
     return { label: 'Segments', pathGroup: 'segments' };
+  }
+  if (endpointPath.startsWith('/analytics/')) {
+    return { label: 'Analytics', pathGroup: 'analytics' };
   }
   if (endpointPath.startsWith('/settings/') || endpointPath === '/settings') {
     return { label: 'Settings', pathGroup: 'settings' };

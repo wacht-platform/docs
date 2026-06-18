@@ -1,53 +1,43 @@
 ---
 title: Guides
-description: Hands-on building docs.
+description: Task-focused guides for building on Wacht — the agent runtime, platform surfaces, end-to-end integration, and the tooling around them.
 ---
 
-## Agents
+Build something real with Wacht. [Start](/start) has the mental model; these guides are the how. Each one is grounded in the actual API and SDK surface, with working code and the failure modes called out.
 
-Configure and run the worker side of your app. Tasks are part of this.
+## Agent runtime
 
-**Configure**
-- [Overview](/guides/agents) — what an agent is.
-- [Model overrides](/guides/agents/model-overrides) — strong/weak per agent.
-- [Execution hooks](/guides/agents/hooks) — setup and cleanup.
-- [Approval policy](/guides/agents/approval-policy) — gate risky tool calls.
-- [Code runner](/guides/agents/code-runner) — Python, ffmpeg, sandboxes.
-- [Skill bundles](/guides/agents/skill-bundles) — reusable behavior.
-- [Scheduling](/guides/agents/scheduling) — recurring or one-shot.
-- [Composio](/guides/agents/composio) — third-party integrations.
-- [Sessions](/guides/agents/sessions) — share an agent chat.
-
-**Orchestrate**
-- [Multi-agent](/guides/agents/multi-agent) — coordinator with specialists.
-
-**Tasks** (the unit of work an agent acts on)
-- [Tasks overview](/guides/tasks) — lifecycle and shape.
-- [Workspace and artifacts](/guides/tasks/workspace-and-artifacts) — the `/task/` filesystem.
-- [Deliverables and journal](/guides/tasks/deliverables) — structured handoff.
-- [File uploads](/guides/tasks/file-uploads) — files into the workspace.
-- [Realtime UI](/guides/tasks/realtime-ui) — surface live state.
+<LinkRows>
+  <LinkRow href="/guides/agents" title="Agents">Models, execution hooks, approval policy, tools, and multi-agent coordination.</LinkRow>
+  <LinkRow href="/guides/tasks" title="Tasks">The unit of work an agent runs against — workspace, deliverables, file uploads, realtime UI.</LinkRow>
+</LinkRows>
 
 ## Platform surfaces
 
-- [API Auth](/guides/api-auth) — customer API keys.
-- [Webhook Apps](/guides/webhook-apps) — customer event delivery.
-- [OAuth Apps](/guides/oauth-apps) — issue OAuth to third parties.
-- [Notifications](/guides/notifications) — in-app inboxes.
-- [Deployment Events](/guides/deployment-events) — keep your backend in sync.
+<LinkRows>
+  <LinkRow href="/guides/api-auth" title="API auth">Issue and govern customer API keys, with scopes, rate limits, and audit.</LinkRow>
+  <LinkRow href="/guides/oauth-apps" title="OAuth apps">Be an OAuth and OpenID Connect provider for third-party clients.</LinkRow>
+  <LinkRow href="/guides/webhook-apps" title="Webhook apps">Deliver signed events to your customers' endpoints, with retries and replay.</LinkRow>
+  <LinkRow href="/guides/notifications" title="Notifications">In-app inboxes with read state, scoped filters, and realtime streams.</LinkRow>
+  <LinkRow href="/guides/deployment-events" title="Deployment events">Subscribe to what happens inside Wacht and keep your backend in sync.</LinkRow>
+</LinkRows>
 
-## Integration playbooks
+## Integrate end-to-end
 
-- [Frontend + backend auth](/guides/integration-playbooks/fullstack-auth-lifecycle-react-rust) — React + Rust.
-- [B2B lifecycle](/guides/integration-playbooks/b2b-org-workspace-lifecycle) — orgs, workspaces, tenancy.
-- [Unsupported stacks](/guides/integration-playbooks/unsupported-stacks) — no SDK package? Use this.
+<LinkRows>
+  <LinkRow href="/guides/integration-playbooks/fullstack-auth-lifecycle-react-rust" title="Frontend + backend auth">A React frontend and a Rust backend on one session model.</LinkRow>
+  <LinkRow href="/guides/integration-playbooks/b2b-org-workspace-lifecycle" title="B2B lifecycle">Organizations, workspaces, memberships, and tenancy end to end.</LinkRow>
+  <LinkRow href="/guides/integration-playbooks/unsupported-stacks" title="Unsupported stacks">No SDK for your stack? Wire it against the API directly.</LinkRow>
+</LinkRows>
 
-## AI-assisted development
+## Build with AI
 
-- [Wacht Bench](/guides/wacht-bench) — the CLI.
-- [Docs MCP](/guides/docs-mcp) — docs server for your assistant.
-- [Skills](/guides/bench-skills) — installable skill packs.
+<LinkRows>
+  <LinkRow href="/guides/wacht-bench" title="Wacht Bench">The CLI for AI-assisted development on Wacht.</LinkRow>
+  <LinkRow href="/guides/docs-mcp" title="Docs MCP">Serve these docs to your coding assistant.</LinkRow>
+  <LinkRow href="/guides/bench-skills" title="Skills">Installable skill packs for Bench.</LinkRow>
+</LinkRows>
 
 ---
 
-[Start](/start) for the model. [Reference](/reference) for API shapes. [SDKs](/sdks) for framework integration.
+[Start](/start) for the model · [Reference](/reference) for API shapes · [SDKs](/sdks) for framework setup.

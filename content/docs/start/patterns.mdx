@@ -15,7 +15,7 @@ actor → project → thread
 
 One agent. Work is the conversation. Use [session tickets](/guides/agents/sessions) if you want to embed the chat without putting the user through your auth again.
 
-Drop in `<AgentSession />` from `@wacht/jsx`, or build your own UI on `useAgentThread` and `executeAgentThreadAsync`.
+Bind the session with `useAgentSession` from `@wacht/jsx`, then build the chat surface on `useAgentThreadConversation`, which exposes `messages` and `sendMessage` for driving the thread.
 
 Don't add task boards or coordinators here. They get in the way of straight chat.
 
@@ -75,7 +75,7 @@ actor → project → thread + session ticket
 
 Customer demos, partner integrations, anyone who shouldn't have to sign into your app. The ticket grants scoped access to one thread for a short window. The recipient hits the URL; the SDK handles the rest.
 
-Mint the ticket with `createBackendSessionTicket` from your backend.
+Mint the ticket with `createSessionTicket` from your backend.
 
 See [Agent sessions](/guides/agents/sessions).
 

@@ -9,9 +9,9 @@ import { Popover, PopoverContent, PopoverTrigger } from 'fumadocs-ui/components/
 import { useEffect, useState, type ReactNode } from 'react';
 
 const topNav = [
-  { label: 'Documentation', href: '/sdks/nextjs' },
-  { label: 'Guides', href: '/guides' },
-  { label: 'API Reference', href: '/reference' },
+  { label: 'documentation', href: '/sdks/nextjs' },
+  { label: 'guides', href: '/guides' },
+  { label: 'api reference', href: '/reference' },
 ];
 
 function isActive(pathname: string, item: (typeof topNav)[number]) {
@@ -23,9 +23,9 @@ export function DocsHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-30 [grid-area:header]">
+    <header className="sticky top-(--fd-docs-row-1) z-30 [grid-area:header]">
       {/* Mobile */}
-      <div className="border-b border-fd-border bg-fd-background md:hidden">
+      <div className="border-b border-fd-border bg-fd-background/80 backdrop-blur-md md:hidden">
         <div className="flex h-12 items-center gap-3 px-4">
           <Logo />
           <div className="flex-1" />
@@ -41,7 +41,7 @@ export function DocsHeader() {
             <Link
               key={`mobile-${item.href}`}
               href={item.href}
-              className="relative flex-1 items-center justify-center border-r border-fd-border px-4 text-center text-xs font-medium text-fd-muted-foreground transition-colors hover:text-fd-foreground data-[active=true]:text-fd-foreground after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-fd-foreground after:opacity-0 data-[active=true]:after:opacity-100 last:border-r-0 inline-flex"
+              className="relative flex-1 items-center justify-center border-r border-fd-border px-4 text-center text-xs font-medium text-fd-muted-foreground transition-colors hover:text-fd-foreground data-[active=true]:text-fd-foreground after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-fd-primary after:opacity-0 data-[active=true]:after:opacity-100 last:border-r-0 inline-flex"
               data-active={isActive(pathname, item)}
             >
               {item.label}
@@ -50,22 +50,18 @@ export function DocsHeader() {
         </nav>
       </div>
 
-      {/* Desktop — full-width bar with logo | nav tabs | right */}
-      <div className="hidden border-b border-fd-border bg-fd-background md:block">
-        <div className="flex h-[52px] items-stretch">
-          <div
-            className="flex shrink-0 items-center px-6"
-            style={{ width: 'var(--landing-left-pane-width, 280px)' }}
-          >
+      {/* Desktop — translucent bar: logo · nav · right actions */}
+      <div className="hidden border-b border-fd-border bg-fd-background/80 backdrop-blur-md md:block">
+        <div className="flex h-14 items-stretch gap-7 px-6">
+          <div className="flex shrink-0 items-center">
             <Logo />
           </div>
-          <div className="w-px bg-fd-border" />
-          <nav className="flex h-full items-stretch">
+          <nav className="flex h-full items-stretch gap-7">
             {topNav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="relative flex min-w-48 items-center justify-center border-r border-fd-border px-6 text-sm font-medium text-fd-muted-foreground transition-colors hover:text-fd-foreground data-[active=true]:text-fd-foreground after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-fd-foreground after:opacity-0 data-[active=true]:after:opacity-100"
+                className="relative inline-flex items-center text-[13px] text-fd-muted-foreground transition-colors hover:text-fd-foreground data-[active=true]:text-fd-foreground after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-fd-primary after:opacity-0 data-[active=true]:after:opacity-100"
                 data-active={isActive(pathname, item)}
               >
                 {item.label}
@@ -73,16 +69,16 @@ export function DocsHeader() {
             ))}
           </nav>
           <div className="flex-1" />
-          <div className="flex shrink-0 items-center gap-3 border-l border-fd-border px-4">
+          <div className="flex shrink-0 items-center gap-2">
             <ThemeDropdown />
+            <a
+              href="https://console.wacht.dev"
+              className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-[12.5px] font-medium text-[#050507] transition-colors hover:bg-[#ececf0]"
+            >
+              <span>Console</span>
+              <ArrowUpRight className="size-3.5 shrink-0" />
+            </a>
           </div>
-          <a
-            href="https://console.wacht.dev"
-            className="flex shrink-0 items-center gap-2 border-l border-fd-border px-5 text-sm font-medium text-fd-foreground transition-colors hover:bg-fd-muted/40"
-          >
-            <span>Console</span>
-            <ArrowUpRight className="size-4 shrink-0 text-fd-muted-foreground" />
-          </a>
         </div>
       </div>
     </header>

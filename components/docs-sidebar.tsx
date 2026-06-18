@@ -9,7 +9,6 @@ import {
   FileCode2,
   FileText,
   KeyRound,
-  Code2,
   Layers3,
   Rocket,
   Search,
@@ -515,11 +514,11 @@ const documentationSections: NavSection[] = [
         page('Server-side Auth', '/sdks/nextjs/server-side', KeyRound),
       ], ShieldCheck),
       header('Components'),
-      ...sharedComponentGroups('/sdks/nextjs').map((item) => group(item.name, item.pages, Blocks)),
+      ...sharedComponentGroups('/sdks/nextjs').map((item) => group(item.name, item.pages)),
       header('Hooks'),
-      ...sharedHookGroups('/sdks/nextjs').map((item) => group(item.name, item.pages, Code2)),
+      ...sharedHookGroups('/sdks/nextjs').map((item) => group(item.name, item.pages)),
       header('Backend SDK'),
-      ...sharedBackendGroups('/sdks/nextjs').map((item) => group(item.name, item.pages, FileCode2)),
+      ...sharedBackendGroups('/sdks/nextjs').map((item) => group(item.name, item.pages)),
     ],
   },
   {
@@ -537,11 +536,11 @@ const documentationSections: NavSection[] = [
         page('Server Auth', '/sdks/react-router/server-auth', KeyRound),
       ], ShieldCheck),
       header('Components'),
-      ...sharedComponentGroups('/sdks/react-router').map((item) => group(item.name, item.pages, Blocks)),
+      ...sharedComponentGroups('/sdks/react-router').map((item) => group(item.name, item.pages)),
       header('Hooks'),
-      ...sharedHookGroups('/sdks/react-router').map((item) => group(item.name, item.pages, Code2)),
+      ...sharedHookGroups('/sdks/react-router').map((item) => group(item.name, item.pages)),
       header('Backend SDK'),
-      ...sharedBackendGroups('/sdks/react-router').map((item) => group(item.name, item.pages, FileCode2)),
+      ...sharedBackendGroups('/sdks/react-router').map((item) => group(item.name, item.pages)),
     ],
   },
   {
@@ -559,11 +558,11 @@ const documentationSections: NavSection[] = [
         page('Server Auth', '/sdks/tanstack-router/server-auth', KeyRound),
       ], ShieldCheck),
       header('Components'),
-      ...sharedComponentGroups('/sdks/tanstack-router').map((item) => group(item.name, item.pages, Blocks)),
+      ...sharedComponentGroups('/sdks/tanstack-router').map((item) => group(item.name, item.pages)),
       header('Hooks'),
-      ...sharedHookGroups('/sdks/tanstack-router').map((item) => group(item.name, item.pages, Code2)),
+      ...sharedHookGroups('/sdks/tanstack-router').map((item) => group(item.name, item.pages)),
       header('Backend SDK'),
-      ...sharedBackendGroups('/sdks/tanstack-router').map((item) => group(item.name, item.pages, FileCode2)),
+      ...sharedBackendGroups('/sdks/tanstack-router').map((item) => group(item.name, item.pages)),
     ],
   },
   {
@@ -580,8 +579,8 @@ const documentationSections: NavSection[] = [
       header('Runtime Guides'),
       group('Node.js', [
         page('Overview', '/sdks/node/runtimes/nodejs', Layers3),
-        page('Extress', '/sdks/node/runtimes/nodejs/express-integration', ShieldCheck),
-        page('Fartify', '/sdks/node/runtimes/nodejs/fastify-integration', ShieldCheck),
+        page('Express', '/sdks/node/runtimes/nodejs/express-integration', ShieldCheck),
+        page('Fastify', '/sdks/node/runtimes/nodejs/fastify-integration', ShieldCheck),
         page('NestJS', '/sdks/node/runtimes/nodejs/nest-integration', ShieldCheck),
         page('Koa', '/sdks/node/runtimes/nodejs/koa-integration', ShieldCheck),
         page('Hapi', '/sdks/node/runtimes/nodejs/hapi-integration', ShieldCheck),
@@ -616,7 +615,7 @@ const documentationSections: NavSection[] = [
         page('Platform Patterns', '/sdks/node/runtimes/serverless-workers/platform-patterns', ShieldCheck),
       ], Layers3),
       header('Backend SDK'),
-      ...sharedBackendGroups('/sdks/node').map((item) => group(item.name, item.pages, FileCode2)),
+      ...sharedBackendGroups('/sdks/node').map((item) => group(item.name, item.pages)),
     ],
   },
   {
@@ -635,7 +634,7 @@ const documentationSections: NavSection[] = [
       header('SDK Methods'),
       ...sharedBackendGroups('/sdks/rust').map((item) => {
         const rustItem = rustifyBackendGroup(item);
-        return group(rustItem.name, rustItem.pages, FileCode2);
+        return group(rustItem.name, rustItem.pages);
       }),
       group('Category Guides', [
         page('Organizations and Workspaces', '/sdks/rust/organizations-workspaces', Building2),
@@ -667,22 +666,13 @@ const guidesSection: NavSection = {
   match: '/guides',
   entries: [
     topPage('Overview', '/guides', FileText),
-    group('AI Development', [
-      page('Wacht Bench', '/guides/wacht-bench', Rocket),
-      page('Docs MCP', '/guides/docs-mcp', Blocks),
-      page('Wacht Skills', '/guides/bench-skills', FileCode2),
-    ], Blocks),
-    group('Integration Playbooks', [
-      page('Frontend + backend auth lifecycle', '/guides/integration-playbooks/fullstack-auth-lifecycle-react-rust'),
-      page('B2B org/workspace lifecycle', '/guides/integration-playbooks/b2b-org-workspace-lifecycle'),
-      page('Unsupported stack adaptation', '/guides/integration-playbooks/unsupported-stacks'),
-    ], Layers3),
+    header('Agent runtime'),
     group('Agents', [
       page('Overview', '/guides/agents'),
       page('Multi-agent', '/guides/agents/multi-agent'),
-      page('Model overrides', '/guides/agents/model-overrides'),
       page('Execution hooks', '/guides/agents/hooks'),
       page('Approval policy', '/guides/agents/approval-policy'),
+      page('Model overrides', '/guides/agents/model-overrides'),
       page('Code runner', '/guides/agents/code-runner'),
       page('Skill bundles', '/guides/agents/skill-bundles'),
       page('Scheduling', '/guides/agents/scheduling'),
@@ -691,39 +681,52 @@ const guidesSection: NavSection = {
     ], Blocks),
     group('Tasks', [
       page('Overview', '/guides/tasks'),
-      page('Workspace and artifacts', '/guides/tasks/workspace-and-artifacts'),
-      page('Deliverables and journal', '/guides/tasks/deliverables'),
+      page('Workspace & artifacts', '/guides/tasks/workspace-and-artifacts'),
+      page('Deliverables & journal', '/guides/tasks/deliverables'),
       page('File uploads', '/guides/tasks/file-uploads'),
       page('Realtime UI', '/guides/tasks/realtime-ui'),
     ], FileCode2),
-    group('API Auth', [
+    header('Platform surfaces'),
+    group('API auth', [
       page('Overview', '/guides/api-auth'),
-      page('Custom Hook Flow Implementation', '/guides/api-auth/custom-hook-flow-implementation'),
-      page('Audit Observability Screens', '/guides/api-auth/audit-observability-screens'),
-      page('Vanity Pages Implementation', '/guides/api-auth/vanity-pages-implementation'),
+      page('Vanity pages', '/guides/api-auth/vanity-pages-implementation'),
+      page('Custom hook flow', '/guides/api-auth/custom-hook-flow-implementation'),
+      page('Audit & observability', '/guides/api-auth/audit-observability-screens'),
     ], KeyRound),
-    group('Webhook Apps', [
-      page('Overview', '/guides/webhook-apps'),
-      page('Vanity Pages Implementation', '/guides/webhook-apps/vanity-pages-implementation'),
-      page('Custom Hook Flow Implementation', '/guides/webhook-apps/custom-hook-flow-implementation'),
-      page('Deliveries, Replay, and Observability', '/guides/webhook-apps/deliveries-replay-and-observability'),
-    ], Server),
-    group('OAuth Apps', [
+    group('OAuth apps', [
       page('Overview', '/guides/oauth-apps'),
-      page('Create OAuth App And Clients', '/guides/oauth-apps/create-oauth-app-and-clients'),
-      page('Implement Consent Flow', '/guides/oauth-apps/implement-consent-flow'),
-      page('Verify Access Tokens And Operate Clients', '/guides/oauth-apps/verify-access-tokens-and-operate-clients'),
-      page('Use as OpenID Connect Provider', '/guides/oauth-apps/use-as-openid-connect-provider'),
-    ], KeyRound),
+      page('Create app & clients', '/guides/oauth-apps/create-oauth-app-and-clients'),
+      page('Consent flow', '/guides/oauth-apps/implement-consent-flow'),
+      page('Access-token verification', '/guides/oauth-apps/access-token-verification'),
+      page('Native apps', '/guides/oauth-apps/native-apps'),
+      page('Verify tokens & operate clients', '/guides/oauth-apps/verify-access-tokens-and-operate-clients'),
+      page('OpenID Connect provider', '/guides/oauth-apps/use-as-openid-connect-provider'),
+    ], ShieldCheck),
+    group('Webhook apps', [
+      page('Overview', '/guides/webhook-apps'),
+      page('Vanity pages', '/guides/webhook-apps/vanity-pages-implementation'),
+      page('Custom hook flow', '/guides/webhook-apps/custom-hook-flow-implementation'),
+      page('Deliveries & replay', '/guides/webhook-apps/deliveries-replay-and-observability'),
+    ], Server),
     group('Notifications', [
       page('Overview', '/guides/notifications'),
-      page('Backend Sending Patterns', '/guides/notifications/backend-sending-patterns'),
-      page('Frontend Inbox With Hooks', '/guides/notifications/frontend-inbox-with-hooks'),
-      page('Realtime Stream Handling', '/guides/notifications/realtime-stream-handling'),
-      page('Actionable Notification UX', '/guides/notifications/actionable-notification-ux'),
+      page('Backend sending', '/guides/notifications/backend-sending-patterns'),
+      page('Frontend inbox', '/guides/notifications/frontend-inbox-with-hooks'),
+      page('Realtime stream', '/guides/notifications/realtime-stream-handling'),
+      page('Actionable UX', '/guides/notifications/actionable-notification-ux'),
     ], FileText),
-    group('Deployment Events', [
-      page('Use Webhooks To Keep Backend In Sync', '/guides/deployment-events'),
+    topPage('Deployment events', '/guides/deployment-events', Rocket),
+    header('Integrate'),
+    group('Integration playbooks', [
+      page('Frontend + backend auth', '/guides/integration-playbooks/fullstack-auth-lifecycle-react-rust'),
+      page('B2B org/workspace lifecycle', '/guides/integration-playbooks/b2b-org-workspace-lifecycle'),
+      page('Unsupported stacks', '/guides/integration-playbooks/unsupported-stacks'),
+    ], Layers3),
+    header('Tooling'),
+    group('AI-assisted development', [
+      page('Wacht Bench', '/guides/wacht-bench'),
+      page('Docs MCP', '/guides/docs-mcp'),
+      page('Skills', '/guides/bench-skills'),
     ], Rocket),
   ],
 };
@@ -829,7 +832,7 @@ export function DocsSidebar() {
       <aside className="docs-sidebar sticky top-(--fd-header-height) [grid-area:sidebar] h-[calc(100vh-var(--fd-header-height))] w-[var(--landing-left-pane-width,280px)] hidden md:flex flex-col bg-fd-background border-r border-border transition-[width] duration-300 ease-out">
         <button
           type="button"
-          className="flex h-12 w-full items-center gap-2.5 border-b border-border px-4 text-sm text-muted-foreground transition-colors hover:bg-white/2 hover:text-foreground"
+          className="flex h-12 w-full items-center gap-2.5 border-b border-border px-4 text-sm text-muted-foreground transition-colors hover:bg-fd-accent hover:text-foreground"
           onClick={() => setOpenSearch(true)}
         >
           <Search className="size-4 shrink-0" strokeWidth={1.8} />
@@ -960,7 +963,7 @@ function SidebarGroup({
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex h-12 w-full items-center gap-2.5 px-4 text-left text-sm text-muted-foreground transition-colors hover:bg-white/2 hover:text-foreground"
+        className="flex h-12 w-full items-center gap-2.5 px-4 text-left text-sm text-muted-foreground transition-colors hover:bg-fd-accent hover:text-foreground"
       >
         {group.icon ? <group.icon className="size-4 shrink-0" /> : null}
         <span className="truncate">{group.name}</span>
@@ -997,7 +1000,7 @@ function SidebarPageEntry({
     <div className="border-b border-border">
       <Link
         href={page.url}
-        className="flex h-12 w-full items-center gap-2.5 px-4 text-sm text-muted-foreground transition-colors hover:bg-white/2 hover:text-foreground"
+        className="flex h-12 w-full items-center gap-2.5 px-4 text-sm text-muted-foreground transition-colors hover:bg-fd-accent hover:text-foreground"
       >
         {page.icon ? <page.icon className="size-4 shrink-0" /> : null}
         <span className="truncate">{page.name}</span>
@@ -1017,7 +1020,7 @@ function SdkSwitcher({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="flex h-12 w-full items-center gap-2.5 border-b border-border px-4 text-left text-sm text-muted-foreground transition-colors hover:bg-white/2 hover:text-foreground data-[state=open]:bg-white/2 data-[state=open]:text-foreground">
+      <PopoverTrigger className="flex h-12 w-full items-center gap-2.5 border-b border-border px-4 text-left text-sm text-muted-foreground transition-colors hover:bg-fd-accent hover:text-foreground data-[state=open]:bg-fd-accent data-[state=open]:text-foreground">
         <SectionIcon sectionKey={activeSection.key} className="size-4 shrink-0 text-muted-foreground" />
         <span className="truncate text-foreground">{activeSection.name}</span>
         <ChevronDownIcon
@@ -1077,10 +1080,10 @@ function SidebarLinkNode({
   return (
     <Link
       href={url}
-      className="flex items-center gap-2 rounded px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-white/2 hover:text-foreground"
+      className="flex items-center gap-2 rounded px-3 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-fd-accent hover:text-foreground"
     >
       {method ? (
-        <span className={cn('shrink-0 rounded px-1 py-0.5 font-mono text-[10px] font-semibold uppercase', METHOD_STYLES[method] ?? 'bg-muted text-muted-foreground')}>
+        <span className={cn('shrink-0 rounded px-1 py-0.5 font-mono text-[11px] font-semibold uppercase', METHOD_STYLES[method] ?? 'bg-muted text-muted-foreground')}>
           {method}
         </span>
       ) : null}

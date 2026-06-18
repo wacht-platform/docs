@@ -89,6 +89,12 @@
           "path": "/ai/agents/{agent_id}/sub-agents/{sub_agent_id}"
         },
         {
+          "name": "Set Agent Role Agent",
+          "slug": "set-agent-role-agent",
+          "method": "PUT",
+          "path": "/ai/agents/{agent_id}/role-agent"
+        },
+        {
           "name": "Get Ai Tools",
           "slug": "get-ai-tools",
           "method": "GET",
@@ -311,6 +317,48 @@
           "path": "/ai/settings"
         },
         {
+          "name": "List Ai Provider Profiles",
+          "slug": "list-ai-provider-profiles",
+          "method": "GET",
+          "path": "/ai/settings/provider-profiles"
+        },
+        {
+          "name": "Create Ai Provider Profile",
+          "slug": "create-ai-provider-profile",
+          "method": "POST",
+          "path": "/ai/settings/provider-profiles"
+        },
+        {
+          "name": "Get Ai Provider Profile",
+          "slug": "get-ai-provider-profile",
+          "method": "GET",
+          "path": "/ai/settings/provider-profiles/{profile_id}"
+        },
+        {
+          "name": "Update Ai Provider Profile",
+          "slug": "update-ai-provider-profile",
+          "method": "PATCH",
+          "path": "/ai/settings/provider-profiles/{profile_id}"
+        },
+        {
+          "name": "Delete Ai Provider Profile",
+          "slug": "delete-ai-provider-profile",
+          "method": "DELETE",
+          "path": "/ai/settings/provider-profiles/{profile_id}"
+        },
+        {
+          "name": "List Actors",
+          "slug": "list-actors",
+          "method": "GET",
+          "path": "/ai/actors"
+        },
+        {
+          "name": "Create Actor",
+          "slug": "create-actor",
+          "method": "POST",
+          "path": "/ai/actors"
+        },
+        {
           "name": "List Actor Projects Flat",
           "slug": "list-actor-projects-flat",
           "method": "GET",
@@ -443,6 +491,12 @@
           "path": "/ai/actor-projects/{project_id}/board/items/{item_id}/cancel"
         },
         {
+          "name": "Answer Thread Question",
+          "slug": "answer-thread-question",
+          "method": "POST",
+          "path": "/ai/threads/{thread_id}/messages/answer"
+        },
+        {
           "name": "Answer Project Task Board Item Question",
           "slug": "answer-project-task-board-item-question",
           "method": "POST",
@@ -549,12 +603,6 @@
           "slug": "execute-agent-thread-async",
           "method": "POST",
           "path": "/ai/actor-project-threads/{thread_id}/run"
-        },
-        {
-          "name": "Create Actor",
-          "slug": "create-actor",
-          "method": "POST",
-          "path": "/ai/actors"
         },
         {
           "name": "Lookup Actor",
@@ -681,6 +729,30 @@
           "slug": "get-analytics-stats",
           "method": "GET",
           "path": "/analytics"
+        },
+        {
+          "name": "Get Token Usage Stats",
+          "slug": "get-token-usage-stats",
+          "method": "GET",
+          "path": "/analytics/token-usage"
+        },
+        {
+          "name": "Get Token Usage By Model",
+          "slug": "get-token-usage-by-model",
+          "method": "GET",
+          "path": "/analytics/token-usage-by-model"
+        },
+        {
+          "name": "Get Webhook Usage Stats",
+          "slug": "get-webhook-usage-stats",
+          "method": "GET",
+          "path": "/analytics/webhook-usage"
+        },
+        {
+          "name": "Get Gateway Usage Stats",
+          "slug": "get-gateway-usage-stats",
+          "method": "GET",
+          "path": "/analytics/gateway-usage"
         }
       ]
     },

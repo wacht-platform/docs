@@ -11,10 +11,9 @@ This Cloudflare Workers guide follows the Module Worker pattern with environment
 name = "wacht-admin-api"
 main = "src/index.ts"
 compatibility_date = "2026-01-01"
-
-[vars]
-WACHT_BACKEND_API_URL = "https://api.wacht.io"
 ```
+
+Leave the API base URL unset — the SDK defaults to `https://api.wacht.dev`. Only set `WACHT_BACKEND_API_URL` if Wacht gives you a different base; never point it at a deployment frontend host.
 
 Store secrets with `wrangler secret put`:
 

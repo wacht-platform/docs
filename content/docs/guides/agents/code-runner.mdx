@@ -1,85 +1,53 @@
 ---
-title: "CodeRunner tools"
-description: "Create Python tools that run inside a Wacht agent sandbox."
+title: CodeRunner tools
+description: Create Python tools that an agent runs inside a Wacht sandbox.
 ---
 
 # CodeRunner tools
 
-Use a CodeRunner tool when an agent needs deterministic Python execution inside
-its sandbox: parsing files, probing generated media, calling model SDKs, or
-turning structured input into an artifact.
+A CodeRunner tool runs a Python function inside the agent's sandbox. Reach for it when the agent needs deterministic execution rather than reasoning: parsing files, probing generated media, calling a model SDK, turning structured input into an artifact.
 
-For HTTP endpoints you own, use an `Api` tool. For external SaaS actions, use
-Composio/Virtual tools. For a custom tool server, use `Mcp`.
+For an HTTP endpoint you own, use an `Api` tool. For a third-party SaaS action, use Composio. For your own tool server, use `Mcp`.
 
 ## Runtime contract
 
-CodeRunner currently supports Python.
+CodeRunner runs Python. The tool configuration carries:
 
-The tool configuration stores:
+| Field | Notes |
+| --- | --- |
+| `type` | `"CodeRunner"` (PascalCase). |
+| `runtime` | `"python"` (the only runtime). |
+| `code` | Python source, must define `run`. |
+| `input_schema` | Wacht `SchemaField[]`. |
+| `output_schema` | Optional `SchemaField[]`. When set, the return value is validated against it and must be a JSON object. |
+| `env_variables` | Optional per-tool variables, stored encrypted. |
+| `timeout_seconds` | Defaults to 30. |
+| `allow_network` | Defaults to `false` — outbound network is blocked unless you opt in. |
 
-- `type: "CodeRunner"`
-- `runtime: "python"`
-- `code`: Python source
-- `input_schema`: Wacht `SchemaField[]`
-- `output_schema`: optional Wacht `SchemaField[]`
-- `env_variables`: optional encrypted per-tool environment variables
-- `timeout_seconds`
-- `allow_network`
-
-The Python source must define:
+Your source must define a `run` function:
 
 ```python
 def run(input):
     return {"ok": True}
 ```
 
-`input` is a JSON object filtered and validated against `input_schema`.
-The return value must be JSON-serializable. If `output_schema` is set, the
-returned object is validated against it.
+`input` is a JSON object, filtered and validated against `input_schema`. The return value must be JSON-serializable. `run` may be `async def`; a returned coroutine is awaited. If the script defines no callable `run`, the tool fails with `CodeRunner script must define a callable run(input) function`.
 
 ## Provider SDKs
 
-When the deployment has provider keys configured, CodeRunner injects:
+When the deployment has the matching provider key configured, CodeRunner injects it as an environment variable and initializes a ready client global:
 
-- `OPENAI_API_KEY`
-- `ANTHROPIC_API_KEY`
-- `GEMINI_API_KEY`
+| Env var | Client global |
+| --- | --- |
+| `OPENAI_API_KEY` | `openai_client` |
+| `ANTHROPIC_API_KEY` | `anthropic_client` |
+| `GEMINI_API_KEY` | `gemini_client` |
 
-The wrapper also initializes these globals for the script:
+If a provider key isn't configured, touching that client raises a clear runtime error rather than failing silently.
 
-```python
-openai_client
-anthropic_client
-gemini_client
-```
+The sandbox image ships a fixed Python set, including `openai`, `anthropic`, `google-genai`, `groq`, `cohere`, `mistralai`, `together`, `boto3`, `requests`, `httpx`, `tenacity`, `pydantic`, `jsonschema`, `pandas`, `numpy`, `Pillow`, `python-docx`, `docxtpl`, `python-pptx`, and `reportlab`. You cannot add packages per tool. System binaries like `ffmpeg` and `ffprobe` depend on the image — if a tool needs one, probe for it at runtime and return a clear error when it's missing.
 
-If a provider key is not configured, accessing that client raises a clear
-runtime error.
-
-The repository's CodeRunner requirements currently include:
-
-- `openai`
-- `anthropic`
-- `google-genai`
-- `groq`
-- `cohere`
-- `mistralai`
-- `together`
-- `boto3`
-- `requests`, `httpx`, `tenacity`
-- `pydantic`, `jsonschema`
-- `numpy`, `pandas`
-- `Pillow`
-- `python-docx`, `docxtpl`
-- `python-pptx`
-- `reportlab`
-
-System binaries such as `ffmpeg` and `ffprobe` depend on the sandbox image. If a
-tool needs them, check availability at runtime and return a clear error when
-they are missing.
-
-## Create a tool
+## Create and attach a tool
 
 ```json
 {
@@ -104,14 +72,12 @@ they are missing.
 }
 ```
 
-Then create and attach it:
-
 ```sh
 wacht api call createAiTool --body @tool.json
 wacht api call attachToolToAgent --param agent_id=<agent_id> --param tool_id=<tool_id>
 ```
 
-Set approval policy for expensive or side-effecting tools:
+For an expensive or side-effecting tool, gate it behind review — see [approval policy](/guides/agents/approval-policy):
 
 ```sh
 wacht api call updateAgentToolApprovalAction \
@@ -120,17 +86,6 @@ wacht api call updateAgentToolApprovalAction \
   --body '{"approval_action":"review"}'
 ```
 
-## Schema notes
+## Schema casing
 
-`configuration.type` uses PascalCase, for example `"CodeRunner"`.
-
-`field_type` and `items_type` use uppercase Wacht schema names:
-
-- `STRING`
-- `INTEGER`
-- `NUMBER`
-- `BOOLEAN`
-- `ARRAY`
-- `OBJECT`
-
-Lowercase names are not equivalent.
+`configuration.type` is PascalCase (`"CodeRunner"`). `field_type` and `items_type` use uppercase Wacht schema names: `STRING`, `INTEGER`, `NUMBER`, `BOOLEAN`, `ARRAY`, `OBJECT`. Lowercase variants are not accepted.

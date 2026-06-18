@@ -14,7 +14,7 @@ function rustMethodToHttp(method: string): string {
 
 // Rust type → JSON Schema
 export function rustTypeToJsonSchema(rustType: string): JsonSchema {
-  const t = rustType.trim();
+  const t = rustType.trim().replace(/chrono::/g, '');
 
   // Malformed / truncated types from parser edge cases — return opaque
   if (!t || t.startsWith('(') || (t.endsWith('>') && !t.includes('<'))) return {};
@@ -73,6 +73,17 @@ export function rustTypeToJsonSchema(rustType: string): JsonSchema {
   // If stripping left a malformed name (e.g., "Foo>"), fall back to opaque
   if (typeName.includes('<') || typeName.includes('>') || typeName.startsWith('(')) return {};
   return { $ref: `#/components/schemas/${typeName}` };
+}
+
+// Fields tagged with an `i64_as_string`-family serde adapter serialize their
+// integer(s) as string(s) on the wire. Honor the Vec wrapper so `Vec<i64>` /
+// `Option<Vec<i64>>` become string arrays rather than a scalar string.
+function stringSerializedSchema(rustType: string, required: boolean): JsonSchema {
+  let t = rustType.trim();
+  if (t.startsWith('Option<')) t = t.slice(7, -1).trim();
+  const nullable = required ? {} : { nullable: true };
+  if (t.startsWith('Vec<')) return { type: 'array', items: { type: 'string' }, ...nullable };
+  return { type: 'string', ...nullable };
 }
 
 // Build a map of fn_name → routes by parsing all .rs files in router dir
@@ -693,7 +704,7 @@ export function rustStructToJsonSchema(
   for (const field of struct.fields) {
     const key = field.serdeRename ?? field.name;
     properties[key] = field.serializedAsString
-      ? { type: 'string', ...(field.required ? {} : { nullable: true }) }
+      ? stringSerializedSchema(field.rustType, field.required)
       : rustTypeToJsonSchema(field.rustType);
     if (field.required) required.push(key);
   }

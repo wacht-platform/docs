@@ -1,66 +1,186 @@
 ---
 title: AI Runtime and Configuration
-description: Agents, tools, knowledge bases, MCP servers, projects, and threads.
+description: Manage agents, tools, knowledge bases, MCP servers, projects, and threads from the Rust SDK.
 ---
 
-Validated route domains:
+The AI surface is split in two. `client.ai()` manages the building blocks an agent runs with — agents, tools, knowledge bases, MCP servers, and the projects and threads an agent executes inside. `client.ai_settings()` manages deployment-level configuration — the default models, runtime flags, and provider profiles that back every execution. Each method is a builder; call `.send().await?` to run it. List methods accept `.limit()`, `.offset()`, and (where supported) `.search()` before `.send()`.
 
-- `/ai/agents*`
-- `/ai/tools*`
-- `/ai/knowledge-bases*`
-- `/ai/mcp-servers*`
-- `/ai/settings`
-- `/ai/actor-projects*`
-- `/ai/actor-project-threads*`
-- `/ai/actor-mcp-servers*`
+## Deployment AI settings
 
-Rust API surfaces:
-
-- `client.ai().agents().list_agents()`
-- `client.ai().agents().create_agent(request)`
-- `client.ai().tools().list_tools()`
-- `client.ai().knowledge_bases().fetch_knowledge_bases()`
-- `client.ai().mcp_servers().list_mcp_servers()`
-- `client.ai_settings().fetch_ai_settings()`
-- `client.ai_settings().update_ai_settings(request)`
-- `client.ai().actor_projects().list_actor_projects(actor_id)`
-- `client.ai().actor_projects().fetch_threads(project_id)`
-- `client.ai().actor_project_threads().run_thread(thread_id, request)`
-- `client.ai().actor_mcp_servers().list_actor_mcp_servers()`
-
-Default runtime tools:
-
-Wacht injects a set of internal tools into agent execution. Availability can depend on the execution mode, assignment context, mounted filesystems, and approval policy.
-
-- Files and execution: `read_image`, `read_file`, `write_file`, `append_file`, `edit_file`, `execute_command`, `sleep`.
-- Web and evidence: `web_search`, `url_content`, `search_knowledgebase`.
-- Memory and tool discovery: `load_memory`, `save_memory`, `update_memory`, `search_tools`, `load_tools`.
-- Threads and task orchestration: `list_threads`, `create_thread`, `update_thread`, `create_project_task`, `update_project_task`, `assign_project_task`, `append_task_journal`.
-- Task graph planning: `task_graph_add_node`, `task_graph_add_dependency`, `task_graph_mark_in_progress`, `task_graph_complete_node`, `task_graph_fail_node`, `task_graph_reset`.
-- Human input: `ask_user`.
-
-`web_search` searches the public web and returns URLs, excerpts, source metadata, warnings, and usage information. It accepts either an `objective` or `search_queries`, plus optional `mode`, `max_results`, domain filters, and freshness filtering.
-
-`url_content` fetches focused excerpts or full markdown content for one or more URLs. Use it after `web_search` when the agent needs page-level evidence instead of search-result excerpts.
-
-Rust example:
+`fetch_ai_settings` returns the deployment's `DeploymentAiSettings` — default models, runtime toggles, and the active provider configuration. Read it before an execution flow if your code branches on which models or features are enabled. `update_ai_settings` is a full PUT; send a complete `UpdateDeploymentAiSettingsRequest`, since omitted fields are not merged.
 
 ```rust
-use wacht_rs::{Result, WachtClient};
+// Current deployment AI configuration.
+let settings = client.ai_settings().fetch_ai_settings().send().await?;
 
-pub async fn ai_runtime_example(client: &WachtClient) -> Result<()> {
-    let _settings = client.ai_settings().fetch_ai_settings().send().await?;
+// Provider profiles hold credentials for an upstream model provider.
+// Listing returns a PaginatedResponse; create returns the new profile.
+let profiles = client
+    .ai_settings()
+    .list_provider_profiles()
+    .limit(20)
+    .send()
+    .await?;
+```
 
-    let _run = client
+Provider profiles are managed with `list_provider_profiles`, `create_provider_profile`, `fetch_provider_profile`, `update_provider_profile`, and `delete_provider_profile`. Deleting a profile that an agent still references does not retarget the agent — update the agent or settings first, or executions fall back to the deployment default.
+
+## Agents
+
+An agent is the configured unit of execution: a model, a description that is injected into context on every turn, and the tools, knowledge bases, and sub-agents attached to it. `list_agents` and `fetch_agent` return `AiAgentWithDetails` (the agent plus its resolved attachments); `create_agent` and `update_agent` return the bare `AiAgent`. `update_agent` is a PATCH, so send only the fields you are changing.
+
+```rust
+use wacht::models::CreateAiAgentRequest;
+
+// Returns AiAgentWithDetails rows, newest first.
+let agents = client.ai().agents().list_agents().limit(20).send().await?;
+
+let agent = client
+    .ai()
+    .agents()
+    .create_agent(CreateAiAgentRequest {
+        name: "Incident Responder".into(),
+        description: Some("Triage and summarize active incidents.".into()),
+        ..Default::default()
+    })
+    .send()
+    .await?;
+```
+
+Compose agents with `list_sub_agents`, `attach_sub_agent`, and `detach_sub_agent`. Designate a reviewer or conversation agent with `set_role_agent`; pass a `SetAgentRoleAgentRequest` with `agent_id: None` to reset the role back to the agent itself. `fetch_agent_details` returns the heavier `AgentDetailsResponse` when you need the full resolved configuration rather than the summary attachments.
+
+### Agent skills
+
+Skills are file bundles mounted into an agent's runtime. `list_skills_summary` returns both system skills (built in) and agent skills (uploaded per agent). Browse a bundle with `list_skill_tree` and read one file with `read_skill_file` — both take a `SkillScope` (system or agent). Upload a bundle with `import_skill_bundle`, which takes the file name and raw bytes and returns the new `SkillTreeResponse`; chain `.replace_existing(true)` to overwrite an existing bundle instead of merging. Remove one with `delete_skill`.
+
+```rust
+use wacht::models::SkillScope;
+
+let summary = client
+    .ai()
+    .agents()
+    .list_skills_summary("agent_id")
+    .send()
+    .await?;
+
+// Upload a .zip bundle. Without replace_existing(true) it merges into
+// whatever is already mounted.
+let tree = client
+    .ai()
+    .agents()
+    .import_skill_bundle("agent_id", "research-skills.zip", bundle_bytes)
+    .replace_existing(true)
+    .send()
+    .await?;
+
+let _file = client
+    .ai()
+    .agents()
+    .read_skill_file("agent_id", SkillScope::Agent, "research/SKILL.md")
+    .send()
+    .await?;
+```
+
+## Tools
+
+Tools are callable functions an agent can invoke. `list_tools` returns deployment-defined tools as `AiToolWithDetails`; `list_internal_tools` returns the built-in runtime tools (the same set the runtime injects — files, web search, memory, task orchestration) so you can see what is available without defining anything. Attach a tool to an agent with `attach_tool`, detach with `detach_tool`, and list an agent's current tools with `list_agent_tools`.
+
+```rust
+let tools = client.ai().tools().list_tools().limit(50).send().await?;
+
+// Internal tools are read-only; you cannot create or delete them.
+let internal = client.ai().tools().list_internal_tools().send().await?;
+
+client.ai().tools().attach_tool("agent_id", "tool_id").send().await?;
+```
+
+`set_agent_tool_approval_action` sets whether a specific tool requires human approval before the agent may call it on a given agent. Pass an `UpdateAgentToolApprovalActionRequest`. When a tool is gated this way, an execution that wants to call it pauses and surfaces an approval request — respond to it through the thread's run flow with an `approval_response` (see Threads, below).
+
+## Knowledge bases
+
+A knowledge base is a document store the runtime searches during execution. `fetch_knowledge_bases` returns a `KnowledgeBaseListResponse`; `fetch_knowledge_base` returns one with details. Attach to an agent with `attach_agent_knowledge_base` and remove with `detach_agent_knowledge_base`. `upload_document` is a multipart upload — pass raw bytes and a file name, optionally `.title()` and `.description()` — and returns the stored `KnowledgeBaseDocument`. Uploaded documents are chunked and embedded asynchronously, so a freshly uploaded document is not immediately searchable.
+
+```rust
+use wacht::models::CreateAiKnowledgeBaseRequest;
+
+let kb = client
+    .ai()
+    .knowledge_bases()
+    .create_knowledge_base(CreateAiKnowledgeBaseRequest {
+        name: "Runbooks".into(),
+        ..Default::default()
+    })
+    .send()
+    .await?;
+
+// Multipart upload. Embedding happens in the background after this returns.
+let _doc = client
+    .ai()
+    .knowledge_bases()
+    .upload_document(kb.id.clone(), runbook_bytes, "oncall.md")
+    .title("On-call runbook")
+    .send()
+    .await?;
+
+client
+    .ai()
+    .knowledge_bases()
+    .attach_agent_knowledge_base("agent_id", kb.id)
+    .send()
+    .await?;
+```
+
+List a knowledge base's documents with `fetch_documents` and remove one with `delete_document`. Deleting the document removes its chunks from search on the next index pass.
+
+## MCP servers
+
+MCP servers expose external tools over the Model Context Protocol. Call `discover_mcp_server` with an endpoint URL first — it probes the server and returns an `McpServerDiscoveryResponse` describing the auth the server requires, without persisting anything. Use that to decide what credentials to supply, then `create_mcp_server` to register it. `fetch_mcp_servers` lists registered servers; `update_mcp_server` and `delete_mcp_server` manage them.
+
+```rust
+// Probe before registering — discovery tells you what auth the server needs.
+let discovery = client
+    .ai()
+    .mcp_servers()
+    .discover_mcp_server("https://mcp.example.com")
+    .send()
+    .await?;
+```
+
+`actor_mcp_servers()` is the connection-level surface: `list_actor_mcp_servers`, `connect_actor_mcp_server`, and `disconnect_actor_mcp_server` bind a registered MCP server to a running actor. `composio()` is the equivalent for Composio toolkits — `list_toolkits` and `list_tools` to browse, `fetch_config` and `update_config` for deployment config, and `enable_app` / `disable_app` to toggle an app. These calls return empty when the integration is disabled for the deployment, so gate on the enable flag rather than treating empty as an error.
+
+## Projects, boards, and threads
+
+An actor runs work inside projects. A project owns a task board (items, comments, assignments, a per-task filesystem) and one or more threads (the conversation and execution timeline). `actor_projects()` manages projects and boards; `actor_project_threads()` manages threads and the execution loop.
+
+List and create projects with `list_actor_projects`, `search_actor_projects`, and `create_actor_project` (all scoped by `actor_id`); fetch, update, archive, and unarchive with the matching methods. On the board, `fetch_board` and `fetch_board_items` read the board, `create_board_item` adds a task, and `delegate_task` hands a task to another lane. Board items carry their own filesystem — `fetch_board_item_filesystem` returns a JSON listing, `fetch_board_item_filesystem_file` returns file metadata, and `download_board_item_filesystem_file` returns raw bytes.
+
+### Running a thread
+
+`run_thread` is the execution entry point. It takes an `ExecuteAgentRequest` whose `execution_type` is a oneof — set exactly one of `new_message`, `approval_response`, or `cancel`:
+
+- `new_message` posts a user turn and runs the agent.
+- `approval_response` answers a pending tool-approval request (referenced by `request_message_id`) and resumes the run.
+- `cancel` stops an in-flight run.
+
+It returns `ExecuteAgentResponse { status, conversation_id }`. The run is asynchronous — `status` reflects whether the run was accepted, not that the agent has finished. Poll progress with `fetch_messages` (cursor-paginated via `.before_id()` / `.after_id()`, optionally scoped to one task with `.board_item_id()`) and `fetch_task_graphs`.
+
+```rust
+use wacht::{Result, WachtClient};
+use wacht::models::{ExecuteAgentRequest, ExecuteAgentRequestType, NewMessageRequest};
+
+pub async fn run_incident_thread(client: &WachtClient) -> Result<()> {
+    // Post a message and start the run. status="accepted" means queued,
+    // not complete — read messages afterward to follow progress.
+    let run = client
         .ai()
         .actor_project_threads()
         .run_thread(
             "thread_id",
-            wacht_rs::models::ExecuteAgentRequest {
+            ExecuteAgentRequest {
                 agent_id: None,
-                execution_type: wacht_rs::models::ExecuteAgentRequestType {
-                    new_message: Some(wacht_rs::models::NewMessageRequest {
-                        message: "Summarize current incident impact".to_string(),
+                execution_type: ExecuteAgentRequestType {
+                    new_message: Some(NewMessageRequest {
+                        message: "Summarize current incident impact.".into(),
                         files: None,
                     }),
                     approval_response: None,
@@ -70,7 +190,62 @@ pub async fn ai_runtime_example(client: &WachtClient) -> Result<()> {
         )
         .send()
         .await?;
+    println!("run {}: {}", run.conversation_id.unwrap_or_default(), run.status);
+
+    // Latest messages on the thread.
+    let _messages = client
+        .ai()
+        .actor_project_threads()
+        .fetch_messages("thread_id")
+        .limit(50)
+        .send()
+        .await?;
 
     Ok(())
 }
 ```
+
+When the agent calls `ask_user`, the thread surfaces a pending question and the run pauses. Answer it with `answer_question`, passing an `AnswerSubmission` that carries either structured `answers` or `freeform_text` — send one or the other, not both. The submission resumes the run and returns an `ExecuteAgentResponse` like `run_thread` does.
+
+```rust
+use wacht::models::AnswerSubmission;
+
+let _resumed = client
+    .ai()
+    .actor_project_threads()
+    .answer_question(
+        "thread_id",
+        AnswerSubmission {
+            freeform_text: Some("Restrict the rollback to the EU region.".into()),
+            ..Default::default()
+        },
+    )
+    .send()
+    .await?;
+```
+
+Manage the thread itself with `update_thread`, `archive_thread`, `unarchive_thread`, `fetch_thread`, and `search_threads` (scoped by `actor_id`, cursor-paginated). The thread's working filesystem is readable through `fetch_filesystem` and `fetch_filesystem_file` — the latter exposes `send_bytes()` to fetch raw content with its MIME type rather than JSON.
+
+## Runtime tools the agent sees
+
+`list_internal_tools` returns the built-in tools the runtime can inject into an execution. Availability depends on the execution mode, the assignment context, mounted filesystems, and the agent's approval policy — so the list a given run sees is a subset of this set. The current built-ins:
+
+- Files and execution: `read_image`, `read_file`, `write_file`, `append_file`, `edit_file`, `execute_command`, `sleep`.
+- Web and evidence: `web_search`, `url_content`, `search_knowledgebase`.
+- Memory and tool discovery: `load_memory`, `save_memory`, `update_memory`, `search_tools`, `load_tools`.
+- Threads and task orchestration: `list_threads`, `create_thread`, `update_thread`, `create_project_task`, `update_project_task`, `assign_project_task`, `append_task_journal`.
+- Task-graph planning: `task_graph_add_node`, `task_graph_add_dependency`, `task_graph_mark_in_progress`, `task_graph_complete_node`, `task_graph_fail_node`, `task_graph_reset`.
+- Human input: `ask_user`.
+
+`web_search` searches the public web and returns URLs, excerpts, source metadata, warnings, and usage. It takes either an `objective` or `search_queries`, plus optional `mode`, `max_results`, domain filters, and freshness filtering. `url_content` fetches focused excerpts or full markdown for one or more URLs — use it after `web_search` when the agent needs page-level evidence rather than result snippets.
+
+## Method group summary
+
+- `ai_settings.*` — fetch / update settings; list / create / fetch / update / delete provider profiles
+- `ai.agents.*` — list / fetch / create / update / delete; sub-agents; role agent; skill summary / tree / file / import / delete
+- `ai.tools.*` — list / list_internal / fetch / create / update / delete; attach / detach / list_agent_tools; set approval action
+- `ai.knowledge_bases.*` — fetch / create / update / delete; attach / detach to agent; documents fetch / upload / delete
+- `ai.mcp_servers.*` — discover / fetch / create / update / delete
+- `ai.actor_mcp_servers.*` / `ai.composio.*` — connection-level MCP and Composio toolkit management
+- `ai.actor_projects.*` — projects, boards, board items, comments, assignments, filesystems, delegation
+- `ai.actor_project_threads.*` — search / fetch / update / archive; run_thread; answer_question; messages / task graphs / filesystem

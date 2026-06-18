@@ -1,6 +1,6 @@
 ---
-title: "Tasks"
-description: "How work flows through a Wacht app: created, executed, surfaced."
+title: Tasks
+description: How work flows through a Wacht app — created, executed, surfaced.
 ---
 
 A user makes a request. A board item appears. Agents work on it. Artifacts get produced. Your UI surfaces them. Tasks are the durable record of all of that.
@@ -21,6 +21,7 @@ pending → available → claimed → in_progress → completed
                                             ↘ blocked
                                             ↘ needs_clarification
                                             ↘ rejected
+                                            ↘ failed
                                             ↘ cancelled
 ```
 
@@ -34,6 +35,7 @@ The runtime drives the transitions; you observe them. Brief on each:
 - `blocked` — executor hit something it can't resolve, bubbled back to coordinator
 - `needs_clarification` — agent called `ask_user`, waiting on the user
 - `rejected` — explicitly declined (e.g. by a reviewer)
+- `failed` — execution errored out without a deliverable
 - `cancelled` — user or system cancelled before completion
 
 ## Tasks vs chat

@@ -1,66 +1,117 @@
 ---
-title: B2B Org/Workspace Lifecycle
-description: End-to-end sequence for onboarding organizations, provisioning workspaces, and enforcing scope boundaries.
+title: B2B org/workspace lifecycle
+description: The end-to-end path from a fresh sign-in to a scoped, multi-tenant request — onboarding into organizations, selecting workspaces, and enforcing scope on the backend.
 ---
 
-Use this guide when your app needs organization and workspace scope throughout auth, API access, and admin operations.
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
-## Tenant lifecycle diagram
+Wacht's business-to-business (B2B) model has two tenancy layers. An organization is the account a team shares; a workspace is a scope inside it. A user holds a membership in each, and the active pair rides in every session token's claims. This guide follows one user from sign-in to a scoped request, then covers admin-side invitations and the failure modes worth handling.
+
+The contract across the seam: the frontend resolves which organization and workspace are active and switches between them; the backend reads the resulting claims and scopes every query. The frontend selection is UX. The backend claims are the authority.
+
+## The path
 
 ```text
-Authenticate user
-      |
-      v
-Resolve membership set
-      |
-      +-- none ------------------> onboarding flow
-      |
-      +-- has organizations -----> choose/create org
-                                      |
-                                      v
-                                 choose/create workspace
-                                      |
-                                      v
-                              backend scope enforcement
-                                      |
-                                      v
-                              org/workspace-scoped operations
+sign in
+   │
+   ▼
+resolve memberships ──── none ──────────► onboard: create org (+ first workspace)
+   │
+   has membership
+   │
+   ▼
+active org set? ──── no ──► OrganizationSwitcher / create
+   │
+   yes
+   ▼
+active workspace set? ── no ──► pick / create workspace
+   │
+   yes
+   ▼
+getToken() → claims carry org + workspace ids
+   │
+   ▼
+backend scopes the query to those claims
 ```
 
-## Lifecycle sequence
+A new user signs in with no memberships and must onboard before any scoped request works. A returning user already has an active pair from their last session. Both end at the same place: a token whose claims name an organization and a workspace.
 
-1. User authenticates and lands in your app.
-2. User selects or creates an organization.
-3. User selects or creates a workspace in that organization.
-4. Backend APIs enforce org/workspace scope for all protected operations.
+## Resolve the active tenancy
 
-## Frontend implementation
+`useActiveOrganization()` and `useActiveWorkspace()` read the active pair from the session. When either is `null` after loading, the user hasn't selected one yet — that's your onboarding branch, not an error.
 
-Use SDK tenancy surfaces to manage active organization/workspace and account controls:
+```tsx
+import { useActiveOrganization, useActiveWorkspace } from "@wacht/react-router";
 
-- [React Router Organizations/Workspaces hooks](/sdks/react-router/hooks/organizations-workspaces)
-- [TanStack Router Organizations/Workspaces hooks](/sdks/tanstack-router/hooks/organizations-workspaces)
-- [Next.js Organizations/Workspaces hooks](/sdks/nextjs/hooks/organizations-workspaces)
+function TenantGate({ children }: { children: React.ReactNode }) {
+  const { activeOrganization, loading: orgLoading } = useActiveOrganization();
+  const { activeWorkspace, loading: wsLoading } = useActiveWorkspace();
 
-## Backend implementation
+  if (orgLoading || wsLoading) return <Spinner />;
+  if (!activeOrganization) return <OnboardOrganization />;
+  if (!activeWorkspace) return <OnboardWorkspace />;
 
-Use backend SDK methods and scope-aware checks:
+  return <>{children}</>;
+}
+```
 
-- [Rust Organizations and Workspaces](/sdks/rust/organizations-workspaces)
-- [Backend JS SDK](/sdks/node)
+`RequireActiveTenancy` from the SDK does this gate for you, rendering a selector dialog when no active pair is set. Hand-roll the gate when you want the onboarding screens to be your own.
 
-## Onboarding via organization invitations
+## Switch the active pair
 
-Inviting users into an organization (and optionally a starting workspace + role) is a first-party flow with backend SDK coverage on both Node and Rust. Use it when:
+Switching is a session operation, not an organization-hook one. `useSession().switchOrganization(orgId)` and `switchWorkspace(workspaceId)` change the active pair server-side, clear the cached token, and refetch the session. The next `getToken()` carries the new ids.
 
-- An admin needs to add a teammate by email without provisioning them through the deployment-wide invitations surface.
-- You want the new user to land in a specific workspace and role on first sign-in.
+```tsx
+import { useSession } from "@wacht/react-router";
+
+function useTenancyControls() {
+  const { switchOrganization, switchWorkspace } = useSession();
+  return { switchOrganization, switchWorkspace };
+}
+```
+
+`OrganizationSwitcher` is the prebuilt menu over this — it lists the user's organizations and calls `switchOrganization` on selection. There is no prebuilt workspace switcher; build one over `useWorkspaceList()` and `switchWorkspace`.
+
+Switching org and workspace are independent calls. Switching organization does not auto-pick a workspace in the new org, so after an org switch the active workspace can be `null` — your gate routes back to workspace selection. Account for that rather than assuming a switch lands fully scoped.
+
+## Create on first run
+
+A user with no memberships creates an organization, then a workspace inside it. Both return the created entity and the membership in one call, so the new owner is a member immediately — no second invite step for the creator.
+
+```tsx
+import { useOrganizationList, useWorkspaceList, useSession } from "@wacht/react-router";
+
+function OnboardButton() {
+  const { createOrganization } = useOrganizationList();
+  const { createWorkspace } = useWorkspaceList();
+  const { switchOrganization, switchWorkspace } = useSession();
+
+  async function onboard() {
+    const { data: org } = await createOrganization({ name: "Acme" });
+    await switchOrganization(org.organization.id);
+
+    const ws = await createWorkspace(org.organization.id, "Production");
+    await switchWorkspace(ws.workspace.id);
+  }
+
+  return <button onClick={onboard}>Create organization</button>;
+}
+```
+
+`createOrganization` takes an object (`{ name, description?, image? }`) and returns the wrapped result, so read `data.organization`. `createWorkspace` takes positional arguments (`organizationId, name, image?, description?`) and returns the unwrapped `{ workspace, membership }`. Switch into each after creating it so the session — and the next token — reflects the new scope.
+
+## Onboarding teammates via invitations
+
+The creator is in. Adding teammates by email is a first-party flow with backend SDK coverage on both Node and Rust. Use it when:
+
+- An admin adds a teammate by email without provisioning them through the deployment-wide invitations surface.
+- The new user should land in a specific workspace and role on first sign-in.
 - You need to revoke a pending invite before it's accepted.
 
-A row is soft-deleted both on user accept **and** on admin discard, so the data doesn't distinguish — pass `include_deleted` when listing if you need to see both states.
+A row is soft-deleted both on user accept **and** on admin discard, so the stored state doesn't distinguish the two — pass `include_deleted` when listing if you need to see both.
 
-### Node
-
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
 ```ts
 import { organizations } from "@wacht/backend";
 
@@ -89,8 +140,9 @@ await organizations.discardOrganizationInvitation(
 );
 ```
 
-### Rust
-
+Only `email` is required. The rest are optional: omit `role_id` / `workspace_id` to invite into the org with no preset workspace.
+</Tab>
+<Tab>
 ```rust
 use wacht::models::CreateOrganizationInvitationRequest;
 
@@ -126,24 +178,64 @@ client
     .await?;
 ```
 
-`expiry_days` defaults to 10 when omitted. The returned `token` builds the accept-invitation URL — surface to admin tooling only when out-of-band sharing is needed and treat it like a secret otherwise.
+`CreateOrganizationInvitationRequest` derives `Default`, so set `email` and leave the rest as `None` for an org-only invite. Add `.include_deleted(true)` to `list(...)` to surface accepted and discarded rows; `discard(...)` is idempotent.
+</Tab>
+</Tabs>
 
-For the corresponding webhook events fired by these operations (`organization.invitation.created`, `.accepted`, `.revoked`), see [Webhooks → keep your backend in sync](/guides/deployment-events).
+`expiry_days` defaults to 10 when omitted. The returned `token` builds the accept-invitation URL — surface it to admin tooling only when out-of-band sharing is needed, and treat it like a secret otherwise.
 
-## Scope enforcement rules
+For the webhook events these operations fire (`organization.invitation.created`, `.accepted`, `.revoked`), see [Webhooks → keep your backend in sync](/guides/deployment-events).
 
-- Treat org/workspace IDs as authoritative backend inputs, not frontend hints.
-- Validate current membership/permissions for each protected request.
-- Prefer explicit workspace-scoped resources where available.
+## Enforce scope on the backend
+
+The active pair is in the token claims. The backend reads it and scopes every query — it never trusts an org or workspace id from the request body. This is the same `auth.organizationId` / `auth.workspaceId` (Node) and `auth.organization_id` / `auth.workspace_id` (Rust) shown in the [React + backend auth lifecycle](/guides/integration-playbooks/fullstack-auth-lifecycle-react-rust#tenancy-scoping).
+
+Both ids are nullable. A token can be authenticated yet carry no active workspace — a user mid-onboarding, or one who just switched organizations. Treat a missing workspace as `403`, not `500`:
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+const auth = await getAuth(request);
+await auth.protect();
+
+if (!auth.workspaceId) {
+  return new Response("workspace required", { status: 403 });
+}
+// every query below filters on auth.workspaceId
+```
+</Tab>
+<Tab>
+```rust
+let workspace_id = auth
+    .workspace_id
+    .as_deref()
+    .ok_or(Error::Forbidden("workspace required"))?;
+// every query below filters on workspace_id
+```
+</Tab>
+</Tabs>
+
+Validate membership and permissions per request, not once at sign-in. Roles change after a token is minted, and a workspace can stop being accessible mid-session.
 
 ## Failure modes to handle
 
-- User has no org membership yet.
-- User has org membership but no workspace membership.
-- Selected workspace is no longer accessible.
-- Role/permission changed after token/session issuance.
+| Condition | Where it surfaces | Handling |
+| --- | --- | --- |
+| User has no organization membership | `activeOrganization` is `null` after load | Route to org onboarding; don't error |
+| Org membership but no active workspace | `activeWorkspace` is `null`; token has no workspace claim | Route to workspace selection; backend returns `403` for workspace-scoped routes |
+| Active workspace no longer accessible | Backend `404`/`403` on a resource that previously resolved | Refetch tenancy, drop the stale selection, re-gate |
+| Role or permission changed after token issue | Backend `403` on a route that worked before | Mint a fresh token (it carries updated permission claims) and retry once |
 
-## Contract validation checkpoints
+## Production checklist
 
-- [Frontend API org/workspace surfaces](/reference/frontend-api)
-- [Backend API org/workspace surfaces](/reference/backend-api)
+- The frontend gates the app on a resolved active organization **and** workspace before rendering scoped UI.
+- Org switch and workspace switch are treated as separate steps; an org switch can leave the workspace unset.
+- Every backend tenant query filters on the token's org/workspace claims, never on an id from the request body.
+- Workspace-scoped routes return `403` when the claim is absent, not a server error.
+- Invitation tokens are treated as secrets and surfaced only to admin tooling.
+
+## Reference
+
+- [React + backend auth lifecycle](/guides/integration-playbooks/fullstack-auth-lifecycle-react-rust) for the token verification seam this builds on.
+- [Rust: Organizations and Workspaces](/sdks/rust/organizations-workspaces) for the full backend method surface.
+- [Frontend API](/reference/frontend-api) and [Backend API](/reference/backend-api) for exact request/response shapes.

@@ -1,10 +1,162 @@
 ---
 title: Server SDKs
-description: Runtime integrations for Node and Rust services.
+description: When to use the Node or Rust backend SDK, what they cover, and how to verify auth server-side.
 ---
 
-Server-side docs should focus on:
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
-- authentication and token validation
-- management and admin operations
-- runtime integration patterns
+Wacht ships two server-side SDKs over one backend API: `@wacht/backend` for JavaScript and TypeScript runtimes, and the `wacht` crate for Rust. They are not different products with different capabilities — they're two surfaces over the same endpoints, so the choice is your stack, not your feature set. Both verify sessions, run gateway authorization, and call the typed backend API (users, organizations and workspaces, webhooks, API auth, AI, settings).
+
+Server SDKs are where authorization actually happens. The frontend reflects who's signed in; the backend decides what a request is allowed to do. Everything on this page runs on the server with a secret key.
+
+## Node vs Rust
+
+Pick by where your code already lives:
+
+- **Node SDK (`@wacht/backend`)** — framework-agnostic, works anywhere `fetch` is available: Node.js, Bun, Hono, Cloudflare Workers, Netlify, other serverless runtimes. The framework packages (`@wacht/nextjs/server`, `@wacht/react-router/server`, `@wacht/tanstack-router/server`) are thin adapters over this same client. If you're in a JS/TS backend, this is the SDK.
+- **Rust SDK (`wacht`)** — typed request builders with async execution and an optional Axum feature for middleware-level auth. If your services are Rust, this is the SDK.
+
+Both read `WACHT_API_KEY` and talk to the Wacht backend API. They do **not** cover console, machine, or frontend-api routes — only the backend API surface that an application server is meant to call.
+
+## Installing and initializing
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```bash
+pnpm add @wacht/backend
+```
+
+The SDK reads `WACHT_API_KEY` and defaults to `https://api.wacht.dev`. Don't point the base URL at a deployment `backend_host` or an `fapi.*` host.
+
+```ts
+import { users } from "@wacht/backend";
+
+const response = await users.listUsers({ limit: 20 });
+console.log(response.data.length);
+```
+</Tab>
+<Tab>
+```toml
+[dependencies]
+wacht = { version = "0.1.0-beta.4", features = ["axum"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+```
+
+`WachtClient::from_env()` reads `WACHT_API_KEY` and `WACHT_PUBLISHABLE_KEY`. Backend methods are builders — finish each with `.send().await`.
+
+```rust
+use wacht::{Result, WachtClient};
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let client = WachtClient::from_env().await?;
+    let users = client.users().list_users().send().await?;
+    println!("fetched {} users", users.len());
+    Ok(())
+}
+```
+</Tab>
+</Tabs>
+
+## Verifying end-user auth
+
+A request from a signed-in browser carries a session token. Verifying it means three checks in one call: the token is authentic, the user is real, and the session is still alive (a logged-out or revoked session fails even if the token string is well-formed). Assert the permission you need at the same point.
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+import { authenticateRequest } from "@wacht/backend";
+
+export async function handler(request: Request) {
+  const auth = await authenticateRequest(request, {
+    signInUrl: "https://app.example.com/sign-in",
+  });
+
+  // Throws with a redirect target when unauthenticated or the permission is missing.
+  await auth.protect({ permission: "user:read" });
+
+  return Response.json({ userId: auth.userId });
+}
+```
+
+Use `verifyAuthToken(token)` when you only have a bare token and want the decoded payload without the request wrapper.
+</Tab>
+<Tab>
+```rust
+use axum::{routing::get, Router};
+use wacht::middleware::WachtAuthLayer;
+
+let app: Router = Router::new()
+    .route("/me", get(handler))
+    .layer(WachtAuthLayer::new());
+```
+
+The Axum layer verifies the session and rejects unauthenticated requests before your handler runs; an extractor then hands you the resolved user and scope. See [Rust Axum auth layer](/sdks/rust/frameworks/axum/auth-layer-setup).
+</Tab>
+</Tabs>
+
+## Verifying machine auth
+
+API keys and OAuth access tokens don't go through session verification — they go through the gateway. One `checkPrincipalAuthz` call resolves the principal, confirms it isn't revoked or expired, checks the required permissions and resource, and applies the rate limit. The principal type tells the gateway what kind of credential it's looking at: `api_key`, `m2m_oauth`, or `user_oauth`.
+
+<Tabs items={["Node SDK", "Rust SDK"]}>
+<Tab>
+```ts
+import { WachtClient } from "@wacht/backend";
+
+const client = new WachtClient({ apiKey: process.env.WACHT_BACKEND_API_KEY! });
+
+const authz = await client.gateway.checkPrincipalAuthz({
+  principalType: "api_key",
+  principalValue: apiKey,
+  method: "GET",
+  resource: "reports",
+  requiredPermissions: ["reports:read"],
+});
+
+if (!authz.allowed) throw new Error("Forbidden");
+```
+</Tab>
+<Tab>
+```rust
+use wacht::gateway::{GatewayAuthzOptions, GatewayPrincipalType};
+
+let authz = client
+    .gateway()
+    .check_authz_with_principal_type(
+        GatewayPrincipalType::ApiKey,
+        api_key,
+        "GET",
+        "reports",
+        GatewayAuthzOptions {
+            required_permissions: Some(vec!["reports:read".to_string()]),
+            ..Default::default()
+        },
+    )
+    .await?;
+
+if !authz.allowed {
+    // Reject in your middleware.
+}
+```
+</Tab>
+</Tabs>
+
+For the OAuth-token path — opaque tokens via the gateway versus JWTs verified locally — see [Verify OAuth access tokens](/guides/oauth-apps/access-token-verification).
+
+## Admin and management operations
+
+Beyond verification, the SDKs expose the management surface: a user's sessions, passkeys, MFA, and memberships; organizations and workspaces; API auth apps and keys; webhook apps, endpoints, and deliveries; AI agents and tasks. These are the same operations across both languages, grouped onto the client.
+
+```rust
+// Revoke every active sign-in for a user. The count excludes already-expired rows.
+let summary = client.users().sessions().revoke_all("user_id").send().await?;
+println!("revoked {} sign-ins", summary.revoked);
+```
+
+## Where to go next
+
+- [Backend JS SDK](/sdks/node) — runtimes, framework interop, server auth
+- [Rust Getting Started](/sdks/rust/getting-started) — install, client, request pattern
+- [Rust user management](/sdks/rust/user-management) · [Rust webhooks](/sdks/rust/webhooks) · [Rust API auth + OAuth](/sdks/rust/api-auth-oauth)
+- [Authentication](/product/authentication) · [API authentication](/product/api-auth) · [Webhooks](/product/webhooks)

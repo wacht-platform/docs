@@ -1,17 +1,19 @@
 ---
 title: React + backend auth lifecycle
-description: A React frontend that signs users in and calls a backend that verifies them. Both Node and Rust on the server. End to end with code.
+description: A React frontend signs a user in, mints a session token, and calls a backend that verifies it. Node and Rust both shown, end to end.
 ---
 
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
-A working setup for the most common Wacht backend shape: React on the frontend, your backend verifying session tokens, protected handlers, tenancy-scoped data access. Backend examples are shown for both Node (`@wacht/backend`) and Rust (`wacht` with the `axum` feature).
+The most common Wacht backend shape: React on the frontend, your server verifying session tokens, protected handlers, tenancy-scoped data access. The browser never holds a backend credential. It mints a short-lived JSON Web Token (JWT) per call; your backend verifies it against your deployment's JSON Web Key Set (JWKS). Backend examples are shown for both Node (`@wacht/backend`) and Rust (`wacht` with the `axum` feature).
+
+The seam to get right: the frontend sends `Authorization: Bearer <token>`, the backend verifies the signature and reads `user_id` / `organization_id` / `workspace_id` from the claims, and every tenant query filters on those claims. Frontend hiding is UX, not a security boundary.
 
 ## Prerequisites
 
-- A Wacht deployment with the publishable key and a backend secret
-- Node 20+ and pnpm for the frontend (and Node backend, if you pick that)
-- Rust 1.75+ and cargo (if you pick the Rust backend)
+- A Wacht deployment, its publishable key (`pk_...`), and a backend API key (`wk_...`)
+- Node 20+ and pnpm for the frontend (and the Node backend, if you pick it)
+- Rust 1.75+ and cargo, if you pick the Rust backend
 
 ## Frontend
 
@@ -21,35 +23,37 @@ A working setup for the most common Wacht backend shape: React on the frontend, 
 pnpm add @wacht/react-router @wacht/types
 ```
 
-Use `@wacht/nextjs` instead if you're on Next.js, or `@wacht/tanstack-router` for TanStack. The patterns are the same.
+Use `@wacht/nextjs` instead if you're on Next.js, or `@wacht/tanstack-router` for TanStack. Same hooks and components; only the provider's router binding differs.
 
 ### Wrap your app
 
+`DeploymentProvider` fetches deployment config and holds session state. It takes `publicKey` (the `pk_...` publishable key, which encodes your Frontend API host). The adapter packages build the router binding for you.
+
 ```tsx
 // src/main.tsx
-import { WachtProvider } from "@wacht/react-router";
+import { DeploymentProvider } from "@wacht/react-router";
 
 function App() {
   return (
-    <WachtProvider publicKey={import.meta.env.VITE_WACHT_PUBLIC_KEY}>
+    <DeploymentProvider publicKey={import.meta.env.VITE_WACHT_PUBLISHABLE_KEY}>
       <Router />
-    </WachtProvider>
+    </DeploymentProvider>
   );
 }
 ```
 
 ### Sign-in UI
 
-Drop in the prebuilt components or build your own with the hooks.
+`SignedIn` / `SignedOut` render their children based on session state. `UserButton` is the prebuilt account menu. `NavigateToSignIn` redirects to the hosted sign-in page on mount — use it when you don't embed `SignInForm` directly.
 
 ```tsx
-import { SignIn, SignedIn, SignedOut, UserButton } from "@wacht/react-router";
+import { SignedIn, SignedOut, UserButton, NavigateToSignIn } from "@wacht/react-router";
 
 function Header() {
   return (
     <header>
       <SignedOut>
-        <SignIn />
+        <NavigateToSignIn />
       </SignedOut>
       <SignedIn>
         <UserButton />
@@ -61,7 +65,7 @@ function Header() {
 
 ### Call your backend
 
-Get the session token from `useSession` and send it as a bearer.
+`useSession().getToken()` mints a session JWT and caches it in memory until just before it expires. Send it as a bearer header. There's no shared session store between frontend and backend — the token is the entire handoff.
 
 ```tsx
 import { useSession } from "@wacht/react-router";
@@ -82,7 +86,7 @@ function useApi() {
 }
 ```
 
-`getToken()` returns a JWT signed by Wacht's keys. It refreshes automatically before expiry. Your backend verifies it; no shared session storage between frontend and backend.
+`getToken(template?)` takes an optional JWT template name and returns the signed token string; with no argument it uses the `default` template. The token's claims carry `sub` (user id) plus the active organization and workspace. It refreshes automatically — a cached token is reused until expiry, then re-minted. `getToken` is only available once the session has loaded; during `loading`, the hook's fields aren't callable, so gate on `useSession().loading` first.
 
 ## Backend
 
@@ -109,19 +113,20 @@ The `axum` feature enables `AuthLayer` and the extractors.
 
 ### Configure the client
 
+Two credentials do two jobs. The API key (`apiKey` / `WACHT_API_KEY`) authenticates *your server* when it calls Wacht's REST API. The publishable key (`WACHT_PUBLISHABLE_KEY`) is how the verifier derives your Frontend API host to fetch JWKS — it verifies the *user's* token. Don't confuse them: the API key is a secret and never ships to the browser; the publishable key is public.
+
 <Tabs items={["Node SDK", "Rust SDK"]}>
 <Tab>
 ```ts
 // src/server.ts
-import { initBackend } from "@wacht/backend";
+import { initClient } from "@wacht/backend";
 
-initBackend({
-  publishableKey: process.env.WACHT_PUBLISHABLE_KEY!,
-  secretKey: process.env.WACHT_BACKEND_SECRET!,
+initClient({
+  apiKey: process.env.WACHT_API_KEY!,
 });
 ```
 
-`initBackend()` configures the SDK once at startup. After that the helpers (`getAuth`, `authenticateRequest`, plus the `ai.*` and `users.*` clients) read from process state.
+`initClient()` configures the global SDK client once at startup. The `users.*` and `ai.*` REST clients read from it. Request verification (`getAuth`, `authenticateRequest`) is separate: it reads `WACHT_PUBLISHABLE_KEY` from the environment to find the JWKS endpoint, or you pass `publishableKey` per call in `options`. In non-Node runtimes without `process.env` (Workers, edge), pass `publishableKey` explicitly.
 </Tab>
 <Tab>
 ```rust
@@ -141,7 +146,7 @@ async fn main() {
 }
 ```
 
-`init_from_env()` reads `WACHT_DEPLOYMENT_URL` and `WACHT_BACKEND_SECRET`. `AuthLayer` verifies the bearer token on every request and attaches an `AuthContext` to request extensions. If the token is missing or invalid, the layer doesn't reject — it leaves the extension empty. Reject in the handler via the extractor so optional-auth routes still work.
+`init_from_env()` reads `WACHT_API_KEY` plus `WACHT_PUBLISHABLE_KEY` (or `WACHT_FRONTEND_HOST`), then fetches and caches your deployment's JWKS so `AuthLayer` can verify signatures offline. Run it before building the router — `AuthLayer::new()` panics if the signing material isn't loaded yet; use `AuthLayer::try_new()` if you'd rather handle that as `None`. `AuthLayer` verifies the bearer token on every request and attaches an `AuthContext` to request extensions. A missing or invalid token doesn't reject at the layer — it leaves the extension empty, so optional-auth routes still work. The extractor in your handler decides whether to reject.
 </Tab>
 </Tabs>
 
@@ -164,7 +169,7 @@ export async function me(request: Request): Promise<Response> {
 }
 ```
 
-`getAuth` reads the `Authorization: Bearer ...` header, verifies the JWT against Wacht's JWKS, and returns a `WachtAuth` object. `auth.protect()` throws `WachtAuthError` if the user isn't signed in; map that to a 401 in your framework's error handler.
+`getAuth` reads the `Authorization: Bearer ...` header, verifies the JWT against your deployment's JWKS, and returns a `WachtAuth` object. `auth.protect()` is async — `await` it. It throws `WachtAuthError` (with `code: "unauthenticated"`, status 401) if the user isn't signed in; map that to a 401 in your framework's error handler. `auth.userId` / `auth.organizationId` / `auth.workspaceId` are `null` when unauthenticated.
 </Tab>
 <Tab>
 ```rust
@@ -180,7 +185,7 @@ async fn me(auth: RequireAuth) -> impl IntoResponse {
 }
 ```
 
-`RequireAuth` returns `401 Unauthorized` if `AuthLayer` didn't find a valid token. Inside the handler you have `auth.user_id`, `auth.organization_id`, `auth.workspace_id`, and the raw claims.
+`RequireAuth` rejects with `401 Unauthorized` if `AuthLayer` didn't find a valid token. It derefs to the `AuthContext`, so inside the handler you have `auth.user_id` and `auth.session_id` (both `String`), `auth.organization_id` and `auth.workspace_id` (both `Option<String>`), and `auth.claims` for the raw token claims.
 </Tab>
 </Tabs>
 
@@ -213,12 +218,14 @@ async fn public_or_personalized(auth: OptionalAuth) -> impl IntoResponse {
     }
 }
 ```
+
+`OptionalAuth` never rejects. It wraps `Option<AuthContext>`, so match on `auth.0`.
 </Tab>
 </Tabs>
 
 ## Tenancy scoping
 
-Wacht's B2B model attaches the user's active organization and workspace IDs to the token. Protected handlers check them before touching tenant data.
+Wacht's business-to-business (B2B) model attaches the user's active organization and workspace IDs to the token claims. Protected handlers read those claims — never a tenant id from the request body — and scope every query to them.
 
 <Tabs items={["Node SDK", "Rust SDK"]}>
 <Tab>
@@ -267,7 +274,7 @@ async fn list_documents(auth: RequireAuth) -> Result<Json<Vec<Document>>, Error>
 </Tab>
 </Tabs>
 
-The frontend switches active organization/workspace via `useActiveOrganization()` and `useActiveWorkspace()` from the SDK. The next token they get will carry the new IDs.
+The frontend switches the active organization or workspace via `useSession().switchOrganization(orgId)` and `switchWorkspace(workspaceId)`. Switching clears the cached token, so the next `getToken()` carries the new IDs. Read the current selection with `useActiveOrganization()` and `useActiveWorkspace()`. Because the switch invalidates the token, an in-flight request can still arrive at the backend with the old scope — keep the backend the authority and the frontend in step, not ahead.
 
 ## Permission checks
 
@@ -292,7 +299,9 @@ export async function removeMember(request: Request, memberId: string) {
 </Tab>
 <Tab>
 ```rust
-use wacht::middleware::{Permission, RequirePermission, auth::PermissionScope};
+use axum::extract::Path;
+use axum::http::StatusCode;
+use wacht::middleware::{Permission, PermissionScope, RequireAuth, RequirePermission};
 
 struct ManageMembers;
 impl Permission for ManageMembers {
@@ -305,18 +314,18 @@ async fn remove_member(
     auth: RequireAuth,
     Path(member_id): Path<String>,
 ) -> Result<StatusCode, Error> {
-    delete_member(&pool, auth.organization_id.unwrap(), &member_id).await?;
+    delete_member(&pool, auth.organization_id.as_deref().unwrap(), &member_id).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 ```
 
-If the user doesn't have the permission, the request gets `403 Forbidden` before your handler runs. Permission types live in one module so reviewers can audit them.
+Define the permission as a type implementing `Permission` with its scope, then add `RequirePermission<ManageMembers>` to the handler signature. If the user lacks it, the request gets `403 Forbidden` before the handler body runs. Keep the permission types in one module so reviewers can audit them in one place.
 </Tab>
 </Tabs>
 
 ## Calling Wacht's API from the backend
 
-Once authenticated, use the SDK to read or mutate Wacht state on the user's behalf.
+Verifying the token tells you who's calling. To read or mutate Wacht state — the full user record, organization details — use the REST client, which authenticates with your API key. Verification and the REST client are independent: one reads the user's token, the other carries your server's key.
 
 <Tabs items={["Node SDK", "Rust SDK"]}>
 <Tab>
@@ -331,20 +340,25 @@ export async function whoami(request: Request) {
   return Response.json(user);
 }
 ```
+
+`users.getUser(id)` returns a `UserDetails` record. It runs against the global client configured by `initClient()`.
 </Tab>
 <Tab>
 ```rust
 use wacht::middleware::RequireAuth;
+use wacht::models::UserDetails;
 
-async fn whoami(auth: RequireAuth) -> Result<Json<User>, Error> {
+async fn whoami(auth: RequireAuth) -> Result<Json<UserDetails>, Error> {
     let user = wacht::try_get_client()?
         .users()
-        .get_user_by_id(&auth.user_id)
+        .fetch_user_details(&auth.user_id)
         .send()
         .await?;
     Ok(Json(user))
 }
 ```
+
+`fetch_user_details(id)` returns `UserDetails`. `try_get_client()` hands back the client `init_from_env()` set up; it errors if init never ran.
 </Tab>
 </Tabs>
 
@@ -367,27 +381,26 @@ Most apps wrap their fetch helper to handle 401 by silently refreshing the token
 Frontend `.env`:
 
 ```
-VITE_WACHT_PUBLIC_KEY=pk_...
+VITE_WACHT_PUBLISHABLE_KEY=pk_...
 VITE_API_URL=http://localhost:3000
 ```
 
 Backend `.env`:
 
 ```
-WACHT_DEPLOYMENT_URL=https://your-deployment.wacht.dev
+WACHT_API_KEY=wk_...
 WACHT_PUBLISHABLE_KEY=pk_...
-WACHT_BACKEND_SECRET=sk_...
 ```
 
-The publishable key is only required on the Node side for `getAuth` to derive the JWKS endpoint. Rust reads JWKS from the deployment URL directly.
+The API key authenticates your server's REST calls and is a secret. The publishable key is how both SDKs derive the Frontend API host to verify user tokens — the host is base64-encoded inside the `pk_` key, so no separate URL is needed. Rust accepts `WACHT_FRONTEND_HOST` as an explicit alternative to `WACHT_PUBLISHABLE_KEY`.
 
 ## Production checklist
 
-- All protected routes call `auth.protect()` (Node) or use `RequireAuth` / `RequirePermission` (Rust). No reliance on frontend hiding to gate data.
-- All tenant queries filter by `auth.organizationId` / `auth.workspaceId`. No "current user's data" without an explicit scope check.
+- All protected routes `await auth.protect()` (Node) or use `RequireAuth` / `RequirePermission` (Rust). No reliance on frontend hiding to gate data.
+- All tenant queries filter by `auth.organizationId` / `auth.workspaceId` (Node) or `auth.organization_id` / `auth.workspace_id` (Rust). No "current user's data" query without an explicit scope check.
 - Rust: `AuthLayer` is mounted on the protected router, not the public one. Public routes (health checks, OAuth callbacks) bypass it.
-- The frontend never holds the backend secret. Only the publishable key ships to the browser.
-- The frontend retries 401 once after a fresh `getToken()` before bouncing to sign-in.
+- The frontend never holds the API key. Only the publishable key ships to the browser.
+- The frontend retries a 401 once after a fresh `getToken()` before bouncing to sign-in.
 - Permission strings (Node) or `Permission` types (Rust) live in one module so reviewers can audit them.
 
 ## Next

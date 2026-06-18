@@ -1,37 +1,32 @@
 ---
-title: Agent Skill Bundles
+title: Agent skill bundles
 description: Upload, inspect, and manage per-agent skill bundles from the backend SDKs.
 ---
 
-# Agent Skill Bundles
+# Agent skill bundles
 
-Agents in Wacht run with two kinds of skills:
+An agent runs with two kinds of skills. System skills are built into the platform and available to every agent — the reusable agentic primitives Wacht maintains, read-only through this API. Agent skills are ones you upload per agent as a ZIP; they land in the agent's filesystem under `/skills/agent/<slug>` and are tracked in the database so you can list, fetch, and delete them independently.
 
-1. **System skills** — built into the platform, available to every agent. These are the reusable agentic primitives Wacht maintains.
-2. **Agent skills** — per-agent bundles you upload as a ZIP. They land in the agent's filesystem under `/skills/agent/<slug>` and are tracked in the database so they can be listed, fetched, and deleted independently.
-
-The backend SDKs (`@wacht/backend`, `wacht-rs`) expose the full lifecycle.
+The backend SDKs (`@wacht/backend`, `wacht-rs`) cover the full lifecycle. Every endpoint is on the backend API surface (`/ai/agents/{id}/skills/*`) — API-key authenticated, not user-session.
 
 ## Bundle format
 
-A skill bundle is a ZIP file that contains one or more skill folders. Each folder must include a `SKILL.md` at its root with frontmatter:
+A bundle is a ZIP that contains exactly one skill: either a `SKILL.md` at the zip root, or a single top-level folder containing one. More than one top-level folder is rejected.
 
 ```markdown
 ---
-name: my-skill
-description: One-line summary used by agents to decide when to load this skill.
+name: My Skill
+description: One-line summary an agent uses to decide when to load this skill.
 ---
 
 # Body content
 ```
 
-The `name` becomes the slug after kebab-case normalization. The folder name is irrelevant — the slug comes from frontmatter.
-
-Bundles are capped at **25 MB**.
+The slug comes from the **zip file name** (when `SKILL.md` is at the root) or the **single top-level folder name** — not from the frontmatter. It's kebab-case normalized. The frontmatter `name` becomes the display name and `description` the summary; both are optional, and an upload with no frontmatter still succeeds as long as `SKILL.md` is present. Bundles are capped at 25 MB; symlinks are rejected.
 
 ## List the summary
 
-Get both system and agent skills for an agent in one call. Each row carries `slug`, `name`, optional `description`, `mount_path`, and `source` (`"system"` or `"agent"`).
+Returns system and agent skills in one call. Each row carries `slug`, `name`, optional `description`, `mount_path`, and `source` (`"system"` or `"agent"`).
 
 **Node**
 
@@ -56,7 +51,7 @@ let summary = client
 
 ## Browse the filesystem
 
-`list_skill_tree` returns the directory listing for a given scope (`system` or `agent`) at a given path. Use it to walk the bundle structure or render a tree UI.
+`list_skill_tree` returns the directory listing for a scope (`system` or `agent`) at a path. Use it to walk the bundle structure or render a tree UI.
 
 **Node**
 
@@ -82,7 +77,7 @@ let tree = client
 
 ## Read a file
 
-For text files you get `content`; for binaries you get `content_base64`. `is_text` tells you which one to read.
+Text files come back as `content`; binaries as `content_base64`. Check `is_text` to know which.
 
 **Node**
 
@@ -104,12 +99,12 @@ let file = client
 
 ## Upload a bundle
 
-Multipart POST. `replace_existing` controls whether matching slugs are overwritten or added alongside.
+Multipart POST. `replace_existing` decides what happens on a slug collision: `true` overwrites the matching skill, `false` errors. The call returns the updated agent skill tree.
 
 **Node**
 
 ```ts
-const file = new File([buffer], "skills.zip", { type: "application/zip" });
+const file = new File([buffer], "my-skill.zip", { type: "application/zip" });
 const tree = await ai.importAgentSkillBundle("agent_id", file, {
   replace_existing: true,
 });
@@ -118,18 +113,19 @@ const tree = await ai.importAgentSkillBundle("agent_id", file, {
 **Rust**
 
 ```rust
-let bytes = std::fs::read("./skills.zip")?;
+let bytes = std::fs::read("./my-skill.zip")?;
 let tree = client
     .ai()
     .agents()
-    .import_skill_bundle("agent_id", "skills.zip", bytes)
+    .import_skill_bundle("agent_id", "my-skill.zip", bytes)
+    .replace_existing(true)
     .send()
     .await?;
 ```
 
 ## Delete an agent skill
 
-Removes the skill row and its files. System skills aren't deletable — only agent-scoped ones.
+Removes the skill row and its files. Only agent-scoped skills are deletable; system skills are read-only through this API and managed at the platform deployment level.
 
 **Node**
 
@@ -147,9 +143,3 @@ client
     .send()
     .await?;
 ```
-
-## Notes
-
-- Slugs are unique per `(agent_id, source)`. Re-uploading with `replace_existing=true` overwrites; `false` errors on conflict.
-- System skills are read-only through this API. Manage them via the platform deployment.
-- All endpoints are on the **backend API surface** (`/ai/agents/{id}/skills/*`) — API-key authenticated, not user-session.

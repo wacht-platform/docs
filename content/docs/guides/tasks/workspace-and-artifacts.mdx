@@ -1,68 +1,74 @@
 ---
-title: "Workspace and artifacts"
-description: "Every task gets a /task/ filesystem. How agents use it, how to surface files to your UI."
+title: Workspace and artifacts
+description: Every task gets a /task/ filesystem. How agents use it, how to surface files to your UI.
 ---
 
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
-Every board item gets a private filesystem mounted at `/task/` inside agent sandboxes. This is where work-in-progress lives, where deliverables get written, and where the journal accumulates. Your UI reads from it via the workspace file API.
+Every board item gets a filesystem mounted at `/task/` inside agent sandboxes. Work-in-progress lives there, deliverables get written there, and the journal accumulates there. The filesystem is shared across every thread working the board item, so a coordinator and its executor lanes read and write the same files. Your UI reads from it through the workspace file API.
 
 ## The /task/ layout
 
-The convention agents follow:
+The runtime maintains three files at the workspace root:
 
 ```
 /task/
-├── artifacts/         ← deliverables. Validated to exist when task completes.
-│   ├── summary.md
-│   ├── teaser-final.mp4
-│   └── ...
-├── JOURNAL.md         ← append-only log of structured handoffs per completion
-├── (scratch files)    ← agents leave whatever they need here
-└── (mounted dirs)     ← S3-backed mounts if configured on the schedule
+├── TASK.md       ← the task brief, maintained by the runtime
+├── JOURNAL.md    ← append-only log of handoffs, one entry per completion
+└── AUDIT.log     ← runtime audit trail
 ```
 
-- `artifacts/` is the canonical "this is the output" directory. Paths here get validated to actually exist before a task can be marked `completed`.
-- `JOURNAL.md` is auto-maintained — every handoff appends an entry.
-- Scratch files don't have to follow any convention; agents use it as working memory.
+Everything else under `/task/` is convention, not enforced structure. By convention agents write outputs under `/task/artifacts/` and pass intermediate files between lanes under their own subpaths. Uploaded files land under `/task/uploads/` (see [File uploads](/guides/tasks/file-uploads)). Nothing creates these directories for you; the agent makes them when it writes.
+
+Two paths matter beyond the root files:
+
+- `/task/artifacts/` is the conventional output directory. The agent prompts steer deliverables here, but the path is not enforced — completion validates that each declared artifact *exists*, not that it sits under a fixed prefix.
+- `/task/uploads/` is where user-attached files are written, with a runtime-assigned name.
+
+A separate `/scratch/` mount (top-level, not under `/task/`) is ephemeral working space that does not persist with the task. Use `/task/` for anything you want to survive the run.
 
 ## How agents read and write
 
-Agents reach the filesystem via the built-in **filesystem tool**. Common operations:
+Agents reach the filesystem through built-in tools. The tools operate on any mounted path:
 
 | Operation | Tool call |
 |---|---|
 | Read a file | `read_file(path="/task/artifacts/script.txt")` |
 | Write a file | `write_file(path="/task/artifacts/summary.md", content="...")` |
-| List a directory | `list_directory(path="/task/artifacts")` |
-| Check existence | `exists(path="/task/artifacts/done.flag")` |
-| Append to a file | `append_file(path="/task/notes.md", content="...")` |
+| Edit in place | `edit_file(path="/task/draft.md", old_string="...", new_string="...")` |
+| Append to a file | `append_file(path="/task/draft.md", content="...")` |
+| Read an image | `read_image(path="/task/uploads/diagram.png")` |
 
-The CodeRunner tool can also operate on `/task/` directly — Python scripts can read/write files there, run `ffmpeg`, etc.
+There is no `list_directory` tool. To list a directory the agent runs a shell command (`ls /task/artifacts`) through the command-execution tool, or uses `code_runner`, which can read and write `/task/` directly — run `ffmpeg`, parse a PDF, emit a derived file.
 
-**The filesystem is shared across all threads on the board item.** The coordinator can write a brief to `/task/brief.md`, the executor reads it. One executor lane can pass files to the next via `/task/handoff/`.
+> The filesystem is shared across all threads on the board item. A coordinator can write a brief, an executor reads it; one lane can leave a file for the next. Lanes coordinate through files, not through shared memory.
 
 ## Surfacing files to your UI
 
-Your frontend can browse and download workspace files via the backend SDK.
+Your frontend browses and downloads workspace files through the backend SDK or the React hook. The hook relays through your backend.
 
-### Listing files
+### Listing a directory
+
+Use this to render an artifacts browser, or to confirm an expected output exists before linking to it.
 
 <Tabs items={["Node SDK", "Rust SDK"]}>
 <Tab>
 ```ts
 import { ai } from "@wacht/backend";
 
-const result = await ai.listProjectTaskBoardItemFilesystem(taskId, {
-  path: "/task/artifacts",
-});
+const listing = await ai.listProjectTaskBoardItemFilesystem(
+  projectId,
+  taskId,
+  "/task/artifacts",
+);
 
-// result.entries: [{ name, kind: "file" | "directory", size_bytes, modified_at }]
+// listing.exists: boolean — false if the path is missing
+// listing.files: [{ path, name, is_dir, size_bytes?, modified_at? }]
 ```
 </Tab>
 <Tab>
 ```rust
-let result = wacht::try_get_client()?
+let listing = wacht::try_get_client()?
     .ai()
     .actor_projects()
     .fetch_board_item_filesystem(project_id, task_id)
@@ -70,38 +76,49 @@ let result = wacht::try_get_client()?
     .send()
     .await?;
 
-// result.entries: Vec<FilesystemEntry { name, kind, size_bytes, modified_at }>
+// listing.exists: bool
+// listing.files: Vec<TaskWorkspaceFileEntry { path, name, is_dir, size_bytes, modified_at }>
 ```
 </Tab>
 </Tabs>
 
-Or via the SDK hook on the frontend (relays through your backend):
+`exists` is `false` when the path has not been created yet — early in a task `/task/artifacts` may not exist. Render an empty state rather than treating that as an error. Each entry's `is_dir` distinguishes a subdirectory from a file; descend into directories with another listing call.
+
+On the frontend, `useProjectTaskBoardItem` returns a live `taskWorkspace` listing for the workspace root plus a `listTaskWorkspaceDirectory(path)` method for any subpath:
 
 ```tsx
-import { useTaskWorkspaceFiles } from "@wacht/nextjs";
+import { useProjectTaskBoardItem } from "@wacht/nextjs";
 
-function ArtifactsList({ taskId }: { taskId: string }) {
-  const { entries, loading } = useTaskWorkspaceFiles(taskId, "/task/artifacts");
-  if (loading) return <div>Loading…</div>;
+function ArtifactsList({ projectId, taskId }: { projectId: string; taskId: string }) {
+  const { taskWorkspace, taskWorkspaceLoading } = useProjectTaskBoardItem(projectId, taskId);
+  if (taskWorkspaceLoading) return <div>Loading…</div>;
+  if (!taskWorkspace.exists) return <div>No files yet.</div>;
   return (
     <ul>
-      {entries?.map((e) => (
-        <li key={e.name}>{e.name} ({e.size_bytes} bytes)</li>
+      {taskWorkspace.files.map((f) => (
+        <li key={f.path}>
+          {f.name} {f.is_dir ? "(dir)" : `(${f.size_bytes ?? 0} bytes)`}
+        </li>
       ))}
     </ul>
   );
 }
 ```
 
+The hook takes `(projectId, taskId)` — both are required. It revalidates on a 15-second interval, so a file the agent writes appears within that window without a manual refresh.
+
 ### Downloading a file
+
+Use this to serve an artifact back to the browser. Stream it — do not buffer large media into memory.
 
 <Tabs items={["Node SDK", "Rust SDK"]}>
 <Tab>
 ```ts
-// Backend route
-const file = await ai.downloadProjectTaskBoardItemFilesystemFile(taskId, {
-  path: "/task/artifacts/teaser-final.mp4",
-});
+const file = await ai.downloadProjectTaskBoardItemFilesystemFile(
+  projectId,
+  taskId,
+  "/task/artifacts/teaser-final.mp4",
+);
 
 return new Response(file.body, {
   headers: { "content-type": file.contentType ?? "application/octet-stream" },
@@ -123,24 +140,30 @@ let file = wacht::try_get_client()?
 
 // file.body is a stream; pipe it back to the client
 Ok(Response::builder()
-    .header("content-type", file.content_type.unwrap_or_else(|| "application/octet-stream".into()))
+    .header(
+        "content-type",
+        file.content_type.unwrap_or_else(|| "application/octet-stream".into()),
+    )
     .body(file.body.into())
     .unwrap())
 ```
 </Tab>
 </Tabs>
 
-Stream it. Don't buffer entire video files into memory.
+A path that does not exist returns an error, not an empty body — guard the call or rely on the listing to confirm the file is there first. The frontend equivalent is `downloadTaskWorkspaceFile(path)` on `useProjectTaskBoardItem`; for text you want to render inline, `getTaskWorkspaceFile(path)` returns the file content directly.
 
-### A complete React artifact viewer
+### Driving the viewer from deliverables
+
+The workspace holds both outputs and scratch files. To show only what the agent considers output, read the artifact paths from the board item's `deliverables` array rather than listing the whole filesystem.
 
 ```tsx
 "use client";
 import { useProjectTaskBoardItem } from "@wacht/nextjs";
 
-export function TaskArtifacts({ taskId }: { taskId: string }) {
-  const { item } = useProjectTaskBoardItem(taskId);
-  const latest = item?.deliverables?.[item.deliverables.length - 1];
+export function TaskArtifacts({ projectId, taskId }: { projectId: string; taskId: string }) {
+  const { item } = useProjectTaskBoardItem(projectId, taskId);
+  const deliverables = item?.deliverables ?? [];
+  const latest = deliverables[deliverables.length - 1];
 
   if (!latest) return <div>No deliverables yet.</div>;
 
@@ -148,10 +171,10 @@ export function TaskArtifacts({ taskId }: { taskId: string }) {
     <section>
       <h2>{latest.result_summary}</h2>
       <ul>
-        {latest.artifacts.map((path) => (
-          <li key={path}>
-            <a href={`/api/task/${taskId}/file?path=${encodeURIComponent(path)}`}>
-              {path.split("/").pop()}
+        {latest.artifacts.map((a) => (
+          <li key={a.path}>
+            <a href={`/api/task/${taskId}/file?path=${encodeURIComponent(a.path)}`}>
+              {a.path.split("/").pop()}
             </a>
           </li>
         ))}
@@ -161,11 +184,11 @@ export function TaskArtifacts({ taskId }: { taskId: string }) {
 }
 ```
 
-The `deliverables` array carries the artifact paths declared at completion time. Reading from `deliverables` instead of listing the filesystem gives you a stable list of "what the agent considers output" vs. scratch files left lying around.
+`deliverables` is the stable list of declared outputs; the filesystem listing is everything, including intermediate files. Each artifact entry is an object with a `path`. See [Deliverables and the journal](/guides/tasks/deliverables) for the full shape.
 
-## Mounted directories (advanced)
+## Mounting external storage
 
-You can mount external storage (S3 buckets, typically) into `/task/<mount-path>` so agents can read large reference data without it being copied into the workspace.
+You can mount an S3 object into `/task/<mount-path>` so an agent reads large reference data without copying it into the workspace. Use this when the input is huge — hours of video, a large dataset — or shared across many tasks.
 
 <Tabs items={["Node SDK", "Rust SDK"]}>
 <Tab>
@@ -194,7 +217,7 @@ let mount: ScheduleMount = serde_json::from_value(json!({
     "mode": "ro",
 }))?;
 
-client
+wacht::try_get_client()?
     .ai()
     .actor_projects()
     .create_board_item(
@@ -212,55 +235,17 @@ client
 </Tab>
 </Tabs>
 
-The agent sees `/task/source/demo-recording.mp4` as a regular file. Reads stream from S3; the workspace doesn't have a local copy. Use `mode: "rw"` if the agent should write back.
+`mount_path` is where the agent sees the object; `s3_relative_key` is the key in your configured bucket; `mode` is `ro` or `rw`. The Rust `ScheduleMount` is a free-form map, so build it from JSON with those keys. The agent sees `/task/source/demo-recording.mp4` as a regular file; reads stream from S3 with no local copy. `mounts` is a backend-SDK capability — it is not on the React `updateItem` request type.
 
-This pattern is common for media workflows where the source material is huge and the deliverable is a smaller derived file.
+## Limits and cleanup
 
-## Workspace size limits and cleanup
-
-- Workspaces are not infinite. Default cap is per-deployment configurable. Beyond the cap, writes start failing.
-- Scratch files persist for the life of the task. Archive the task to free the workspace.
-- For long-running schedules, design your agent prompts to clean up: "After completing, remove anything under /task/scratch/."
-
-## Common patterns
-
-### Agent writes summary + artifact, UI shows both
-
-Agent prompt:
-```
-Write a short markdown summary to /task/artifacts/summary.md
-and a structured JSON report to /task/artifacts/report.json.
-```
-
-Coordinator marks complete with both files in `artifacts: [...]`.
-
-UI iterates `latest.artifacts`, picks `.md` for inline render, `.json` for download.
-
-### Pass a file from one lane to the next
-
-```
-script lane writes  /task/handoff/script.txt
-storyboard lane reads /task/handoff/script.txt
-storyboard lane writes /task/handoff/storyboard.json
-image-gen lane reads /task/handoff/storyboard.json
-...
-```
-
-Each lane only depends on what the previous lane left in `/task/handoff/`. Lanes are loosely coupled.
-
-### Agent works on big input, outputs small derived file
-
-```
-mount: s3://demos/2026-q2/recording.mp4 → /task/source/recording.mp4 (ro)
-agent reads /task/source/recording.mp4 (streams from S3, no copy)
-agent writes /task/artifacts/chapters.json (small, served from workspace)
-```
-
-The big file never touches your storage budget.
+- Per-file uploads cap at 64 MB. For anything larger, mount it instead of uploading.
+- Scratch files under `/task/` persist for the life of the task. Archive the task to release the workspace.
+- For recurring schedules, instruct the agent to clean up after itself — leftover files accumulate across runs on the same board item.
 
 ## Where to go next
 
-- [Deliverables and the journal](/guides/tasks/deliverables) — the structured handoff format
-- [File uploads](/guides/tasks/file-uploads) — going the other direction (UI → workspace)
+- [Deliverables and the journal](/guides/tasks/deliverables) — the structured handoff each completion produces
+- [File uploads](/guides/tasks/file-uploads) — getting user files into the workspace
 - [Realtime UI](/guides/tasks/realtime-ui) — surfacing files as they appear
 - [Agents → code runner](/guides/agents/code-runner) — Python that operates on `/task/`

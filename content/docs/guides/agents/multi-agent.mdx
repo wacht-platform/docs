@@ -1,6 +1,6 @@
 ---
-title: "Multi-agent orchestration"
-description: "Coordinator with specialists. The concrete playbook."
+title: Multi-agent orchestration
+description: Route work across specialist agents with a coordinator that decides which lane runs next.
 ---
 
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
@@ -20,7 +20,8 @@ actor (user)
         ├── storyboard
         ├── image-gen
         ├── video-gen
-        └── verification
+        ├── assembler
+        └── verifier
 ```
 
 - **One coordinator agent** that understands the lane topology and decides routing.
@@ -49,7 +50,7 @@ One more agent — the coordinator.
 
 - **Name:** `video-coordinator`
 - **Model:** `claude-sonnet-4-6` (smarter model — it's making decisions)
-- **Tools:** none required, but `get_project_task`, `list_assignments` are useful for reading state
+- **Tools:** none required, but `get_project_task` (returns the board item with its assignments and deliverables) and `list_threads` are useful for reading state
 - **System prompt:**
 
   ```
@@ -87,10 +88,10 @@ Each executor thread has `capability_tags`. The coordinator routes by these tags
 import { ai } from "@wacht/backend";
 
 // Bootstrap one project bound to the coordinator
-const project = await ai.createActorProjectFlat(
-  { actor_id: userActorId },
-  { agent_id: "video_coordinator_agent_id", name: "Video for X" }
-);
+const project = await ai.createActorProject(userActorId, {
+  agent_id: "video_coordinator_agent_id",
+  name: "Video for X",
+});
 
 // Create one lane thread per specialist, tagged so the coordinator can route
 const laneSpecs = [
@@ -204,8 +205,8 @@ What happens next, automatically:
 
 1. **Coordinator wakes up.** Reads task description, decides: "no script yet, route to script lane."
 2. **Creates executor assignment** on the `script` lane thread with `capability_tags: ["script"]`.
-3. **Script lane runs.** Writes script to `/task/artifacts/script.txt`, marks assignment completed with a handoff (summary, artifact path, next: "storyboard").
-4. **Coordinator wakes up again.** Sees the completed assignment, reads the journal entry, decides: "script done, storyboard next."
+3. **Script lane runs.** Writes script to `/task/artifacts/script.txt`, finishes its slice with a handoff (summary, artifact path, next: "storyboard") that routes the board item back to the coordinator.
+4. **Coordinator wakes up again.** Sees the finished assignment, reads the journal entry, decides: "script done, storyboard next."
 5. **Creates storyboard assignment.** Storyboard lane runs, produces shot list, completes.
 6. **Repeat through image-gen → video-gen → assembler → verifier.**
 7. **Verifier completes with approval.** Coordinator marks the board item `completed` with the final video as the artifact.
@@ -236,7 +237,7 @@ The coordinator's next prompt automatically includes the journal tail (last 60 l
 
 The coordinator decides routing based on:
 
-- **Board state** — `list_assignments` shows which lanes have run, which are active, which are pending.
+- **Board state** — `get_project_task` returns the board item's assignments, so the coordinator sees which lanes have run, which are active, which are pending.
 - **Deliverables** — what's been produced so far.
 - **Journal** — narrative of why each lane finished the way it did.
 - **The original task description** — the user's intent never gets stale.
@@ -276,21 +277,20 @@ Your coordinator prompt should still explicitly:
 
 > "Trust only the deliverables array and the current assignment statuses for what's been done. Do not trust prose claims of completion from prior conversation history."
 
-## Child tasks for fan-out
+## Fan-out across a lane
 
-If a lane needs to do many parallel pieces (image-gen producing 8 key frames), the cleanest model is **child tasks**.
+If a lane needs many parallel pieces (image-gen producing 8 key frames), route one task per piece to the same lane thread. `delegateProjectTask` takes four fields — `target_lane_thread_id`, `title`, `description`, `capability_tags` — and creates a board item assigned to a matching agent on that lane.
 
 <Tabs items={["Node SDK", "Rust SDK"]}>
 <Tab>
 ```ts
-// From the image-gen executor, kick off one child task per shot
+// Route one task per shot at the image-gen lane thread
 for (const shot of shots) {
   await ai.delegateProjectTask(project.id, {
     target_lane_thread_id: imageGenLaneThreadId,
     title: `Key frame for shot ${shot.id}`,
     description: shot.description,
     capability_tags: ["image-gen"],
-    parent_board_item_id: parentTaskId,
   });
 }
 ```
@@ -319,7 +319,7 @@ for shot in shots {
 </Tab>
 </Tabs>
 
-Each child becomes its own board item. They run in parallel (subject to the lane's concurrency limits). The parent task can wait on all children via the `waiting_for_children` status.
+Each delegated task is its own board item; they run in parallel, subject to the lane's concurrency limits. To make the originating task wait on the batch, the agent creates them as child tasks in-loop with the `create_project_task` tool (passing `parent_task_key`) rather than from the SDK — the parent then sits in `waiting_for_children` until they all finish.
 
 ## Debugging when things go sideways
 
