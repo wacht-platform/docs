@@ -1,4 +1,4 @@
-import { FrontendAPIPage, frontendApiServer } from '@/lib/openapi';
+import { FrontendAPIPage } from '@/components/frontend-api-page';
 import { DocsPage, DocsBody } from 'fumadocs-ui/layouts/docs/page';
 import { notFound } from 'next/navigation';
 import frontendManifest from '@/public/openapi/frontend-api-manifest.json';
@@ -16,9 +16,7 @@ export default async function Page(props: PageProps<'/reference/frontend-api/[ta
       <DocsBody>
         <div className="openapi-page">
           <FrontendAPIPage
-            document="frontend-api"
-            operations={[{ path: opEntry.path, method: opEntry.method.toLowerCase() as any }]}
-            showTitle
+            operations={[{ path: opEntry.path, method: opEntry.method.toLowerCase() }]}
           />
         </div>
       </DocsBody>

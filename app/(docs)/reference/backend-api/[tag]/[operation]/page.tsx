@@ -1,4 +1,4 @@
-import { PlatformAPIPage, platformApiServer } from '@/lib/openapi';
+import { PlatformAPIPage } from '@/components/platform-api-page';
 import { DocsPage, DocsBody } from 'fumadocs-ui/layouts/docs/page';
 import { notFound } from 'next/navigation';
 import platformManifest from '@/public/openapi/platform-api-manifest.json';
@@ -16,9 +16,7 @@ export default async function Page(props: PageProps<'/reference/backend-api/[tag
       <DocsBody>
         <div className="openapi-page">
           <PlatformAPIPage
-            document="platform-api"
-            operations={[{ path: opEntry.path, method: opEntry.method.toLowerCase() as any }]}
-            showTitle
+            operations={[{ path: opEntry.path, method: opEntry.method.toLowerCase() }]}
           />
         </div>
       </DocsBody>
