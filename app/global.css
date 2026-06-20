@@ -180,3 +180,23 @@ html > body[data-scroll-locked] {
     margin-right: 0px !important;
     --removed-body-scroll-bar-size: 0px !important;
 }
+
+/* ---------------------------------------------------------------------------
+   Code blocks — match the marketing site. fumadocs already uses the github-dark
+   shiki theme, but paints the surface with bg-fd-card (#0a0a0e), almost the same
+   as the page (#050507), so blocks read flat. The site uses an elevated #0f0f14
+   surface (--color-bg-2) with a clearer #25252e border (--color-line-2).
+--------------------------------------------------------------------------- */
+.dark figure.shiki,
+.dark figure.shiki figcaption {
+    background: #0f0f14;
+    border-color: #25252e;
+}
+
+/* Inline code — match the site's subtle card + violet text. */
+.dark .prose :not(pre) > code {
+    background: #0f0f14;
+    border: 1px solid #25252e;
+    border-radius: 4px;
+    color: #c4a6ff;
+}
