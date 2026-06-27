@@ -128,7 +128,7 @@ function sharedComponentGroups(base: string): SharedNavGroup[] {
         page('<SignInForm />', `${base}/components/sign-in-form`),
         page('<SignUpForm />', `${base}/components/sign-up-form`),
         page('<WaitlistForm />', `${base}/components/waitlist-form`),
-        page('<SSOCallback />', `${base}/components/sso-callback`),
+        page('<SocialCallback />', `${base}/components/social-callback`),
         page('<MagicLinkVerification />', `${base}/components/magic-link-verification`),
         page('<AcceptInvite />', `${base}/components/accept-invite`),
         page('<SignedInAccounts />', `${base}/components/signed-in-accounts`),
@@ -180,7 +180,7 @@ function sharedHookGroups(base: string): SharedNavGroup[] {
       pages: [
         page('useSignIn()', `${base}/hooks/use-sign-in`),
         page('useSignUp()', `${base}/hooks/use-sign-up`),
-        page('useSSOCallback()', `${base}/hooks/use-sso-callback`),
+        page('useSocialCallback()', `${base}/hooks/use-social-callback`),
         page('useWaitlist()', `${base}/hooks/use-waitlist`),
         page('useForgotPassword()', `${base}/hooks/use-forgot-password`),
         page('useMagicLinkVerification()', `${base}/hooks/use-magic-link-verification`),
