@@ -38478,13 +38478,15 @@
         "type": "string",
         "enum": [
           "otp",
-          "oath_google",
-          "oath_github",
+          "oauth_google",
+          "oauth_github",
           "oauth_microsoft",
           "oauth_facebook",
           "oauth_linkedin",
           "oauth_discord",
-          "oauth_apple"
+          "oauth_apple",
+          "enterprise_sso",
+          "scim"
         ]
       },
       "Organization": {
