@@ -13,7 +13,9 @@ description: Verify Wacht session tokens and enforce permissions in backend Java
 - `verifyAuthToken(token, options?)` — verify a token and return the raw JWT payload, or `null`.
 - `authFromHeaders(headers)` — rebuild `WachtAuth` from a forwarded `x-wacht-auth` header without re-verifying.
 
-None of these throw on an unauthenticated request. They return a `WachtAuth` with `userId === null`; the failure surfaces only when you call `auth.protect()`, which throws `WachtAuthError`.
+The verified-auth helpers return a signed-out `WachtAuth` for an invalid or missing token; calling `auth.protect()` then throws `WachtAuthError`.
+
+`authFromHeaders` is only for trusted internal forwarding. Strip client-supplied `x-wacht-auth` at public ingress and overwrite it with the header from `authenticateRequest`. This helper does not verify a signature, so never pass raw client headers to it. Its `protect()` method is unavailable and throws a generic error; enforce protection before forwarding.
 
 ## Basic request auth
 
